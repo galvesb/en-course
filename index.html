@@ -1,4 +1,4 @@
-<!-- index.html — Chat Simulator (hover corrigido, arquivo completo) -->
+<!-- index.html — Chat Simulator (ícone de "olho" que mostra dica) COMPLETO -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -7,233 +7,182 @@
   <title>Chat Simulator</title>
   <style>
     :root {
-      --blue:#93c5fd; --green:#86efac; --gray-bg:#f3f4f6; --gray-border:#d1d5db; --primary:#2563eb;
+      --blue:#93c5fd;
+      --green:#86efac;
+      --gray-bg:#f3f4f6;
+      --gray-border:#d1d5db;
+      --primary:#2563eb;
     }
-    html,body{
-      margin:0;
-      font-family:system-ui,sans-serif;
+    html, body {
+      margin:0; font-family:system-ui,sans-serif;
       background:var(--gray-bg);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      min-height:100vh; display:flex;
+      align-items:center; justify-content:center;
     }
-    .card{
-      background:#fff;
-      padding:1.5rem;
+    .card {
+      background:#fff; padding:1.5rem;
       border-radius:.75rem;
       box-shadow:0 2px 6px rgba(0,0,0,.08);
-      width:100%;
-      max-width:380px;
+      width:100%; max-width:380px;
     }
-    .btn{
-      width:100%;
-      padding:.5rem 1rem;
-      margin-top:.5rem;
-      border:none;
-      border-radius:.5rem;
-      font-weight:600;
+    .btn {
+      width:100%; padding:.5rem 1rem;
+      margin-top:.5rem; border:none;
+      border-radius:.5rem; font-weight:600;
       cursor:pointer;
     }
-    .btn.primary{background:var(--primary);color:#fff}
-    .btn.secondary{background:#e5e7eb}
-    .btn.ghost{background:transparent;color:var(--primary)}
-    .chat-scroll{max-height:340px;overflow-y:auto}
-    .chat-bubble{max-width:70%;padding:.75rem;border-radius:1rem;box-shadow:0 1px 3px rgba(0,0,0,.1)}
-    .bubble-a{background:var(--blue)}
-    .bubble-b{background:var(--green)}
-    input[type=text]{flex:1;padding:.5rem;border:1px solid var(--gray-border);border-radius:.5rem;outline:none}
-    .flex{display:flex}
-    .gap-md{gap:.75rem}
-    .search-box{margin-bottom:1rem}
+    .btn.primary { background:var(--primary); color:#fff; }
+    .btn.secondary { background:#e5e7eb; }
+    .btn.ghost { background:transparent; color:var(--primary); }
+    .chat-scroll { max-height:340px; overflow-y:auto; }
+    .chat-bubble {
+      max-width:70%; padding:.75rem;
+      border-radius:1rem;
+      box-shadow:0 1px 3px rgba(0,0,0,.1);
+    }
+    .bubble-a { background:var(--blue); }
+    .bubble-b { background:var(--green); }
+    input[type=text] {
+      flex:1; padding:.5rem;
+      border:1px solid var(--gray-border);
+      border-radius:.5rem; outline:none;
+    }
+    .flex { display:flex; }
+    .gap-md { gap:.75rem; }
+    .search-box { margin-bottom:1rem; }
+    /* Ícone de olho e balão */
+    .hint-btn {
+      background:transparent; border:none;
+      cursor:pointer; font-size:1.3rem;
+      padding:0 .25rem; line-height:1;
+    }
+    .input-group { position:relative;
+      display:flex; align-items:center;
+      width:100%;
+    }
+    .hint-bubble {
+      position:absolute; right:2.5rem; bottom:120%;
+      background:#333; color:#fff;
+      padding:.25rem .5rem;
+      border-radius:.25rem;
+      font-size:.75rem;
+      white-space:pre-wrap;
+      display:none;
+      max-width:250px;
+    }
+    .hint-bubble::after {
+      content:''; position:absolute;
+      bottom:-6px; right:10px;
+      border-width:6px 6px 0 6px;
+      border-style:solid;
+      border-color:#333 transparent transparent transparent;
+    }
   </style>
 </head>
 <body>
   <div id="app" class="card"></div>
-
   <script>
-    /* ---------- 1. Dados ---------- */
+    // 1. Dados
     const conversationData = {
       conversas: [
         {
           title: 'Entrevista comportamental',
           A: [
-            { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/a-1.mp3' },
-            { id: '2', pergunta: 'Perfect. This will be about a 45‑minute chat. Sound good?', audio: 'audio/a-2.mp3' }
+            { id:'1', pergunta:'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio:'audio/a-1.mp3' },
+            { id:'2', pergunta:'Perfect. This will be about a 45-minute chat. Sound good?', audio:'audio/a-2.mp3' }
           ],
           B: [
-            { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/b-1.mp3' },
-            { id: '2', resposta: 'Absolutely, sounds good.', audio: 'audio/b-2.mp3' }
+            { id:'1', resposta:'Hi! Yes, everything’s working fine. Thanks for having me today.', audio:'audio/b-1.mp3' },
+            { id:'2', resposta:'Absolutely, sounds good.', audio:'audio/b-2.mp3' }
           ]
         },
         {
           title: 'cenario 2',
           A: [
-            { id: '1', pergunta: 'eae keka?', audio: 'audio/a-1.mp3' },
-            { id: '2', pergunta: 'Estou bem', audio: 'audio/a-2.mp3' }
+            { id:'1', pergunta:'eae keka?', audio:'audio/a-1.mp3' },
+            { id:'2', pergunta:'Estou bem', audio:'audio/a-2.mp3' }
           ],
           B: [
-            { id: '1', resposta: 'oi vida tudo bem e com você?', audio: 'audio/b-1.mp3' },
-            { id: '2', resposta: 'que bom', audio: 'audio/b-2.mp3' }
+            { id:'1', resposta:'oi vida tudo bem e com você?', audio:'audio/b-1.mp3' },
+            { id:'2', resposta:'que bom', audio:'audio/b-2.mp3' }
           ]
         }
       ]
     };
-
-    /* ---------- 2. Estado ---------- */
-    let stage = 'titles';
-    let selectedConv = null;
-    let role = null;
-    let step = 0;
-    let history = [];
-    let searchTerm = '';
-
-    const app = document.getElementById('app');
-
-    /* ---------- 3. Util ---------- */
-    const scrollToBottom = () => {
-      const box = document.getElementById('chat-scroll');
-      if (box) box.scrollTop = box.scrollHeight;
-    };
-
-    const player = new Audio();
-    const playAudio = (src) => {
-      if (!src) return;
-      try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch {}
-    };
-
-    const pushMessage = (msg) => {
-      history.push(msg);
-      if (msg.audio) playAudio(msg.audio);
-    };
-
-    /* ---------- 4. Render ---------- */
-    const render = () => {
-      if (stage === 'titles') return renderTitles();
-      if (stage === 'role')   return renderRoles();
-      return renderChat();
-    };
-
-    /* 4.1 Cenários */
-    function renderTitles() {
-      app.innerHTML = `
-        <h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
+    // 2. Estado
+    let stage='titles', selectedConv=null, role=null, step=0, history=[], searchTerm='';
+    const app=document.getElementById('app');
+    // 3. Util
+    const scrollToBottom=()=>{ const box=document.getElementById('chat-scroll'); if(box)box.scrollTop=box.scrollHeight; };
+    const player=new Audio(); const playAudio=src=>{ if(!src)return; try{player.pause();player.currentTime=0;player.src=src;player.play();}catch{} };
+    const pushMessage=msg=>{ history.push(msg); if(msg.audio) playAudio(msg.audio); };
+    // 4. Render
+    const render=()=>{ if(stage==='titles')return renderTitles(); if(stage==='role')return renderRoles(); return renderChat(); };
+    // 4.1 Títulos
+    function renderTitles(){
+      app.innerHTML=`<h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
         <div class="search-box flex gap-md">
           <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
         </div>
         <div id="scenario-list"></div>`;
-
-      document.getElementById('search-input').addEventListener('input', (e) => {
-        searchTerm = e.target.value;
-        renderScenarioList();
-      });
-
-      renderScenarioList();
-      document.getElementById('search-input').focus();
+      document.getElementById('search-input').addEventListener('input',e=>{searchTerm=e.target.value;renderScenarioList();});
+      renderScenarioList(); document.getElementById('search-input').focus();
     }
-
-    function renderScenarioList() {
-      const list = document.getElementById('scenario-list');
-      const filtered = conversationData.conversas.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()));
-      list.innerHTML = filtered.length
-        ? filtered.map((c, idx) => `<button class="btn primary" onclick="chooseConversation(${idx})">${c.title}</button>`).join('')
-        : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
+    function renderScenarioList(){
+      const list=document.getElementById('scenario-list');
+      const filtered=conversationData.conversas.filter(c=>c.title.toLowerCase().includes(searchTerm.toLowerCase()));
+      list.innerHTML=filtered.length
+        ?filtered.map((c,idx)=>`<button class="btn primary" onclick="chooseConversation(${idx})">${c.title}</button>`).join('')
+        :`<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
     }
-
-    /* 4.2 Papel */
-    function renderRoles() {
-      app.innerHTML = `
-        <h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
+    // 4.2 Papel
+    function renderRoles(){
+      app.innerHTML=`<h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
         <div class="flex gap-md">
           <button class="btn primary" style="flex:1" onclick="chooseRole('A')">Pessoa A</button>
           <button class="btn primary" style="flex:1" onclick="chooseRole('B')">Pessoa B</button>
         </div>
         <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
     }
-
-    /* 4.3 Chat */
-    function renderChat() {
-      const conv = conversationData.conversas[selectedConv];
-      const finished = (role === 'A' && step >= conv.A.length) || (role === 'B' && step >= conv.B.length);
-
-      const histHTML = history.map(msg => {
-        const align = msg.speaker === role ? 'flex-end' : 'flex-start';
-        const bubble = msg.speaker === 'A' ? 'bubble-a' : 'bubble-b';
-        const aud = msg.audio ? `<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
+    // 4.3 Chat
+    function renderChat(){
+      const conv=conversationData.conversas[selectedConv];
+      const finished=(role==='A'&&step>=conv.A.length)||(role==='B'&&step>=conv.B.length);
+      const histHTML=history.map(msg=>{
+        const align=msg.speaker===role?'flex-end':'flex-start';
+        const bubble=msg.speaker==='A'?'bubble-a':'bubble-b';
+        const aud=msg.audio?`<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>`:'';
         return `<div style="display:flex;justify-content:${align}"><div class="chat-bubble ${bubble}"><p style="margin:0">${msg.text}</p>${aud}</div></div>`;
       }).join('');
-
-      const inputHTML = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
-        <div class="flex gap-md" style="margin-top:.75rem">
-          <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
-          <button class="btn primary" onclick="send()">Enviar</button>
-        </div>`;
-
-      app.innerHTML = `
-        <div id="chat-scroll" class="chat-scroll space-y">${histHTML}</div>
-        ${inputHTML}
-        <div class="flex gap-md" style="margin-top:1rem;justify-content:space-between">
-          <button class="btn secondary" onclick="setStage('role')">Trocar Papel</button>
-          <button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button>
-        </div>`;
-
-      const chatInput = document.getElementById('chat-input');
-      if (chatInput) {
-        const hint = role === 'A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
-        chatInput.dataset.hint = hint;
-        chatInput.placeholder = 'Digite e tecle Enter…';
-        chatInput.onmouseenter = () => chatInput.placeholder = hint || 'Digite e tecle Enter…';
-        chatInput.onmouseleave = () => chatInput.placeholder = 'Digite e tecle Enter…';
+      const inputHTML=finished
+        ?`<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>`
+        :`<div class="input-group flex gap-md" style="margin-top:.75rem">
+             <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
+             <button id="hint-btn" class="hint-btn">👁</button>
+             <button class="btn primary" style="width:auto" onclick="send()">Enviar</button>
+             <div id="hint-bubble" class="hint-bubble"></div>
+           </div>`;
+      app.innerHTML=`<div id="chat-scroll" class="chat-scroll space-y">${histHTML}</div>${inputHTML}<div class="flex gap-md" style="margin-top:1rem;justify-content:space-between"><button class="btn secondary" onclick="setStage('role')">Trocar Papel</button><button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button></div>`;
+      const chatInput=document.getElementById('chat-input');
+      const hintBtn=document.getElementById('hint-btn');
+      const hintBubble=document.getElementById('hint-bubble');
+      if(chatInput&&hintBtn&&hintBubble){
+        const hint=role==='A'?(conv.A[step]?.pergunta||''):(conv.B[step]?.resposta||'');
+        hintBubble.textContent=hint;
+        hintBtn.onmouseenter=()=>{if(hint)hintBubble.style.display='block';};
+        hintBtn.onmouseleave=()=>hintBubble.style.display='none';
+        hintBtn.onclick    =()=>hintBubble.style.display=hintBubble.style.display==='block'?'none':'block';
         chatInput.focus();
-        chatInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); send(); } };
+        chatInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();send();}};
       }
-
       scrollToBottom();
     }
-
-    /* ---------- 5. Actions ---------- */
-    window.chooseConversation = (idx) => {
-      selectedConv = idx;
-      step = 0;
-      history = [];
-      stage = 'role';
-      render();
-    };
-
-    window.chooseRole = (r) => {
-      role = r;
-      stage = 'chat';
-      if (r === 'B') {
-        const first = conversationData.conversas[selectedConv].A[0];
-        pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio });
-        step = 0;
-      }
-      render();
-    };
-
-    window.setStage = (s) => { stage = s; render(); };
-
-    window.send = () => {
-      const input = document.getElementById('chat-input');
-      if (!input || !input.value.trim()) return;
-
-      const text = input.value.trim();
-      const conv = conversationData.conversas[selectedConv];
-      const userLine = role === 'A' ? conv.A[step] : conv.B[step];
-
-      // 1) adiciona usuário
-      pushMessage({ speaker: role, text, audio: userLine?.audio || null });
-
-      // 2) resposta
-      const replyLine = role === 'A' ? conv.B[step] : conv.A[step + 1];
-      if (replyLine) pushMessage({ speaker: role === 'A' ? 'B' : 'A', text: replyLine.pergunta || replyLine.resposta, audio: replyLine.audio });
-
-      // 3) avança passo e re-renderiza
-      step++;
-      render();
-    };
-
-    /* ---------- INIT ---------- */
+    // 5. Actions
+    window.chooseConversation=idx=>{selectedConv=idx;step=0;history=[];stage='role';render();};
+    window.chooseRole=r=>{role=r;stage='chat';if(r==='B'){const first=conversationData.conversas[selectedConv].A[0];pushMessage({speaker:'A',text:first.pergunta,audio:first.audio});step=0;}render();};
+    window.setStage=s=>{stage=s;render();};
+    window.send=()=>{const input=document.getElementById('chat-input');if(!input||!input.value.trim())return;const text=input.value.trim();const conv=conversationData.conversas[selectedConv];const userLine=role==='A'?conv.A[step]:conv.B[step];pushMessage({speaker:role,text,audio:userLine?.audio||null});const replyLine=role==='A'?conv.B[step]:conv.A[step+1];if(replyLine)pushMessage({speaker:role==='A'?'B':'A',text:replyLine.pergunta||replyLine.resposta,audio:replyLine.audio});step++;render();};
+    // Init
     render();
   </script>
 </body>
