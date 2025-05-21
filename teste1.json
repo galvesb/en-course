@@ -1,0 +1,11 @@
+                {
+                    title: "Entrevista comportamental",
+                    A: [
+                        { id: "1", pergunta: "Hi Guilherme, it’s great to meet you! Can you hear and see me okay?", audio: "audio/a-1.mp3" },
+                        { id: "2", pergunta: "Perfect. I’m really glad we could connect. Just to give you a quick idea  this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?", audio: "audio/a-2.mp3" },
+                    ],
+                    B: [
+                        { id: "1", resposta: "Hi! Yes, everything’s working fine. Thanks for having me today.", audio: "audio/b-1.mp3" },
+                        { id: "2", resposta: "Absolutely, sounds good.", audio: "audio/b-2.mp3" },
+                    ],
+                },
