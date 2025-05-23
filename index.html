@@ -106,19 +106,42 @@
     // 1. Dados
     const conversationData = {
       conversas: [
+
+        // ************ Entrevistas
         {
-          title: 'Entrevista comportamental',
+          title: '[Entrevista] comportamental',
           A: [
-            { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/a-1.mp3' },
-            { id: '2', pergunta: 'Perfect. This will be about a 45-minute chat. Sound good?', audio: 'audio/a-2.mp3' }
+            { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/behavioral-interview/1.mp3' },
+            { id: '2', pergunta: 'Perfect. I’m really glad we could connect. Just to give you a quick idea this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?', audio: 'audio/behavioral-interview/3.mp3' },
+            { id: '3', pergunta: "Can you tell me about yourself and your professional background? let's start with the company luizalabs.", audio: 'audio/behavioral-interview/5.mp3' },
+            { id: '4', pergunta: "tell me about everis.", audio: 'audio/behavioral-interview/7.mp3'},
+            { id: '5', pergunta: "tell me about tembici.", audio: 'audio/behavioral-interview/9.mp3'},
+            { id: '6', pergunta: "tell me about Santander bank.", audio: 'audio/behavioral-interview/11.mp3'},
+            { id: '7', pergunta: "Why are you looking for new opportunities?", audio: 'audio/behavioral-interview/13.mp3'},
+            { id: '8', pergunta: "Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?", audio: 'audio/behavioral-interview/15.mp3'},
+            { id: '9', pergunta: "Tell me about a time you received critical feedback. How did you handle it?", audio: 'audio/behavioral-interview/17.mp3'},
+            { id: '10', pergunta: "Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.", audio: 'audio/behavioral-interview/19.mp3'},
           ],
           B: [
-            { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/b-1.mp3' },
-            { id: '2', resposta: 'Absolutely, sounds good.', audio: 'audio/b-2.mp3' }
+            { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/behavioral-interview/2.mp3' },
+            { id: '2', resposta: 'Absolutely, sounds good.', audio: 'audio/behavioral-interview/4.mp3' },
+            { id: '3', resposta: 'I’m currently a Senior Software Developer at Luizalabs, where I focus on backend solutions using Python with FastAPI, MongoDB, Kafka, Kubernetes and ArgoCD. In this role, I’ve had the opportunity to worked on back-office applications that manage sellers and leads interested in selling on Magazine Luiza, a major retail company in Brazil. One of my main contributions here was building a risk analysis system that replaced an external legacy system, saving R$200,000 per year.', audio: 'audio/behavioral-interview/6.mp3' },
+            { id: '4', resposta: 'Before Luizalabs, I worked as a Mid-level Software Engineer at Everis, where I worked on B2B product team for ambev. There, I worked with Python, Django, Postgres, RabbitMQ and AWS.', audio: 'audio/behavioral-interview/8.mp3' },
+            { id: '5', resposta: 'before everis, I worked as a Mid-level Software Engineer at Tembici, where I worked on the IFood Pedal project, a bike rental app with over 18,000 delivery drivers.,The project won the Innovation of the Year award. There, I worked with Python, Django, Postgres, Celery and AWS', audio: 'audio/behavioral-interview/10.mp3' },
+            { id: '6', resposta: 'Finally, I started my career at Santander Bank as an Entry-Level Software Developer, working on both backend Python, Flask, React for payment team.', audio: 'audio/behavioral-interview/12.mp3' },
+            { id: '7', resposta: "I'm looking for a place where I can work in English daily and work with people from all over the world.", audio: 'audio/behavioral-interview/14.mp3'},
+            { id: '8', resposta: "One project where I faced a significant challenge was building an internal risk analysis tools for sellers at Luizalabs. It replaced an expensive legacy system and saved the company 200,000 per year. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date", audio: 'audio/behavioral-interview/14.mp3'},
+            { id: '9', resposta: "At Santander, I received feedback from my tech lead that my SQL queries were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the queries to be cleaner and easier to understand.", audio: 'audio/behavioral-interview/18.mp3'},
+            { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3'},
           ]
         },
+
+        // ************ dia a dia
+
+
+        // ************** dia a dia dev
         {
-          title: 'Scenario 1 Daily Standup',
+          title: '[Scenario Dev] 1 Daily Standup',
           A: [
             { id: '1', pergunta: 'Good morning, everyone! Let’s start with Guilherme.', audio: 'audio/scenario-1-daily-standup/1.mp3' },
             { id: '2', pergunta: 'Any blockers?', audio: 'audio/scenario-1-daily-standup/3.mp3' },
@@ -133,7 +156,7 @@
           ]
         },
         {
-          title: 'Scenario 2 Pair Programming',
+          title: '[Scenario Dev] 2 Pair Programming',
           A: [
             { id: '1', pergunta: 'Hey Bill, can we pair on the new onboarding screen?', audio: 'audio/scenario-2-pair-programming/1.mp3' },
             { id: '2', pergunta: 'I added the layout, but I’m unsure about handling form validation.', audio: 'audio/scenario-2-pair-programming/3.mp3' },
