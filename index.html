@@ -138,6 +138,33 @@
 
         // ************ dia a dia
 
+        {
+          title: '[Scenario common day] 1 Morning Commute Chat', // falta colocar audios
+          A: [
+            { id: '1', pergunta: 'Excuse me, is this seat taken?', audio: 'audio/scenario-common-day-1-morning-commute-chat/1.mp3' },
+            { id: '2', pergunta: 'Thanks. The traffic was crazy today, huh?', audio: 'audio/scenario-common-day-1-morning-commute-chat/3.mp3' },
+            { id: '3', pergunta: 'Same here. Gotta love rush hour!', audio: 'audio/scenario-common-day-1-morning-commute-chat/5.mp3' },
+          ],
+          B: [
+            { id: '1', resposta: 'No, go ahead!', audio: 'audio/scenario-common-day-1-morning-commute-chat/2.mp3' },
+            { id: '2', resposta: 'Yeah, it took me an extra 20 minutes to get here.', audio: 'audio/scenario-common-day-1-morning-commute-chat/4.mp3' },
+            { id: '3', resposta: "At least the train's on time for once.", audio: 'audio/scenario-common-day-1-morning-commute-chat/6.mp3' },
+          ]
+        },
+        {
+          title: '[Scenario common day] 2 Grocery Store Stop', // falta colocar audios
+          A: [
+            { id: '1', pergunta: 'Hi there! Did you find everything you needed today?', audio: 'audio/scenario-common-day-2-grocery-store-stop/1.mp3' },
+            { id: '2', pergunta: 'Great, your total is $23.50.', audio: 'audio/scenario-common-day-2-grocery-store-stop/3.mp3' },
+            { id: '3', pergunta: "You're all set. Have a great day!", audio: 'audio/scenario-common-day-2-grocery-store-stop/5.mp3' },
+          ],
+          B: [
+            { id: '1', resposta: 'Yes, thank you. Just these items.', audio: 'audio/scenario-common-day-2-grocery-store-stop/2.mp3' },
+            { id: '2', resposta: "Here's my card.", audio: 'audio/scenario-common-day-2-grocery-store-stop/4.mp3' },
+            { id: '3', resposta: "You too, thanks!", audio: 'audio/scenario-common-day-2-grocery-store-stop/6.mp3' },
+          ]
+        },
+
 
         // ************** dia a dia dev
         {
@@ -168,6 +195,21 @@
             { id: '2', resposta: 'Let’s use a custom hook for that. We already have one for forms.', audio: 'audio/scenario-2-pair-programming/4.mp3' },
             { id: '3', resposta: 'Can you also extract the error messages into a constants file?', audio: 'audio/scenario-2-pair-programming/6.mp3' },
             { id: '4', resposta: 'Looks good! Just add a test for the success case.', audio: 'audio/scenario-2-pair-programming/8.mp3' }
+          ]
+        },
+        {
+          title: '[Scenario Dev] 3 Investigating a Slow Query', // falta colocar os audios
+          A: [
+            { id: '1', pergunta: 'Hey Lucas, the orders page is really slow in production.', audio: 'audio/scenario-3-investigating-slow-query/1.mp3' },
+            { id: '2', pergunta: 'Yeah, it’s doing a join on three tables without indexes.', audio: 'audio/scenario-3-investigating-slow-query/3.mp3' },
+            { id: '3', pergunta: 'I’ll test that locally.', audio: 'audio/scenario-3-investigating-slow-query/5.mp3' },
+            { id: '4', pergunta: 'Just did it. Load time dropped by 60%!', audio: 'audio/scenario-3-investigating-slow-query/7.mp3' }
+          ],
+          B: [
+            { id: '1', resposta: "Did you check the database query?", audio: 'audio/scenario-3-investigating-slow-query/2.mp3' },
+            { id: '2', resposta: 'That might be the issue. Can we add indexes on the foreign keys?', audio: 'audio/scenario-3-investigating-slow-query/4.mp3' },
+            { id: '3', resposta: 'Also try using .select_related() to reduce the queries.', audio: 'audio/scenario-3-investigating-slow-query/6.mp3' },
+            { id: '4', resposta: 'Nice! Let’s ship that with the next hotfix.', audio: 'audio/scenario-3-investigating-slow-query/8.mp3' }
           ]
         }
       ]
