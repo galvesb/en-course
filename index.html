@@ -1,6 +1,7 @@
 <!-- index.html — Chat Simulator (revisão colorida por dias) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,7 +18,9 @@
       --rev-yellow: #fbbf24;
       --font-base: 18px;
     }
-    html, body {
+
+    html,
+    body {
       margin: 0;
       font-family: system-ui, sans-serif;
       font-size: var(--font-base);
@@ -28,20 +31,23 @@
       justify-content: center;
       padding: 2rem;
     }
+
     .card {
       background: #fff;
       padding: 2rem;
       border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
       width: 100%;
       max-width: 800px;
       display: flex;
       flex-direction: column;
     }
+
     h2 {
       font-size: 1.5rem;
       margin-bottom: 1.5rem;
     }
+
     .btn {
       width: 100%;
       padding: 0.75rem 1.25rem;
@@ -53,28 +59,62 @@
       text-align: left;
       font-size: 1rem;
     }
-    .btn.primary { background: var(--primary); color: #fff; }
-    .btn.secondary { background: #e5e7eb; }
-    .btn.ghost { background: transparent; color: var(--primary); }
-    .btn.rev-blue { background: var(--blue); color: #000; }
-    .btn.rev-yellow { background: var(--rev-yellow); color: #000; }
-    .btn.rev-red { background: var(--rev-red); color: #000; }
+
+    .btn.primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn.secondary {
+      background: #e5e7eb;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--primary);
+    }
+
+    .btn.rev-blue {
+      background: var(--blue);
+      color: #000;
+    }
+
+    .btn.rev-yellow {
+      background: var(--rev-yellow);
+      color: #000;
+    }
+
+    .btn.rev-red {
+      background: var(--rev-red);
+      color: #000;
+    }
+
     .chat-scroll {
       flex: 1;
       max-height: 500px;
       overflow-y: auto;
       margin-bottom: 1rem;
     }
+
     .chat-bubble {
       max-width: 60%;
       padding: 1rem;
       border-radius: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,.1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
       font-size: 1rem;
       line-height: 1.4;
     }
-    .bubble-a { background: var(--blue); color: #000; }
-    .bubble-b { background: var(--green); color: #000; }
+
+    .bubble-a {
+      background: var(--blue);
+      color: #000;
+    }
+
+    .bubble-b {
+      background: var(--green);
+      color: #000;
+    }
+
     input[type=text] {
       flex: 1;
       padding: 0.75rem;
@@ -83,10 +123,21 @@
       border-radius: 0.75rem;
       outline: none;
     }
-    .flex { display: flex; }
-    .gap-md { gap: 1rem; }
-    .search-box { margin-bottom: 2rem; }
-    .hint-btn, .audio-btn {
+
+    .flex {
+      display: flex;
+    }
+
+    .gap-md {
+      gap: 1rem;
+    }
+
+    .search-box {
+      margin-bottom: 2rem;
+    }
+
+    .hint-btn,
+    .audio-btn {
       background: transparent;
       border: none;
       cursor: pointer;
@@ -94,6 +145,7 @@
       padding: 0 0.5rem;
       line-height: 1;
     }
+
     .input-group {
       position: relative;
       display: flex;
@@ -101,6 +153,7 @@
       width: 100%;
       margin-bottom: 1rem;
     }
+
     .hint-bubble {
       position: absolute;
       right: 4.5rem;
@@ -115,6 +168,7 @@
       max-width: 300px;
       z-index: 10;
     }
+
     .hint-bubble::after {
       content: '';
       position: absolute;
@@ -126,6 +180,7 @@
     }
   </style>
 </head>
+
 <body>
   <div id="app" class="card"></div>
   <script>
@@ -140,13 +195,13 @@
             { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/behavioral-interview/1.mp3' },
             { id: '2', pergunta: 'Perfect. I’m really glad we could connect. Just to give you a quick idea this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?', audio: 'audio/behavioral-interview/3.mp3' },
             { id: '3', pergunta: "Can you tell me about yourself and your professional background? let's start with the company luizalabs.", audio: 'audio/behavioral-interview/5.mp3' },
-            { id: '4', pergunta: "tell me about everis.", audio: 'audio/behavioral-interview/7.mp3'},
-            { id: '5', pergunta: "tell me about tembici.", audio: 'audio/behavioral-interview/9.mp3'},
-            { id: '6', pergunta: "tell me about Santander bank.", audio: 'audio/behavioral-interview/11.mp3'},
-            { id: '7', pergunta: "Why are you looking for new opportunities?", audio: 'audio/behavioral-interview/13.mp3'},
-            { id: '8', pergunta: "Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?", audio: 'audio/behavioral-interview/15.mp3'},
-            { id: '9', pergunta: "Tell me about a time you received critical feedback. How did you handle it?", audio: 'audio/behavioral-interview/17.mp3'},
-            { id: '10', pergunta: "Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.", audio: 'audio/behavioral-interview/19.mp3'},
+            { id: '4', pergunta: "tell me about everis.", audio: 'audio/behavioral-interview/7.mp3' },
+            { id: '5', pergunta: "tell me about tembici.", audio: 'audio/behavioral-interview/9.mp3' },
+            { id: '6', pergunta: "tell me about Santander bank.", audio: 'audio/behavioral-interview/11.mp3' },
+            { id: '7', pergunta: "Why are you looking for new opportunities?", audio: 'audio/behavioral-interview/13.mp3' },
+            { id: '8', pergunta: "Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?", audio: 'audio/behavioral-interview/15.mp3' },
+            { id: '9', pergunta: "Tell me about a time you received critical feedback. How did you handle it?", audio: 'audio/behavioral-interview/17.mp3' },
+            { id: '10', pergunta: "Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.", audio: 'audio/behavioral-interview/19.mp3' },
           ],
           B: [
             { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/behavioral-interview/2.mp3' },
@@ -155,10 +210,10 @@
             { id: '4', resposta: 'Before Luizalabs, I worked as a Mid-level Software Engineer at Everis, where I worked on B2B product team for ambev. There, I worked with Python, Django, Postgres, RabbitMQ and AWS.', audio: 'audio/behavioral-interview/8.mp3' },
             { id: '5', resposta: 'before everis, I worked as a Mid-level Software Engineer at Tembici, where I worked on the IFood Pedal project, a bike rental app with over 18,000 delivery drivers.,The project won the Innovation of the Year award. There, I worked with Python, Django, Postgres, Celery and AWS', audio: 'audio/behavioral-interview/10.mp3' },
             { id: '6', resposta: 'Finally, I started my career at Santander Bank as an Entry-Level Software Developer, working on both backend Python, Flask, React for payment team.', audio: 'audio/behavioral-interview/12.mp3' },
-            { id: '7', resposta: "I'm looking for a place where I can work in English daily and work with people from all over the world.", audio: 'audio/behavioral-interview/14.mp3'},
-            { id: '8', resposta: "One project where I faced a significant challenge was building an internal risk analysis tools for sellers at Luizalabs. It replaced an expensive legacy system and saved the company 200,000 per year. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date", audio: 'audio/behavioral-interview/14.mp3'},
-            { id: '9', resposta: "At Santander, I received feedback from my tech lead that my SQL queries were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the queries to be cleaner and easier to understand.", audio: 'audio/behavioral-interview/18.mp3'},
-            { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3'},
+            { id: '7', resposta: "I'm looking for a place where I can work in English daily and work with people from all over the world.", audio: 'audio/behavioral-interview/14.mp3' },
+            { id: '8', resposta: "One project where I faced a significant challenge was building an internal risk analysis tools for sellers at Luizalabs. It replaced an expensive legacy system and saved the company 200,000 per year. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date", audio: 'audio/behavioral-interview/14.mp3' },
+            { id: '9', resposta: "At Santander, I received feedback from my tech lead that my SQL queries were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the queries to be cleaner and easier to understand.", audio: 'audio/behavioral-interview/18.mp3' },
+            { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3' },
           ]
         },
 
@@ -193,71 +248,40 @@
 
 
         // ************** dia a dia dev
-        {
-          title: '[Scenario Dev] 1 Daily Standup',
+       {
+          title: "[Scenario Dev day] 1 Daily Standup",
           A: [
-            { id: '1', pergunta: 'Good morning, everyone! Let’s start with Guilherme.', audio: 'audio/scenario-1-daily-standup/1.mp3' },
-            { id: '2', pergunta: 'Any blockers?', audio: 'audio/scenario-1-daily-standup/3.mp3' },
-            { id: '3', pergunta: 'I can pair with you after the standup.', audio: 'audio/scenario-1-daily-standup/5.mp3' },
-            { id: '4', pergunta: 'What’s your focus today?', audio: 'audio/scenario-1-daily-standup/7.mp3' }
+            { id: "1", pergunta: "Good morning, team! Let’s start with you, Guilherme.", audio: "audio/scenario-dev-day-1-daily-standup/1.mp3" },
+            { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
+            { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
           ],
+
           B: [
-            { id: '1', resposta: 'Yesterday, I worked on fixing the bug in the checkout flow.', audio: 'audio/scenario-1-daily-standup/2.mp3' },
-            { id: '2', resposta: 'Yes, I need help understanding the new discount logic.', audio: 'audio/scenario-1-daily-standup/4.mp3' },
-            { id: '3', resposta: 'Perfect, that’ll help a lot.', audio: 'audio/scenario-1-daily-standup/6.mp3' },
-            { id: '4', resposta: 'I’ll finalize the fix and write tests for the discount module.', audio: 'audio/scenario-1-daily-standup/8.mp3' }
-          ]
-        },
-        {
-          title: '[Scenario Dev] 2 Pair Programming',
-          A: [
-            { id: '1', pergunta: 'Hey Bill, can we pair on the new onboarding screen?', audio: 'audio/scenario-2-pair-programming/1.mp3' },
-            { id: '2', pergunta: 'I added the layout, but I’m unsure about handling form validation.', audio: 'audio/scenario-2-pair-programming/3.mp3' },
-            { id: '3', pergunta: 'Oh, right! That will simplify the code.', audio: 'audio/scenario-2-pair-programming/5.mp3' },
-            { id: '4', pergunta: 'Good point. Done! Want to review together?', audio: 'audio/scenario-2-pair-programming/7.mp3' }
-          ],
-          B: [
-            { id: '1', resposta: "Sure. Do you want to walk me through what you've done so far?", audio: 'audio/scenario-2-pair-programming/2.mp3' },
-            { id: '2', resposta: 'Let’s use a custom hook for that. We already have one for forms.', audio: 'audio/scenario-2-pair-programming/4.mp3' },
-            { id: '3', resposta: 'Can you also extract the error messages into a constants file?', audio: 'audio/scenario-2-pair-programming/6.mp3' },
-            { id: '4', resposta: 'Looks good! Just add a test for the success case.', audio: 'audio/scenario-2-pair-programming/8.mp3' }
-          ]
-        },
-        {
-          title: '[Scenario Dev] 3 Investigating a Slow Query', // falta colocar os audios
-          A: [
-            { id: '1', pergunta: 'Hey Lucas, the orders page is really slow in production.', audio: 'audio/scenario-3-investigating-slow-query/1.mp3' },
-            { id: '2', pergunta: 'Yeah, it’s doing a join on three tables without indexes.', audio: 'audio/scenario-3-investigating-slow-query/3.mp3' },
-            { id: '3', pergunta: 'I’ll test that locally.', audio: 'audio/scenario-3-investigating-slow-query/5.mp3' },
-            { id: '4', pergunta: 'Just did it. Load time dropped by 60%!', audio: 'audio/scenario-3-investigating-slow-query/7.mp3' }
-          ],
-          B: [
-            { id: '1', resposta: "Did you check the database query?", audio: 'audio/scenario-3-investigating-slow-query/2.mp3' },
-            { id: '2', resposta: 'That might be the issue. Can we add indexes on the foreign keys?', audio: 'audio/scenario-3-investigating-slow-query/4.mp3' },
-            { id: '3', resposta: 'Also try using .select_related() to reduce the queries.', audio: 'audio/scenario-3-investigating-slow-query/6.mp3' },
-            { id: '4', resposta: 'Nice! Let’s ship that with the next hotfix.', audio: 'audio/scenario-3-investigating-slow-query/8.mp3' }
+            { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
+            { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
+            { id: "3", resposta: "Perfect, thanks!", audio: "audio/scenario-dev-day-1-daily-standup/6.mp3" }
           ]
         }
       ]
     };
     // 2. Estado
-    let stage='titles',selectedConv=null,role=null,step=0,history=[],searchTerm='';
-    const app=document.getElementById('app');
+    let stage = 'titles', selectedConv = null, role = null, step = 0, history = [], searchTerm = '';
+    const app = document.getElementById('app');
     // 3. Util
-    const scrollToBottom=()=>{const b=document.getElementById('chat-scroll');if(b)b.scrollTop=b.scrollHeight;};
-    const player=new Audio(); const playAudio=src=>{if(!src)return;try{player.pause();player.currentTime=0;player.src=src;player.play();}catch{}};
-    const pushMessage=msg=>{history.push(msg);if(msg.audio)playAudio(msg.audio);};
+    const scrollToBottom = () => { const b = document.getElementById('chat-scroll'); if (b) b.scrollTop = b.scrollHeight; };
+    const player = new Audio(); const playAudio = src => { if (!src) return; try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch { } };
+    const pushMessage = msg => { history.push(msg); if (msg.audio) playAudio(msg.audio); };
     // 4. Render
-    const render=()=>{ if(stage==='titles')return renderTitles(); if(stage==='role')return renderRoles(); return renderChat(); };
+    const render = () => { if (stage === 'titles') return renderTitles(); if (stage === 'role') return renderRoles(); return renderChat(); };
     // 4.1 Títulos + revisão
-    function renderTitles(){
-      app.innerHTML=`<h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
+    function renderTitles() {
+      app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
         <div class="search-box flex gap-md">
           <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
         </div>
         <div id="scenario-list"></div>`;
-      const listEl=document.getElementById('scenario-list');
-      document.getElementById('search-input').addEventListener('input',e=>{searchTerm=e.target.value; renderScenarioList();});
+      const listEl = document.getElementById('scenario-list');
+      document.getElementById('search-input').addEventListener('input', e => { searchTerm = e.target.value; renderScenarioList(); });
       renderScenarioList(); document.getElementById('search-input').focus();
     }
     function renderScenarioList() {
@@ -269,16 +293,16 @@
       // monta botões usando o índice original de cada cenário
       list.innerHTML = filtered.length
         ? filtered
-            .map(c => {
-              const originalIdx = conversationData.conversas.indexOf(c);
-              return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
-            })
-            .join('')
+          .map(c => {
+            const originalIdx = conversationData.conversas.indexOf(c);
+            return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
+          })
+          .join('')
         : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
     }
     // 4.2 Papel
-    function renderRoles(){
-      app.innerHTML=`<h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
+    function renderRoles() {
+      app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
         <div class="flex gap-md">
           <button class="btn primary" style="flex:1" onclick="chooseRole('A')">Pessoa A</button>
           <button class="btn primary" style="flex:1" onclick="chooseRole('B')">Pessoa B</button>
@@ -286,41 +310,44 @@
         <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
     }
     // 4.3 Chat
-    function renderChat(){
-      const conv=conversationData.conversas[selectedConv];
-      const finished=(role==='A'&&step>=conv.A.length)||(role==='B'&&step>=conv.B.length);
-      const hist=history.map(msg=>{const a=msg.speaker===role?'flex-end':'flex-start';const b=msg.speaker==='A'?'bubble-a':'bubble-b';const au=msg.audio?`<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>`:'';return`<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${msg.text}</p>${au}</div></div>`;}).join('');
-      const inp=finished?`<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>`:`<div class="input-group flex gap-md" style="margin-top:.75rem">
+    function renderChat() {
+      const conv = conversationData.conversas[selectedConv];
+      const finished = (role === 'A' && step >= conv.A.length) || (role === 'B' && step >= conv.B.length);
+      const hist = history.map(msg => { const a = msg.speaker === role ? 'flex-end' : 'flex-start'; const b = msg.speaker === 'A' ? 'bubble-a' : 'bubble-b'; const au = msg.audio ? `<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>` : ''; return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${msg.text}</p>${au}</div></div>`; }).join('');
+      const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `<div class="input-group flex gap-md" style="margin-top:.75rem">
           <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
           <button id="hint-btn" class="hint-btn">👁</button>
           <button id="audio-btn" class="audio-btn">🔊</button>
           <button class="btn primary" style="width:auto" onclick="send()">Enviar</button>
           <div id="hint-bubble" class="hint-bubble"></div>
         </div>`;
-      app.innerHTML=`<div id="chat-scroll" class="chat-scroll space-y">${hist}</div>${inp}<div class="flex gap-md" style="margin-top:1rem;justify-content:space-between"><button class="btn secondary" onclick="setStage('role')">Trocar Papel</button><button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button></div>`;
+      app.innerHTML = `<div id="chat-scroll" class="chat-scroll space-y">${hist}</div>${inp}<div class="flex gap-md" style="margin-top:1rem;justify-content:space-between"><button class="btn secondary" onclick="setStage('role')">Trocar Papel</button><button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button></div>`;
       // event handlers
-      const ci=document.getElementById('chat-input'), hb=document.getElementById('hint-bubble'), hbtn=document.getElementById('hint-btn'), abtn=document.getElementById('audio-btn');
-      if(ci&&hbtn&&abtn&&hb){
-        const hintText=role==='A'?(conv.A[step]?.pergunta||''):(conv.B[step]?.resposta||'');
-        const hintAudio=role==='A'?(conv.A[step]?.audio||''):(conv.B[step]?.audio||'');
-        hb.textContent=hintText;
-        hbtn.onmouseenter=()=>{if(hintText)hb.style.display='block';};
-        hbtn.onmouseleave=()=>hb.style.display='none';
-        hbtn.onclick=()=>hb.style.display=hb.style.display==='block'?'none':'block';
-        abtn.onclick=()=>{if(hintAudio)playAudio(hintAudio);};
-        ci.focus(); ci.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();send();}};
+      const ci = document.getElementById('chat-input'), hb = document.getElementById('hint-bubble'), hbtn = document.getElementById('hint-btn'), abtn = document.getElementById('audio-btn');
+      if (ci && hbtn && abtn && hb) {
+        const hintText = role === 'A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
+        const hintAudio = role === 'A' ? (conv.A[step]?.audio || '') : (conv.B[step]?.audio || '');
+        hb.textContent = hintText;
+        hbtn.onmouseenter = () => { if (hintText) hb.style.display = 'block'; };
+        hbtn.onmouseleave = () => hb.style.display = 'none';
+        hbtn.onclick = () => hb.style.display = hb.style.display === 'block' ? 'none' : 'block';
+        abtn.onclick = () => { if (hintAudio) playAudio(hintAudio); };
+        ci.focus(); ci.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); send(); } };
       }
       scrollToBottom();
     }
     // 5. Actions
-    window.chooseConversation=i=>{selectedConv=i;step=0;history=[];stage='role';render();};
-    window.chooseRole=r=>{role=r;stage='chat';if(r==='B'){const first=conversationData.conversas[selectedConv].A[0];pushMessage({speaker:'A',text:first.pergunta,audio:first.audio});step=0;}render();};
-    window.setStage=s=>{stage=s;render();};
-    window.send=()=>{const i=document.getElementById('chat-input');if(!i||!i.value.trim())return;const t=i.value.trim();const co=conversationData.conversas[selectedConv];const ul=role==='A'?co.A[step]:co.B[step];pushMessage({speaker:role,text:t,audio:ul?.audio||null});const rl=role==='A'?co.B[step]:co.A[step+1];if(rl)pushMessage({speaker:role==='A'?'B':'A',text:rl.pergunta||rl.resposta,audio:rl.audio});step++; // marca data se finalizar
-      if((role==='A'&&step>=co.A.length)||(role==='B'&&step>=co.B.length)){localStorage.setItem(`rev_${co.title}`,new Date().toISOString());}
-      render();};
+    window.chooseConversation = i => { selectedConv = i; step = 0; history = []; stage = 'role'; render(); };
+    window.chooseRole = r => { role = r; stage = 'chat'; if (r === 'B') { const first = conversationData.conversas[selectedConv].A[0]; pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio }); step = 0; } render(); };
+    window.setStage = s => { stage = s; render(); };
+    window.send = () => {
+      const i = document.getElementById('chat-input'); if (!i || !i.value.trim()) return; const t = i.value.trim(); const co = conversationData.conversas[selectedConv]; const ul = role === 'A' ? co.A[step] : co.B[step]; pushMessage({ speaker: role, text: t, audio: ul?.audio || null }); const rl = role === 'A' ? co.B[step] : co.A[step + 1]; if (rl) pushMessage({ speaker: role === 'A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio }); step++; // marca data se finalizar
+      if ((role === 'A' && step >= co.A.length) || (role === 'B' && step >= co.B.length)) { localStorage.setItem(`rev_${co.title}`, new Date().toISOString()); }
+      render();
+    };
     // Init
     render();
   </script>
 </body>
+
 </html>
