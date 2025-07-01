@@ -1,36 +1,7 @@
 const paragraphs = {
-//    *********************** ENTREVISTA COMPORTAMENTAL ***********************
 
-    // Hi Guilherme, it’s great to meet you! Can you hear and see me okay?"
-    "Hi Guilherme, it’s great to meet you! Can you hear and see me okay?": "Hi! Yes, everything’s working fine. Thanks for having me today.",
-    
-    // Perfect. I’m really glad we could connect. Just to give you a quick idea  this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?
-    "Perfect. I’m really glad we could connect. ...": "Absolutely, sounds good.",
-    
-    
-    // Can you tell me about yourself and your professional background?
-    "1 Can you tell ...": "I’m currently a Senior Software Engineer at Luizalabs, where I focus on backend solutions using Python with FastAPI, MongoDB, Kafka, and Kubernetes ArgoCD. In this role, I’ve had the opportunity to create back-office applications that manage marketplace sellers and leads interested in selling on Magazine Luiza, a major retail company in Brazil. One of my main contributions here was building a risk analysis system that replaced an external legacy system, saving R$200,000 per year.",
-    "2 Can you tell ...": "Before that, I worked as a Mid-level Software Engineer at Everis, where I worked on B2B product team for ambev. There, I worked with Python using Django, Postgres for the database, RabbitMQ for messaging, and AWS for cloud services.",
-    "3 Can you tell ...": "Prior to that, I worked as a Mid-level Software Engineer at Tembici, where I worked on the IFood Pedal project, a bike rental app with over 18,000 delivery drivers.,The project won the “Innovation of the Year” award. There, I worked with Python using Django, Postgres for the database, and Celery for background processing.",
-    "4 Can you tell ...": "Finally, I started my career at Santander Bank as an Entry-Level Software Developer, working on both backend Python with Flask and frontend React for payment team.",
-    
-    // Why are you looking for new opportunities?
-    "Why are you looking for new opportunities?": "I'm looking for a place where I can work in English daily and work with people from all over the world.",
-    
-    
-    // Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?
-    "1 Can you tell me about ...?": "One project where I faced a significant challenge was building an internal risk analysis tools for sellers at Luizalabs.",
-    "2 Can you tell me about ...?": "It replaced an expensive legacy system and saved the company R$200,000 per year.",
-    "3 Can you tell me about ...?": "The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend.",
-    "4 Can you tell me about ...?": "I handled this by leading daily meetings to align both frontend and backend teams and ensuring we delivered a resilient solution on time",
-
-
-    //  ***** [ ] colocar mais perguntas aqui seguindo obsidian
-
-
-    //  Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.
-    "Thanks again,  ...?": "Thank you! I really appreciate your time.",
-
+    "1": 'One project where I faced a significant challenge was building a risk analysis tools for sellers at Luizalabs. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date',
+    '2': 'At Santander, I received feedback from my tech lead that my code were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the code to be cleaner and easier to understand.',
 
 };
 
@@ -152,7 +123,7 @@ function resetGame() {
 function seeAnswer() {
     const paragraph = document.getElementById('paragraph');
 
-    paragraph.style.color = '#F5F5F5'; // Muda a cor do texto
+    paragraph.style.color = 'blue'; // Muda a cor do texto
 
 }
 
