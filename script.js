@@ -1,8 +1,6 @@
 const paragraphs = {
 
-    "1": 'One project where I faced a significant challenge was building a risk analysis tools for sellers at Luizalabs. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date',
-    '2': 'At Santander, I received feedback from my tech lead that my code were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the code to be cleaner and easier to understand.',
-
+    "1": 'At Luizalabs, we once faced a critical production issue in the risk analysis integration during a high-traffic sales event. It was impacting the onboarding of new sellers. I stayed calm and started by checking the logs and monitoring dashboards in Grafana. I quickly identified that our Kubernetes pods were running out of memory. I scaled the deployment to 30 pods, which stabilized the system and restored normal operation.',
 };
 
 const typingText = document.querySelector(".typing-text p");

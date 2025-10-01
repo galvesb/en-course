@@ -1,4 +1,4 @@
-<!-- index.html — Chat Simulator (revisão colorida por dias) -->
+<!-- index.html — Chat Simulator (conversa oculta por clique) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -115,6 +115,19 @@
       color: #000;
     }
 
+    /* Conversa oculta até clicar (spoiler) */
+    .hidden-text {
+      filter: blur(8px);
+      cursor: pointer;
+      transition: filter 160ms ease;
+      user-select: none;
+    }
+
+    .hidden-text.revealed {
+      filter: none;
+      user-select: text;
+    }
+
     input[type=text] {
       flex: 1;
       padding: 0.75rem;
@@ -177,6 +190,12 @@
       border-width: 8px 8px 0 8px;
       border-style: solid;
       border-color: #333 transparent transparent transparent;
+    }
+
+    .legend {
+      font-size: 0.9rem;
+      color: #4b5563;
+      margin-bottom: 0.5rem;
     }
   </style>
 </head>
@@ -258,6 +277,32 @@
             { id: "3", resposta: "Let’s do it.", audio: "audio/scenario-common-day-3-evening-gym-session/6.mp3" }
           ]
         },
+        {
+          "title": "[Scenario common day] 4 Coffee Shop Visit",
+          "A": [
+            { "id": "1", "pergunta": "Hi! What can I get started for you today?", "audio": "audio/scenario-common-day-4-coffee-shop-visit/1.mp3" },
+            { "id": "2", "pergunta": "Would you like that hot or iced?", "audio": "audio/scenario-common-day-4-coffee-shop-visit/3.mp3" },
+            { "id": "3", "pergunta": "Perfect. Your order will be ready in a few minutes.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/5.mp3" }
+          ],
+          "B": [
+            { "id": "1", "resposta": "Hi, I’ll take a medium latte, please.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/2.mp3" },
+            { "id": "2", "resposta": "Iced, please. It’s really warm outside.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/4.mp3" },
+            { "id": "3", "resposta": "Great, thank you so much.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/6.mp3" }
+          ]
+        },
+        {
+          "title": "[Scenario common day] 5 Doctor’s Appointment",
+          "A": [
+            { "id": "1", "pergunta": "Good morning, what brings you in today?", "audio": "audio/scenario-common-day-5-doctors-appointment/1.mp3" },
+            { "id": "2", "pergunta": "How long have you been experiencing these symptoms?", "audio": "audio/scenario-common-day-5-doctors-appointment/3.mp3" },
+            { "id": "3", "pergunta": "Alright, I’ll prescribe some medication and recommend rest.", "audio": "audio/scenario-common-day-5-doctors-appointment/5.mp3" }
+          ],
+          "B": [
+            { "id": "1", "resposta": "I’ve been feeling a sore throat and fatigue.", "audio": "audio/scenario-common-day-5-doctors-appointment/2.mp3" },
+            { "id": "2", "resposta": "For about three days now.", "audio": "audio/scenario-common-day-5-doctors-appointment/4.mp3" },
+            { "id": "3", "resposta": "Thank you, I’ll follow your instructions.", "audio": "audio/scenario-common-day-5-doctors-appointment/6.mp3" }
+          ]
+        },
 
 
         // ************** dia a dia dev
@@ -276,7 +321,7 @@
           ]
         },
         {
-          title: "[Scenario dev day] 2 Code Pairing Session", 
+          title: "[Scenario dev day] 2 Code Pairing Session",
           A: [
             { id: "1", pergunta: "Can you explain why you used recursion here?", audio: "audio/scenario-dev-day-2-code-pairing-session/1.mp3" },
             { id: "2", pergunta: "Would iteration work better for performance?", audio: "audio/scenario-dev-day-2-code-pairing-session/3.mp3" },
@@ -300,6 +345,32 @@
             { id: "2", resposta: "Around two days including testing.", audio: "audio/scenario-dev-day-3-sprint-planning/4.mp3" },
             { id: "3", resposta: "Agreed, better to be safe.", audio: "audio/scenario-dev-day-3-sprint-planning/6.mp3" }
           ]
+        },
+        {
+          "title": "[Scenario dev day] 4 Code Review Feedback",
+          "A": [
+            { "id": "1", "pergunta": "I noticed you didn’t add unit tests for this function.", "audio": "audio/scenario-dev-day-4-code-review-feedback/1.mp3" },
+            { "id": "2", "pergunta": "Could you also handle null inputs here?", "audio": "audio/scenario-dev-day-4-code-review-feedback/3.mp3" },
+            { "id": "3", "pergunta": "Great. Please push the changes before tomorrow’s build.", "audio": "audio/scenario-dev-day-4-code-review-feedback/5.mp3" }
+          ],
+          "B": [
+            { "id": "1", "resposta": "You’re right, I’ll write the tests now.", "audio": "audio/scenario-dev-day-4-code-review-feedback/2.mp3" },
+            { "id": "2", "resposta": "Good point, I’ll add a check for that.", "audio": "audio/scenario-dev-day-4-code-review-feedback/4.mp3" },
+            { "id": "3", "resposta": "Will do, thanks for the feedback.", "audio": "audio/scenario-dev-day-4-code-review-feedback/6.mp3" }
+          ]
+        },
+        {
+          "title": "[Scenario dev day] 5 Debugging Production Issue",
+          "A": [
+            { "id": "1", "pergunta": "We just got an alert about high error rates in production.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/1.mp3" },
+            { "id": "2", "pergunta": "Can you check the logs and see what’s going on?", "audio": "audio/scenario-dev-day-5-debugging-production-issue/3.mp3" },
+            { "id": "3", "pergunta": "Thanks. Let’s roll out a fix as soon as possible.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/5.mp3" }
+          ],
+          "B": [
+            { "id": "1", "resposta": "Okay, I’ll take a look right now.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/2.mp3" },
+            { "id": "2", "resposta": "Looks like a null pointer issue after the last deployment.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/4.mp3" },
+            { "id": "3", "resposta": "On it. I’ll patch the bug and push the update.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/6.mp3" }
+          ]
         }
 
       ]
@@ -311,6 +382,8 @@
     const scrollToBottom = () => { const b = document.getElementById('chat-scroll'); if (b) b.scrollTop = b.scrollHeight; };
     const player = new Audio(); const playAudio = src => { if (!src) return; try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch { } };
     const pushMessage = msg => { history.push(msg); if (msg.audio) playAudio(msg.audio); };
+    const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.add('revealed'));
+    const hideAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.remove('revealed'));
     // 4. Render
     const render = () => { if (stage === 'titles') return renderTitles(); if (stage === 'role') return renderRoles(); return renderChat(); };
     // 4.1 Títulos + revisão
@@ -353,15 +426,36 @@
     function renderChat() {
       const conv = conversationData.conversas[selectedConv];
       const finished = (role === 'A' && step >= conv.A.length) || (role === 'B' && step >= conv.B.length);
-      const hist = history.map(msg => { const a = msg.speaker === role ? 'flex-end' : 'flex-start'; const b = msg.speaker === 'A' ? 'bubble-a' : 'bubble-b'; const au = msg.audio ? `<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>` : ''; return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${msg.text}</p>${au}</div></div>`; }).join('');
-      const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `<div class="input-group flex gap-md" style="margin-top:.75rem">
+      const hist = history.map(msg => {
+        const a = msg.speaker === role ? 'flex-end' : 'flex-start';
+        const b = msg.speaker === 'A' ? 'bubble-a' : 'bubble-b';
+        const au = msg.audio ? `<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
+        const txt = `<span class="hidden-text" title="Clique para revelar" onclick="this.classList.toggle('revealed')">${msg.text}</span>`;
+        return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
+      }).join('');
+
+      const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
+        <div class="legend">Dica: as falas ficam <strong>ocultas</strong>. Clique no balão para revelar. Você também pode usar os botões abaixo.</div>
+        <div class="input-group flex gap-md" style="margin-top:.75rem">
           <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
-          <button id="hint-btn" class="hint-btn">👁</button>
-          <button id="audio-btn" class="audio-btn">🔊</button>
+          <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala">👁</button>
+          <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala">🔊</button>
           <button class="btn primary" style="width:auto" onclick="send()">Enviar</button>
           <div id="hint-bubble" class="hint-bubble"></div>
+        </div>
+        <div class="flex gap-md" style="margin-top:.25rem">
+          <button class="btn secondary" style="flex:1" onclick="revealAll()">Revelar tudo</button>
+          <button class="btn secondary" style="flex:1" onclick="hideAll()">Ocultar tudo</button>
         </div>`;
-      app.innerHTML = `<div id="chat-scroll" class="chat-scroll space-y">${hist}</div>${inp}<div class="flex gap-md" style="margin-top:1rem;justify-content:space-between"><button class="btn secondary" onclick="setStage('role')">Trocar Papel</button><button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button></div>`;
+
+      app.innerHTML = `
+        <div id="chat-scroll" class="chat-scroll space-y">${hist}</div>
+        ${inp}
+        <div class="flex gap-md" style="margin-top:1rem;justify-content:space-between">
+          <button class="btn secondary" onclick="setStage('role')">Trocar Papel</button>
+          <button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button>
+        </div>`;
+
       // event handlers
       const ci = document.getElementById('chat-input'), hb = document.getElementById('hint-bubble'), hbtn = document.getElementById('hint-btn'), abtn = document.getElementById('audio-btn');
       if (ci && hbtn && abtn && hb) {
@@ -381,7 +475,12 @@
     window.chooseRole = r => { role = r; stage = 'chat'; if (r === 'B') { const first = conversationData.conversas[selectedConv].A[0]; pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio }); step = 0; } render(); };
     window.setStage = s => { stage = s; render(); };
     window.send = () => {
-      const i = document.getElementById('chat-input'); if (!i || !i.value.trim()) return; const t = i.value.trim(); const co = conversationData.conversas[selectedConv]; const ul = role === 'A' ? co.A[step] : co.B[step]; pushMessage({ speaker: role, text: t, audio: ul?.audio || null }); const rl = role === 'A' ? co.B[step] : co.A[step + 1]; if (rl) pushMessage({ speaker: role === 'A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio }); step++; // marca data se finalizar
+      const i = document.getElementById('chat-input'); if (!i || !i.value.trim()) return; const t = i.value.trim(); const co = conversationData.conversas[selectedConv];
+      const ul = role === 'A' ? co.A[step] : co.B[step];
+      pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
+      const rl = role === 'A' ? co.B[step] : co.A[step + 1];
+      if (rl) pushMessage({ speaker: role === 'A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio });
+      step++; // marca data se finalizar
       if ((role === 'A' && step >= co.A.length) || (role === 'B' && step >= co.B.length)) { localStorage.setItem(`rev_${co.title}`, new Date().toISOString()); }
       render();
     };
