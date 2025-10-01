@@ -1,4 +1,4 @@
-<!-- index.html — Chat Simulator (conversa oculta por clique) -->
+<!-- index.html — Chat Simulator (conversa oculta + botão único “Tocar roteiro”) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat Simulator</title>
   <style>
-    /* Root colors and base font */
     :root {
       --blue: #93c5fd;
       --green: #86efac;
@@ -18,195 +17,39 @@
       --rev-yellow: #fbbf24;
       --font-base: 18px;
     }
-
-    html,
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      font-size: var(--font-base);
-      background: var(--gray-bg);
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 2rem;
-    }
-
-    .card {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
-      width: 100%;
-      max-width: 800px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 0.75rem 1.25rem;
-      margin-top: 0.75rem;
-      border: none;
-      border-radius: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: left;
-      font-size: 1rem;
-    }
-
-    .btn.primary {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    .btn.secondary {
-      background: #e5e7eb;
-    }
-
-    .btn.ghost {
-      background: transparent;
-      color: var(--primary);
-    }
-
-    .btn.rev-blue {
-      background: var(--blue);
-      color: #000;
-    }
-
-    .btn.rev-yellow {
-      background: var(--rev-yellow);
-      color: #000;
-    }
-
-    .btn.rev-red {
-      background: var(--rev-red);
-      color: #000;
-    }
-
-    .chat-scroll {
-      flex: 1;
-      max-height: 500px;
-      overflow-y: auto;
-      margin-bottom: 1rem;
-    }
-
-    .chat-bubble {
-      max-width: 60%;
-      padding: 1rem;
-      border-radius: 1rem;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
-      font-size: 1rem;
-      line-height: 1.4;
-    }
-
-    .bubble-a {
-      background: var(--blue);
-      color: #000;
-    }
-
-    .bubble-b {
-      background: var(--green);
-      color: #000;
-    }
-
-    /* Conversa oculta até clicar (spoiler) */
-    .hidden-text {
-      filter: blur(8px);
-      cursor: pointer;
-      transition: filter 160ms ease;
-      user-select: none;
-    }
-
-    .hidden-text.revealed {
-      filter: none;
-      user-select: text;
-    }
-
-    input[type=text] {
-      flex: 1;
-      padding: 0.75rem;
-      font-size: 1rem;
-      border: 1px solid var(--gray-border);
-      border-radius: 0.75rem;
-      outline: none;
-    }
-
-    .flex {
-      display: flex;
-    }
-
-    .gap-md {
-      gap: 1rem;
-    }
-
-    .search-box {
-      margin-bottom: 2rem;
-    }
-
-    .hint-btn,
-    .audio-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      font-size: 1.5rem;
-      padding: 0 0.5rem;
-      line-height: 1;
-    }
-
-    .input-group {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-      margin-bottom: 1rem;
-    }
-
-    .hint-bubble {
-      position: absolute;
-      right: 4.5rem;
-      bottom: 120%;
-      background: #333;
-      color: #fff;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      font-size: 0.9rem;
-      white-space: pre-wrap;
-      display: none;
-      max-width: 300px;
-      z-index: 10;
-    }
-
-    .hint-bubble::after {
-      content: '';
-      position: absolute;
-      bottom: -8px;
-      right: 12px;
-      border-width: 8px 8px 0 8px;
-      border-style: solid;
-      border-color: #333 transparent transparent transparent;
-    }
-
-    .legend {
-      font-size: 0.9rem;
-      color: #4b5563;
-      margin-bottom: 0.5rem;
-    }
+    html, body { margin: 0; font-family: system-ui, sans-serif; font-size: var(--font-base); background: var(--gray-bg); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem; }
+    .card { background: #fff; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0, 0, 0, .1); width: 100%; max-width: 800px; display: flex; flex-direction: column; }
+    h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+    .btn { width: 100%; padding: 0.75rem 1.25rem; margin-top: 0.75rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; text-align: left; font-size: 1rem; }
+    .btn.primary { background: var(--primary); color: #fff; }
+    .btn.secondary { background: #e5e7eb; }
+    .btn.ghost { background: transparent; color: var(--primary); }
+    .chat-scroll { flex: 1; max-height: 500px; overflow-y: auto; margin-bottom: 1rem; }
+    .chat-bubble { max-width: 60%; padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0, 0, 0, .1); font-size: 1rem; line-height: 1.4; }
+    .bubble-a { background: var(--blue); color: #000; }
+    .bubble-b { background: var(--green); color: #000; }
+    .hidden-text { filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
+    .hidden-text.revealed { filter: none; user-select: text; }
+    input[type=text] { flex: 1; padding: 0.75rem; font-size: 1rem; border: 1px solid var(--gray-border); border-radius: 0.75rem; outline: none; }
+    .flex { display: flex; }
+    .gap-md { gap: 1rem; }
+    .search-box { margin-bottom: 2rem; }
+    .hint-btn, .audio-btn { background: transparent; border: none; cursor: pointer; font-size: 1.5rem; padding: 0 0.5rem; line-height: 1; }
+    .input-group { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 1rem; }
+    .hint-bubble { position: absolute; right: 4.5rem; bottom: 120%; background: #333; color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; display: none; max-width: 300px; z-index: 10; }
+    .hint-bubble::after { content: ''; position: absolute; bottom: -8px; right: 12px; border-width: 8px 8px 0 8px; border-style: solid; border-color: #333 transparent transparent transparent; }
+    .legend { font-size: 0.9rem; color: #4b5563; margin-bottom: 0.5rem; }
+    .toolbar { display: flex; gap: .75rem; margin-top: .25rem; }
+    .toolbar .btn { text-align: center; flex: 1; }
   </style>
 </head>
 
 <body>
   <div id="app" class="card"></div>
   <script>
-    // 1. Dados
+    // 1) DADOS — TODAS AS CONVERSAS ORIGINAIS
     const conversationData = {
       conversas: [
-
         // ************ Entrevistas
         {
           title: '[Entrevista] comportamental',
@@ -237,7 +80,6 @@
         },
 
         // ************ dia a dia
-
         {
           title: '[Scenario common day] 1 Grocery Shopping',
           A: [
@@ -278,32 +120,31 @@
           ]
         },
         {
-          "title": "[Scenario common day] 4 Coffee Shop Visit",
-          "A": [
-            { "id": "1", "pergunta": "Hi! What can I get started for you today?", "audio": "audio/scenario-common-day-4-coffee-shop-visit/1.mp3" },
-            { "id": "2", "pergunta": "Would you like that hot or iced?", "audio": "audio/scenario-common-day-4-coffee-shop-visit/3.mp3" },
-            { "id": "3", "pergunta": "Perfect. Your order will be ready in a few minutes.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/5.mp3" }
+          title: "[Scenario common day] 4 Coffee Shop Visit",
+          A: [
+            { id: "1", pergunta: "Hi! What can I get started for you today?", audio: "audio/scenario-common-day-4-coffee-shop-visit/1.mp3" },
+            { id: "2", pergunta: "Would you like that hot or iced?", audio: "audio/scenario-common-day-4-coffee-shop-visit/3.mp3" },
+            { id: "3", pergunta: "Perfect. Your order will be ready in a few minutes.", audio: "audio/scenario-common-day-4-coffee-shop-visit/5.mp3" }
           ],
-          "B": [
-            { "id": "1", "resposta": "Hi, I’ll take a medium latte, please.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/2.mp3" },
-            { "id": "2", "resposta": "Iced, please. It’s really warm outside.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/4.mp3" },
-            { "id": "3", "resposta": "Great, thank you so much.", "audio": "audio/scenario-common-day-4-coffee-shop-visit/6.mp3" }
+          B: [
+            { id: "1", resposta: "Hi, I’ll take a medium latte, please.", audio: "audio/scenario-common-day-4-coffee-shop-visit/2.mp3" },
+            { id: "2", resposta: "Iced, please. It’s really warm outside.", audio: "audio/scenario-common-day-4-coffee-shop-visit/4.mp3" },
+            { id: "3", resposta: "Great, thank you so much.", audio: "audio/scenario-common-day-4-coffee-shop-visit/6.mp3" }
           ]
         },
         {
-          "title": "[Scenario common day] 5 Doctor’s Appointment",
-          "A": [
-            { "id": "1", "pergunta": "Good morning, what brings you in today?", "audio": "audio/scenario-common-day-5-doctors-appointment/1.mp3" },
-            { "id": "2", "pergunta": "How long have you been experiencing these symptoms?", "audio": "audio/scenario-common-day-5-doctors-appointment/3.mp3" },
-            { "id": "3", "pergunta": "Alright, I’ll prescribe some medication and recommend rest.", "audio": "audio/scenario-common-day-5-doctors-appointment/5.mp3" }
+          title: "[Scenario common day] 5 Doctor’s Appointment",
+          A: [
+            { id: "1", pergunta: "Good morning, what brings you in today?", audio: "audio/scenario-common-day-5-doctors-appointment/1.mp3" },
+            { id: "2", pergunta: "How long have you been experiencing these symptoms?", audio: "audio/scenario-common-day-5-doctors-appointment/3.mp3" },
+            { id: "3", pergunta: "Alright, I’ll prescribe some medication and recommend rest.", audio: "audio/scenario-common-day-5-doctors-appointment/5.mp3" }
           ],
-          "B": [
-            { "id": "1", "resposta": "I’ve been feeling a sore throat and fatigue.", "audio": "audio/scenario-common-day-5-doctors-appointment/2.mp3" },
-            { "id": "2", "resposta": "For about three days now.", "audio": "audio/scenario-common-day-5-doctors-appointment/4.mp3" },
-            { "id": "3", "resposta": "Thank you, I’ll follow your instructions.", "audio": "audio/scenario-common-day-5-doctors-appointment/6.mp3" }
+          B: [
+            { id: "1", resposta: "I’ve been feeling a sore throat and fatigue.", audio: "audio/scenario-common-day-5-doctors-appointment/2.mp3" },
+            { id: "2", resposta: "For about three days now.", audio: "audio/scenario-common-day-5-doctors-appointment/4.mp3" },
+            { id: "3", resposta: "Thank you, I’ll follow your instructions.", audio: "audio/scenario-common-day-5-doctors-appointment/6.mp3" }
           ]
         },
-
 
         // ************** dia a dia dev
         {
@@ -313,7 +154,6 @@
             { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
             { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
           ],
-
           B: [
             { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
             { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
@@ -347,73 +187,85 @@
           ]
         },
         {
-          "title": "[Scenario dev day] 4 Code Review Feedback",
-          "A": [
-            { "id": "1", "pergunta": "I noticed you didn’t add unit tests for this function.", "audio": "audio/scenario-dev-day-4-code-review-feedback/1.mp3" },
-            { "id": "2", "pergunta": "Could you also handle null inputs here?", "audio": "audio/scenario-dev-day-4-code-review-feedback/3.mp3" },
-            { "id": "3", "pergunta": "Great. Please push the changes before tomorrow’s build.", "audio": "audio/scenario-dev-day-4-code-review-feedback/5.mp3" }
+          title: "[Scenario dev day] 4 Code Review Feedback",
+          A: [
+            { id: "1", pergunta: "I noticed you didn’t add unit tests for this function.", audio: "audio/scenario-dev-day-4-code-review-feedback/1.mp3" },
+            { id: "2", pergunta: "Could you also handle null inputs here?", audio: "audio/scenario-dev-day-4-code-review-feedback/3.mp3" },
+            { id: "3", pergunta: "Great. Please push the changes before tomorrow’s build.", audio: "audio/scenario-dev-day-4-code-review-feedback/5.mp3" }
           ],
-          "B": [
-            { "id": "1", "resposta": "You’re right, I’ll write the tests now.", "audio": "audio/scenario-dev-day-4-code-review-feedback/2.mp3" },
-            { "id": "2", "resposta": "Good point, I’ll add a check for that.", "audio": "audio/scenario-dev-day-4-code-review-feedback/4.mp3" },
-            { "id": "3", "resposta": "Will do, thanks for the feedback.", "audio": "audio/scenario-dev-day-4-code-review-feedback/6.mp3" }
+          B: [
+            { id: "1", resposta: "You’re right, I’ll write the tests now.", audio: "audio/scenario-dev-day-4-code-review-feedback/2.mp3" },
+            { id: "2", resposta: "Good point, I’ll add a check for that.", audio: "audio/scenario-dev-day-4-code-review-feedback/4.mp3" },
+            { id: "3", resposta: "Will do, thanks for the feedback.", audio: "audio/scenario-dev-day-4-code-review-feedback/6.mp3" }
           ]
         },
         {
-          "title": "[Scenario dev day] 5 Debugging Production Issue",
-          "A": [
-            { "id": "1", "pergunta": "We just got an alert about high error rates in production.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/1.mp3" },
-            { "id": "2", "pergunta": "Can you check the logs and see what’s going on?", "audio": "audio/scenario-dev-day-5-debugging-production-issue/3.mp3" },
-            { "id": "3", "pergunta": "Thanks. Let’s roll out a fix as soon as possible.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/5.mp3" }
+          title: "[Scenario dev day] 5 Debugging Production Issue",
+          A: [
+            { id: "1", pergunta: "We just got an alert about high error rates in production.", audio: "audio/scenario-dev-day-5-debugging-production-issue/1.mp3" },
+            { id: "2", pergunta: "Can you check the logs and see what’s going on?", audio: "audio/scenario-dev-day-5-debugging-production-issue/3.mp3" },
+            { id: "3", pergunta: "Thanks. Let’s roll out a fix as soon as possible.", audio: "audio/scenario-dev-day-5-debugging-production-issue/5.mp3" }
           ],
-          "B": [
-            { "id": "1", "resposta": "Okay, I’ll take a look right now.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/2.mp3" },
-            { "id": "2", "resposta": "Looks like a null pointer issue after the last deployment.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/4.mp3" },
-            { "id": "3", "resposta": "On it. I’ll patch the bug and push the update.", "audio": "audio/scenario-dev-day-5-debugging-production-issue/6.mp3" }
+          B: [
+            { id: "1", resposta: "Okay, I’ll take a look right now.", audio: "audio/scenario-dev-day-5-debugging-production-issue/2.mp3" },
+            { id: "2", resposta: "Looks like a null pointer issue after the last deployment.", audio: "audio/scenario-dev-day-5-debugging-production-issue/4.mp3" },
+            { id: "3", resposta: "On it. I’ll patch the bug and push the update.", audio: "audio/scenario-dev-day-5-debugging-production-issue/6.mp3" }
           ]
         }
-
       ]
     };
-    // 2. Estado
+
+    // 2) ESTADO E UTILIDADES
     let stage = 'titles', selectedConv = null, role = null, step = 0, history = [], searchTerm = '';
     const app = document.getElementById('app');
-    // 3. Util
+    const player = new Audio();
+
     const scrollToBottom = () => { const b = document.getElementById('chat-scroll'); if (b) b.scrollTop = b.scrollHeight; };
-    const player = new Audio(); const playAudio = src => { if (!src) return; try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch { } };
+    const playAudio = src => { if (!src) return; try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch { } };
     const pushMessage = msg => { history.push(msg); if (msg.audio) playAudio(msg.audio); };
     const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.add('revealed'));
     const hideAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.remove('revealed'));
-    // 4. Render
+
+    // 3) REPRODUZIR ROTEIRO (A1, B1, A2, B2...)
+    const playFullScript = async () => {
+      const conv = conversationData.conversas[selectedConv];
+      if (!conv) return;
+      const maxLen = Math.max(conv.A.length, conv.B.length);
+      for (let i = 0; i < maxLen; i++) {
+        if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
+        if (conv.B[i]?.audio) await playSequential(conv.B[i].audio);
+      }
+    };
+    const playSequential = src => new Promise(res => {
+      player.onended = () => res();
+      player.onerror = () => res();
+      try { player.src = src; player.play().catch(() => res()); }
+      catch { res(); }
+    });
+
+    // 4) RENDERIZAÇÃO
     const render = () => { if (stage === 'titles') return renderTitles(); if (stage === 'role') return renderRoles(); return renderChat(); };
-    // 4.1 Títulos + revisão
+
     function renderTitles() {
       app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
         <div class="search-box flex gap-md">
           <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
         </div>
         <div id="scenario-list"></div>`;
-      const listEl = document.getElementById('scenario-list');
       document.getElementById('search-input').addEventListener('input', e => { searchTerm = e.target.value; renderScenarioList(); });
       renderScenarioList(); document.getElementById('search-input').focus();
     }
     function renderScenarioList() {
       const list = document.getElementById('scenario-list');
-      // filtra cenários pelo termo
-      const filtered = conversationData.conversas.filter(c =>
-        c.title.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      // monta botões usando o índice original de cada cenário
+      const filtered = conversationData.conversas.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()));
       list.innerHTML = filtered.length
-        ? filtered
-          .map(c => {
+        ? filtered.map(c => {
             const originalIdx = conversationData.conversas.indexOf(c);
             return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
-          })
-          .join('')
+          }).join('')
         : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
     }
-    // 4.2 Papel
+
     function renderRoles() {
       app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
         <div class="flex gap-md">
@@ -422,7 +274,7 @@
         </div>
         <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
     }
-    // 4.3 Chat
+
     function renderChat() {
       const conv = conversationData.conversas[selectedConv];
       const finished = (role === 'A' && step >= conv.A.length) || (role === 'B' && step >= conv.B.length);
@@ -442,21 +294,18 @@
           <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala">🔊</button>
           <button class="btn primary" style="width:auto" onclick="send()">Enviar</button>
           <div id="hint-bubble" class="hint-bubble"></div>
-        </div>
-        <div class="flex gap-md" style="margin-top:.25rem">
-          <button class="btn secondary" style="flex:1" onclick="revealAll()">Revelar tudo</button>
-          <button class="btn secondary" style="flex:1" onclick="hideAll()">Ocultar tudo</button>
         </div>`;
 
       app.innerHTML = `
         <div id="chat-scroll" class="chat-scroll space-y">${hist}</div>
         ${inp}
-        <div class="flex gap-md" style="margin-top:1rem;justify-content:space-between">
-          <button class="btn secondary" onclick="setStage('role')">Trocar Papel</button>
-          <button class="btn secondary" onclick="setStage('titles')">Novo Cenário</button>
+        <div class="toolbar">
+          <button class="btn secondary" onclick="playFullScript()">🎧 Tocar roteiro</button>
+          <button class="btn secondary" onclick="revealAll()">👁️ Revelar tudo</button>
+          <button class="btn secondary" onclick="hideAll()">🙈 Ocultar tudo</button>
+          <button class="btn secondary" onclick="setStage('titles')">📚 Novo Cenário</button>
         </div>`;
 
-      // event handlers
       const ci = document.getElementById('chat-input'), hb = document.getElementById('hint-bubble'), hbtn = document.getElementById('hint-btn'), abtn = document.getElementById('audio-btn');
       if (ci && hbtn && abtn && hb) {
         const hintText = role === 'A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
@@ -470,7 +319,8 @@
       }
       scrollToBottom();
     }
-    // 5. Actions
+
+    // 5) Ações
     window.chooseConversation = i => { selectedConv = i; step = 0; history = []; stage = 'role'; render(); };
     window.chooseRole = r => { role = r; stage = 'chat'; if (r === 'B') { const first = conversationData.conversas[selectedConv].A[0]; pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio }); step = 0; } render(); };
     window.setStage = s => { stage = s; render(); };
@@ -484,9 +334,9 @@
       if ((role === 'A' && step >= co.A.length) || (role === 'B' && step >= co.B.length)) { localStorage.setItem(`rev_${co.title}`, new Date().toISOString()); }
       render();
     };
+
     // Init
     render();
   </script>
 </body>
-
 </html>
