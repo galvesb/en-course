@@ -1,51 +1,156 @@
 <!-- index.html — Chat Simulator (conversa oculta + botão único “Tocar roteiro”) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Chat Simulator</title>
   <style>
-    :root {
-      --blue: #93c5fd;
-      --green: #86efac;
-      --gray-bg: #f3f4f6;
-      --gray-border: #d1d5db;
-      --primary: #2563eb;
-      --rev-red: #f87171;
-      --rev-yellow: #fbbf24;
-      --font-base: 18px;
+    /* ====== Base / Theme ====== */
+    :root{
+      --blue:#93c5fd; --green:#86efac; --gray-bg:#f3f4f6; --gray-border:#d1d5db; --primary:#2563eb;
+      --rev-red:#f87171; --rev-yellow:#fbbf24;
+      /* fonte fluida entre 16–18px */
+      --font-base: clamp(16px, 2.5vw, 18px);
+      --radius: 1rem;
+      --shadow: 0 4px 12px rgba(0,0,0,.1);
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left: env(safe-area-inset-left);
+      --safe-right: env(safe-area-inset-right);
     }
-    html, body { margin: 0; font-family: system-ui, sans-serif; font-size: var(--font-base); background: var(--gray-bg); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem; }
-    .card { background: #fff; padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0, 0, 0, .1); width: 100%; max-width: 800px; display: flex; flex-direction: column; }
-    h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
-    .btn { width: 100%; padding: 0.75rem 1.25rem; margin-top: 0.75rem; border: none; border-radius: 0.75rem; font-weight: 600; cursor: pointer; text-align: left; font-size: 1rem; }
-    .btn.primary { background: var(--primary); color: #fff; }
-    .btn.secondary { background: #e5e7eb; }
-    .btn.ghost { background: transparent; color: var(--primary); }
-    .chat-scroll { flex: 1; max-height: 500px; overflow-y: auto; margin-bottom: 1rem; }
-    .chat-bubble { max-width: 60%; padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0, 0, 0, .1); font-size: 1rem; line-height: 1.4; }
-    .bubble-a { background: var(--blue); color: #000; }
-    .bubble-b { background: var(--green); color: #000; }
-    .hidden-text { filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
-    .hidden-text.revealed { filter: none; user-select: text; }
-    input[type=text] { flex: 1; padding: 0.75rem; font-size: 1rem; border: 1px solid var(--gray-border); border-radius: 0.75rem; outline: none; }
-    .flex { display: flex; }
-    .gap-md { gap: 1rem; }
-    .search-box { margin-bottom: 2rem; }
-    .hint-btn, .audio-btn { background: transparent; border: none; cursor: pointer; font-size: 1.5rem; padding: 0 0.5rem; line-height: 1; }
-    .input-group { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 1rem; }
-    .hint-bubble { position: absolute; right: 4.5rem; bottom: 120%; background: #333; color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.9rem; white-space: pre-wrap; display: none; max-width: 300px; z-index: 10; }
-    .hint-bubble::after { content: ''; position: absolute; bottom: -8px; right: 12px; border-width: 8px 8px 0 8px; border-style: solid; border-color: #333 transparent transparent transparent; }
-    .legend { font-size: 0.9rem; color: #4b5563; margin-bottom: 0.5rem; }
-    .toolbar { display: flex; gap: .75rem; margin-top: .25rem; }
-    .toolbar .btn { text-align: center; flex: 1; }
+
+    * { box-sizing: border-box; }
+
+    html, body{
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-size: var(--font-base);
+      background: var(--gray-bg);
+      min-height: 100vh;
+    }
+
+    body{
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: clamp(12px, 3.5vw, 32px);
+      padding-top: calc(clamp(12px, 3.5vw, 32px) + var(--safe-top));
+      padding-bottom: calc(clamp(12px, 3.5vw, 32px) + var(--safe-bottom));
+      padding-left: calc(clamp(12px, 3.5vw, 32px) + var(--safe-left));
+      padding-right: calc(clamp(12px, 3.5vw, 32px) + var(--safe-right));
+    }
+
+    .card{
+      background:#fff; width:100%; max-width: 800px;
+      padding: clamp(16px, 3.5vw, 32px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display:flex; flex-direction:column;
+    }
+
+    h2{ font-size: clamp(1.125rem, 3.5vw, 1.5rem); margin: 0 0 1rem 0; }
+
+    /* ====== Buttons & Inputs ====== */
+    .btn{
+      width:100%;
+      padding: clamp(12px, 3.2vw, 14px) clamp(16px, 3.5vw, 20px);
+      margin-top:.75rem; border:0; border-radius: .75rem;
+      font-weight:600; cursor:pointer; text-align:center; font-size: 1rem;
+      transition: filter .15s ease, transform .02s ease;
+      touch-action: manipulation;
+    }
+    .btn:active{ transform: scale(.99); }
+    .btn.primary{ background: var(--primary); color:#fff; }
+    .btn.secondary{ background:#e5e7eb; color:#111827; }
+    .btn.ghost{ background:transparent; color:var(--primary); }
+
+    input[type=text]{
+      flex:1; padding: .85rem .9rem; font-size:1rem;
+      border:1px solid var(--gray-border); border-radius:.75rem; outline: none;
+      min-width: 0; /* evita overflow em flex */
+    }
+
+    .flex{ display:flex; }
+    .gap-md{ gap: 1rem; }
+
+    .search-box{ margin-bottom: 1rem; }
+
+    .hint-btn, .audio-btn{
+      background: transparent; border: none; cursor: pointer;
+      font-size: 1.5rem; padding: 0 .5rem; line-height: 1; height: 44px;
+    }
+
+    .input-group{
+      position: relative; display:flex; align-items:center; width:100%;
+      gap:.5rem; margin-bottom: .75rem; flex-wrap: wrap; /* empilha no mobile */
+    }
+
+    .hint-bubble{
+      position: absolute; right: 0; bottom: calc(100% + 8px);
+      background:#111827; color:#fff; padding:.5rem .75rem; border-radius:.5rem;
+      font-size:.95rem; white-space:pre-wrap; display:none; max-width: min(92vw, 420px); z-index:10;
+    }
+    .hint-bubble::after{
+      content:''; position:absolute; bottom:-8px; right:12px; border-width:8px 8px 0 8px;
+      border-style:solid; border-color:#111827 transparent transparent transparent;
+    }
+
+    .legend{ font-size:.95rem; color:#4b5563; margin: .25rem 0 .5rem; }
+
+    .toolbar{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .75rem; margin-top:.25rem;
+    }
+    .toolbar .btn{ margin-top:0; }
+
+    /* ====== Chat ====== */
+    .chat-scroll{
+      flex:1; max-height: min(60vh, 520px); /* mais responsivo */
+      overflow-y:auto; margin-bottom: 1rem; padding-right: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chat-bubble{
+      max-width: 85%; /* bolhas mais largas em telas pequenas */
+      padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      font-size: 1rem; line-height: 1.45; margin: .25rem 0;
+      word-wrap: break-word; overflow-wrap: anywhere;
+    }
+    .bubble-a{ background: var(--blue); color:#000; }
+    .bubble-b{ background: var(--green); color:#000; }
+
+    .hidden-text{ filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
+    .hidden-text.revealed{ filter: none; user-select: text; }
+
+    audio{ width:100%; margin-top:.5rem; }
+
+    /* ====== Larger screens ====== */
+    @media (min-width: 640px){
+      .chat-bubble{ max-width: 70%; }
+      .toolbar{ grid-template-columns: repeat(4, 1fr); }
+      .chat-scroll{ max-height: 500px; }
+      .input-group{ flex-wrap: nowrap; }
+    }
+
+    /* ====== Very small phones ====== */
+    @media (max-width: 360px){
+      .hint-btn, .audio-btn{ height: 40px; }
+      .btn{ font-size: .95rem; }
+    }
+
+    /* ====== Reduce motion ====== */
+    @media (prefers-reduced-motion: reduce){
+      .hidden-text{ transition: none; }
+      .btn{ transition: none; }
+    }
   </style>
 </head>
 
 <body>
   <div id="app" class="card"></div>
+
   <script>
     // 1) DADOS — TODAS AS CONVERSAS ORIGINAIS
     const conversationData = {
@@ -78,73 +183,6 @@
             { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3' },
           ]
         },
-
-        // ************ dia a dia
-        // {
-        //   title: '[Scenario common day] 1 Grocery Shopping',
-        //   A: [
-        //     { id: '1', pergunta: 'Hi there! Did you find everything you needed today?', audio: 'audio/scenario-common-day-1-grocery-shopping/1.mp3' },
-        //     { id: '2', pergunta: 'Great. Do you have a rewards card with us?', audio: 'audio/scenario-common-day-1-grocery-shopping/3.mp3' },
-        //     { id: '3', pergunta: 'No problem. Your total is $32.50.', audio: 'audio/scenario-common-day-1-grocery-shopping/5.mp3' },
-        //   ],
-        //   B: [
-        //     { id: '1', resposta: 'Yes, thanks. Just these items.', audio: 'audio/scenario-common-day-1-grocery-shopping/2.mp3' },
-        //     { id: '2', resposta: "No, I don't.", audio: 'audio/scenario-common-day-1-grocery-shopping/4.mp3' },
-        //     { id: '3', resposta: "Here’s my card. Thank you!", audio: 'audio/scenario-common-day-1-grocery-shopping/6.mp3' },
-        //   ]
-        // },
-        // {
-        //   title: '[Scenario common day] 2 Lunch Break at Work',
-        //   A: [
-        //     { id: '1', pergunta: 'Hey, are you joining us for lunch today?', audio: 'audio/scenario-common-day-2-lunch-break-work/1.mp3' },
-        //     { id: '2', pergunta: 'We’re thinking about that new taco place down the street.', audio: 'audio/scenario-common-day-2-lunch-break-work/3.mp3' },
-        //     { id: '3', pergunta: "Awesome, let’s go before it gets crowded.", audio: 'audio/scenario-common-day-2-lunch-break-work/5.mp3' },
-        //   ],
-        //   B: [
-        //     { id: '1', resposta: 'Sure! Where are you guys heading?', audio: 'audio/scenario-common-day-2-lunch-break-work/2.mp3' },
-        //     { id: '2', resposta: "Sounds good. I could go for some tacos.", audio: 'audio/scenario-common-day-2-lunch-break-work/4.mp3' },
-        //     { id: '3', resposta: "Good idea. Let me grab my jacket.", audio: 'audio/scenario-common-day-2-lunch-break-work/6.mp3' },
-        //   ]
-        // },
-        // {
-        //   title: "[Scenario common day] 3 Evening Gym Session",
-        //   A: [
-        //     { id: "1", pergunta: "Welcome back! Ready for today’s workout?", audio: "audio/scenario-common-day-3-evening-gym-session/1.mp3" },
-        //     { id: "2", pergunta: "We’re focusing on strength training today—legs and core.", audio: "audio/scenario-common-day-3-evening-gym-session/3.mp3" },
-        //     { id: "3", pergunta: "That’s the spirit! Let’s start with some squats.", audio: "audio/scenario-common-day-3-evening-gym-session/5.mp3" }
-        //   ],
-        //   B: [
-        //     { id: "1", resposta: "Definitely. What’s on the plan?", audio: "audio/scenario-common-day-3-evening-gym-session/2.mp3" },
-        //     { id: "2", resposta: "Sounds tough but I’m ready.", audio: "audio/scenario-common-day-3-evening-gym-session/4.mp3" },
-        //     { id: "3", resposta: "Let’s do it.", audio: "audio/scenario-common-day-3-evening-gym-session/6.mp3" }
-        //   ]
-        // },
-        // {
-        //   title: "[Scenario common day] 4 Coffee Shop Visit",
-        //   A: [
-        //     { id: "1", pergunta: "Hi! What can I get started for you today?", audio: "audio/scenario-common-day-4-coffee-shop-visit/1.mp3" },
-        //     { id: "2", pergunta: "Would you like that hot or iced?", audio: "audio/scenario-common-day-4-coffee-shop-visit/3.mp3" },
-        //     { id: "3", pergunta: "Perfect. Your order will be ready in a few minutes.", audio: "audio/scenario-common-day-4-coffee-shop-visit/5.mp3" }
-        //   ],
-        //   B: [
-        //     { id: "1", resposta: "Hi, I’ll take a medium latte, please.", audio: "audio/scenario-common-day-4-coffee-shop-visit/2.mp3" },
-        //     { id: "2", resposta: "Iced, please. It’s really warm outside.", audio: "audio/scenario-common-day-4-coffee-shop-visit/4.mp3" },
-        //     { id: "3", resposta: "Great, thank you so much.", audio: "audio/scenario-common-day-4-coffee-shop-visit/6.mp3" }
-        //   ]
-        // },
-        // {
-        //   title: "[Scenario common day] 5 Doctor’s Appointment",
-        //   A: [
-        //     { id: "1", pergunta: "Good morning, what brings you in today?", audio: "audio/scenario-common-day-5-doctors-appointment/1.mp3" },
-        //     { id: "2", pergunta: "How long have you been experiencing these symptoms?", audio: "audio/scenario-common-day-5-doctors-appointment/3.mp3" },
-        //     { id: "3", pergunta: "Alright, I’ll prescribe some medication and recommend rest.", audio: "audio/scenario-common-day-5-doctors-appointment/5.mp3" }
-        //   ],
-        //   B: [
-        //     { id: "1", resposta: "I’ve been feeling a sore throat and fatigue.", audio: "audio/scenario-common-day-5-doctors-appointment/2.mp3" },
-        //     { id: "2", resposta: "For about three days now.", audio: "audio/scenario-common-day-5-doctors-appointment/4.mp3" },
-        //     { id: "3", resposta: "Thank you, I’ll follow your instructions.", audio: "audio/scenario-common-day-5-doctors-appointment/6.mp3" }
-        //   ]
-        // },
 
         // ************** dia a dia dev
         {
@@ -216,88 +254,94 @@
     };
 
     // 2) ESTADO E UTILIDADES
-    let stage = 'titles', selectedConv = null, role = null, step = 0, history = [], searchTerm = '';
+    let stage='titles', selectedConv=null, role=null, step=0, history=[], searchTerm='';
     const app = document.getElementById('app');
     const player = new Audio();
 
-    const scrollToBottom = () => { const b = document.getElementById('chat-scroll'); if (b) b.scrollTop = b.scrollHeight; };
-    const playAudio = src => { if (!src) return; try { player.pause(); player.currentTime = 0; player.src = src; player.play(); } catch { } };
-    const pushMessage = msg => { history.push(msg); if (msg.audio) playAudio(msg.audio); };
-    const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.add('revealed'));
-    const hideAll = () => document.querySelectorAll('.hidden-text').forEach(el => el.classList.remove('revealed'));
+    const scrollToBottom = () => {
+      const b = document.getElementById('chat-scroll');
+      if (b) b.scrollTop = b.scrollHeight;
+    };
+    const playAudio = src => { if(!src) return; try{ player.pause(); player.currentTime=0; player.src=src; player.play(); }catch{} };
+    const pushMessage = msg => { history.push(msg); if(msg.audio) playAudio(msg.audio); };
+    const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.add('revealed'));
+    const hideAll   = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.remove('revealed'));
 
     // 3) REPRODUZIR ROTEIRO (A1, B1, A2, B2...)
     const playFullScript = async () => {
       const conv = conversationData.conversas[selectedConv];
       if (!conv) return;
       const maxLen = Math.max(conv.A.length, conv.B.length);
-      for (let i = 0; i < maxLen; i++) {
+      for (let i=0;i<maxLen;i++){
         if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
         if (conv.B[i]?.audio) await playSequential(conv.B[i].audio);
       }
     };
-    const playSequential = src => new Promise(res => {
+    const playSequential = src => new Promise(res=>{
       player.onended = () => res();
       player.onerror = () => res();
-      try { player.src = src; player.play().catch(() => res()); }
-      catch { res(); }
+      try{ player.src = src; player.play().catch(()=>res()); }catch{ res(); }
     });
 
     // 4) RENDERIZAÇÃO
-    const render = () => { if (stage === 'titles') return renderTitles(); if (stage === 'role') return renderRoles(); return renderChat(); };
+    const render = () => { if (stage==='titles') return renderTitles(); if (stage==='role') return renderRoles(); return renderChat(); };
 
-    function renderTitles() {
-      app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
+    function renderTitles(){
+      app.innerHTML = `
+        <h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
         <div class="search-box flex gap-md">
           <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
         </div>
         <div id="scenario-list"></div>`;
-      document.getElementById('search-input').addEventListener('input', e => { searchTerm = e.target.value; renderScenarioList(); });
-      renderScenarioList(); document.getElementById('search-input').focus();
+      document.getElementById('search-input').addEventListener('input', e=>{ searchTerm=e.target.value; renderScenarioList(); });
+      renderScenarioList();
+      document.getElementById('search-input').focus();
     }
-    function renderScenarioList() {
+
+    function renderScenarioList(){
       const list = document.getElementById('scenario-list');
-      const filtered = conversationData.conversas.filter(c => c.title.toLowerCase().includes(searchTerm.toLowerCase()));
+      const filtered = conversationData.conversas.filter(c=>c.title.toLowerCase().includes(searchTerm.toLowerCase()));
       list.innerHTML = filtered.length
-        ? filtered.map(c => {
+        ? filtered.map(c=>{
             const originalIdx = conversationData.conversas.indexOf(c);
             return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
           }).join('')
         : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
     }
 
-    function renderRoles() {
-      app.innerHTML = `<h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
-        <div class="flex gap-md">
-          <button class="btn primary" style="flex:1" onclick="chooseRole('A')">Pessoa A</button>
-          <button class="btn primary" style="flex:1" onclick="chooseRole('B')">Pessoa B</button>
+    function renderRoles(){
+      app.innerHTML = `
+        <h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
+        <div class="flex gap-md" style="flex-wrap:wrap">
+          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('A')">Pessoa A</button>
+          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('B')">Pessoa B</button>
         </div>
         <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
     }
 
-    function renderChat() {
+    function renderChat(){
       const conv = conversationData.conversas[selectedConv];
-      const finished = (role === 'A' && step >= conv.A.length) || (role === 'B' && step >= conv.B.length);
-      const hist = history.map(msg => {
-        const a = msg.speaker === role ? 'flex-end' : 'flex-start';
-        const b = msg.speaker === 'A' ? 'bubble-a' : 'bubble-b';
-        const au = msg.audio ? `<audio controls style="width:100%;margin-top:.5rem"><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
+      const finished = (role==='A' && step>=conv.A.length) || (role==='B' && step>=conv.B.length);
+      const hist = history.map(msg=>{
+        const a = msg.speaker===role ? 'flex-end' : 'flex-start';
+        const b = msg.speaker==='A' ? 'bubble-a' : 'bubble-b';
+        const au = msg.audio ? `<audio controls><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
         const txt = `<span class="hidden-text" title="Clique para revelar" onclick="this.classList.toggle('revealed')">${msg.text}</span>`;
         return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
       }).join('');
 
       const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
-        <div class="legend">Dica: as falas ficam <strong>ocultas</strong>. Clique no balão para revelar. Você também pode usar os botões abaixo.</div>
-        <div class="input-group flex gap-md" style="margin-top:.75rem">
+        <div class="legend">Dica: as falas ficam <strong>ocultas</strong>. Toque para revelar. Você também pode usar os botões abaixo.</div>
+        <div class="input-group" style="margin-top:.5rem">
           <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
-          <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala">👁</button>
-          <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala">🔊</button>
-          <button class="btn primary" style="width:auto" onclick="send()">Enviar</button>
+          <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala" aria-label="Mostrar dica">👁</button>
+          <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala" aria-label="Ouvir próxima fala">🔊</button>
+          <button class="btn primary" style="width:auto; flex: 0 0 auto" onclick="send()">Enviar</button>
           <div id="hint-bubble" class="hint-bubble"></div>
         </div>`;
 
       app.innerHTML = `
-        <div id="chat-scroll" class="chat-scroll space-y">${hist}</div>
+        <div id="chat-scroll" class="chat-scroll">${hist}</div>
         ${inp}
         <div class="toolbar">
           <button class="btn secondary" onclick="playFullScript()">🎧 Tocar roteiro</button>
@@ -306,32 +350,56 @@
           <button class="btn secondary" onclick="setStage('titles')">📚 Novo Cenário</button>
         </div>`;
 
-      const ci = document.getElementById('chat-input'), hb = document.getElementById('hint-bubble'), hbtn = document.getElementById('hint-btn'), abtn = document.getElementById('audio-btn');
-      if (ci && hbtn && abtn && hb) {
-        const hintText = role === 'A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
-        const hintAudio = role === 'A' ? (conv.A[step]?.audio || '') : (conv.B[step]?.audio || '');
+      const ci = document.getElementById('chat-input'),
+            hb = document.getElementById('hint-bubble'),
+            hbtn = document.getElementById('hint-btn'),
+            abtn = document.getElementById('audio-btn');
+
+      if (ci && hbtn && abtn && hb){
+        const hintText  = role==='A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
+        const hintAudio = role==='A' ? (conv.A[step]?.audio || '')    : (conv.B[step]?.audio || '');
         hb.textContent = hintText;
-        hbtn.onmouseenter = () => { if (hintText) hb.style.display = 'block'; };
-        hbtn.onmouseleave = () => hb.style.display = 'none';
-        hbtn.onclick = () => hb.style.display = hb.style.display === 'block' ? 'none' : 'block';
+
+        // Em dispositivos sem hover, o toggle por clique já funciona bem
+        hbtn.onmouseenter = () => { if (matchMedia('(hover: hover)').matches && hintText) hb.style.display = 'block'; };
+        hbtn.onmouseleave = () => { if (matchMedia('(hover: hover)').matches) hb.style.display = 'none'; };
+        hbtn.onclick = () => { hb.style.display = hb.style.display==='block' ? 'none' : 'block'; };
+
         abtn.onclick = () => { if (hintAudio) playAudio(hintAudio); };
-        ci.focus(); ci.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); send(); } };
+
+        ci.focus();
+        ci.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); send(); } };
       }
       scrollToBottom();
     }
 
     // 5) Ações
-    window.chooseConversation = i => { selectedConv = i; step = 0; history = []; stage = 'role'; render(); };
-    window.chooseRole = r => { role = r; stage = 'chat'; if (r === 'B') { const first = conversationData.conversas[selectedConv].A[0]; pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio }); step = 0; } render(); };
-    window.setStage = s => { stage = s; render(); };
+    window.chooseConversation = i => { selectedConv=i; step=0; history=[]; stage='role'; render(); };
+    window.chooseRole = r => {
+      role=r; stage='chat';
+      if (r==='B'){
+        const first = conversationData.conversas[selectedConv].A[0];
+        pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
+        step=0;
+      }
+      render();
+    };
+    window.setStage = s => { stage=s; render(); };
     window.send = () => {
-      const i = document.getElementById('chat-input'); if (!i || !i.value.trim()) return; const t = i.value.trim(); const co = conversationData.conversas[selectedConv];
-      const ul = role === 'A' ? co.A[step] : co.B[step];
+      const i = document.getElementById('chat-input');
+      if (!i || !i.value.trim()) return;
+      const t = i.value.trim();
+      const co = conversationData.conversas[selectedConv];
+      const ul = role==='A' ? co.A[step] : co.B[step];
       pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
-      const rl = role === 'A' ? co.B[step] : co.A[step + 1];
-      if (rl) pushMessage({ speaker: role === 'A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio });
-      step++; // marca data se finalizar
-      if ((role === 'A' && step >= co.A.length) || (role === 'B' && step >= co.B.length)) { localStorage.setItem(`rev_${co.title}`, new Date().toISOString()); }
+
+      const rl = role==='A' ? co.B[step] : co.A[step+1];
+      if (rl) pushMessage({ speaker: role==='A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio });
+
+      step++;
+      if ((role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length)){
+        localStorage.setItem(`rev_${co.title}`, new Date().toISOString());
+      }
       render();
     };
 
