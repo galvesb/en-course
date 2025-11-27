@@ -84,6 +84,8 @@
         .btn.primary{ background: var(--primary); color:#fff; }
         .btn.secondary{ background:#e5e7eb; color:#111827; }
         .btn.ghost{ background:transparent; color:var(--primary); }
+        .btn.danger{ background:#ef4444; color:#fff; } /* Estilo para o botão de reset */
+
 
         .flex{ display:flex; }
         .gap-md{ gap: 1rem; }
@@ -99,9 +101,9 @@
             width: 35px; height: 35px; display: flex; justify-content: center; align-items: center;
             transition: background 0.1s;
         }
-        /* NEW: Button on the new Front (English/Green) should be dark */
+        /* Button on the new Front (English/Green) should be dark */
         .card-front .audio-btn { border-color: #1f2937; color: #1f2937;} 
-        /* NEW: Button on the new Back (Portuguese/Blue) should be white */
+        /* Button on the new Back (Portuguese/Blue) should be white */
         .card-back .audio-btn { border-color: #fff; color: #fff;} 
         .audio-btn:hover { background: rgba(0,0,0,0.1); }
 
@@ -291,6 +293,24 @@
         .input-group input.error-input {
             border-color: #ef4444; /* Vermelho */
         }
+        
+        /* NOVO: Menu de Configurações */
+        .settings-menu{
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 200;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding-top: calc(70px + var(--safe-top));
+            visibility: hidden; opacity: 0; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .settings-menu.visible{
+            visibility: visible; opacity: 1;
+        }
+        .settings-menu-content{
+            background: white; border-radius: var(--radius); padding: 20px;
+            width: 90%; max-width: 350px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .settings-menu-content h3{ margin-top: 0; color: #111827;}
+
 
         @media (min-width: 640px){
             .chat-bubble{ max-width: 70%; }
@@ -305,20 +325,35 @@
         <div class="nav-header-icons">
             <div style="font-size:1.1rem;">❤️ 5</div>
             <div style="font-size:1.1rem;">🔥 10</div>
+             <button class="hint-btn" style="color:white; font-size:1.8rem;" onclick="toggleSettingsMenu()">☰</button>
         </div>
     </header>
+    
+    <div id="settings-menu" class="settings-menu" onclick="event.target.id === 'settings-menu' && toggleSettingsMenu()">
+        <div class="settings-menu-content">
+            <h3>Configurações</h3>
+            <p style="font-size:0.9rem; color:#6b7280; margin-bottom:1.5rem;">
+                Atenção: Resetar o progresso apagará todos os dados salvos localmente no seu navegador.
+            </p>
+            <button class="btn danger" onclick="resetProgress()">
+                ❌ Resetar Progresso (Limpar LocalStorage)
+            </button>
+            <button class="btn secondary" style="margin-top:1rem;" onclick="toggleSettingsMenu()">
+                Voltar
+            </button>
+        </div>
+    </div>
 
     <div id="app" style="width:100%;max-width:800px; padding: 0 clamp(12px, 3.5vw, 32px);"></div>
 
     <script>
-        // 1) DADOS — Estrutura Dia, Cenários e Lições
+        // 1) DADOS — Estrutura Dia, Cenários e Lições (ESTRUTURA BASE INICIAL)
         const lessonTypes = [
             { id: 'words', title: 'Vocabulário', icon: '📖' },
             { id: 'phrases', title: 'Frases', icon: '💬' },
             { id: 'conversation', title: 'Simulação', icon: '🗣️' }
         ];
 
-        // Definição das Lições para a Daily Standup (Reutilizada)
         const dailyLessons = {
             A: [ 
                 { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Start with you', translation: 'Vamos começar com você'}, {word:'Awesome!', translation: 'Incrível!'}, {word:'Noted', translation: 'Anotado'}] },
@@ -332,7 +367,6 @@
                 { id: 3, type: 'conversation', title: 'Simulação da Daily', completed: false }
             ]
         };
-        // Definição das Lições para a Sprint Planning (Reutilizada)
         const planningLessons = {
             A: [ 
                 { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Top priority', translation: 'Prioridade máxima'}, {word:'Implement', translation: 'Implementar'}, {word:'Allocate', translation: 'Alocar'}] },
@@ -347,8 +381,8 @@
             ]
         };
         
-        // Estrutura do Curso (Dias e Cenários)
-        const courseStructure = [
+        // Estrutura do Curso (Dias e Cenários) - Inicial (USADO PARA RESET)
+        const initialCourseStructure = [
             { 
                 id: 1, 
                 title: 'Dia 1: Introdução ao Time',
@@ -406,37 +440,98 @@
                 ]
             }
         ];
+        
+        let courseStructure = JSON.parse(JSON.stringify(initialCourseStructure)); // Cria uma cópia mutável
 
-        // 2) ESTADO E UTILIDADES (ATUALIZADO)
+        // 2) ESTADO E UTILIDADES (ATUALIZADO COM LOCALSTORAGE E RESET)
+        const LOCAL_STORAGE_KEY = 'devspeak_course_progress';
+
         let stage='map', currentDayIndex=0, currentScenarioIndex=0, currentRole=null, currentLessonIndex=0;
-        // ESTADOS PARA A FILA DE REPETIÇÃO DO FLASHCARD
-        let flashcardQueue = []; // A fila de IDs (índices na array words) dos cards que precisam ser repetidos
-        let currentCardIndexInQueue = 0; // Índice atual dentro desta fila
+        let flashcardQueue = []; 
+        let currentCardIndexInQueue = 0; 
         let isFlashcardFlipped = false;
-        // ESTADOS PARA O CHAT DE VALIDAÇÃO
-        let lastInputFailed = false; // Flag para indicar que o último envio falhou
-        let lastInputText = ''; // Mantém o texto digitado incorretamente
+        let lastInputFailed = false; 
+        let lastInputText = ''; 
         
         let role=null, step=0, history=[];
 
         const app = document.getElementById('app');
         const player = new Audio();
+        
+        // NOVO: Função para abrir/fechar o menu de configurações
+        window.toggleSettingsMenu = () => {
+            const menu = document.getElementById('settings-menu');
+            menu.classList.toggle('visible');
+        };
 
-        // FIX: Função para limpar a string para comparação (Inclui Smart Quotes '’“”' no filtro)
+        // NOVO: Função para resetar o progresso
+        window.resetProgress = () => {
+            if (confirm("Tem certeza que deseja resetar todo o seu progresso? Esta ação é irreversível.")) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                // Reinicia a estrutura do curso para o estado inicial
+                courseStructure = JSON.parse(JSON.stringify(initialCourseStructure));
+                // Redefine o estado da aplicação
+                setStage('map', 0, 0, null);
+                // Fecha o menu
+                toggleSettingsMenu();
+                alert("Progresso resetado com sucesso!");
+                console.log("LocalStorage limpo e aplicação resetada.");
+            }
+        };
+
+        // [UTILIDADE] Atualiza a estrutura base com o progresso salvo
+        const updateCourseStructureFromSavedData = (savedData) => {
+            savedData.forEach((savedDay, dIdx) => {
+                if (courseStructure[dIdx] && courseStructure[dIdx].id === savedDay.id) {
+                    savedDay.scenarios.forEach((savedScenario, sIdx) => {
+                        if (courseStructure[dIdx].scenarios[sIdx] && courseStructure[dIdx].scenarios[sIdx].id === savedScenario.id) {
+                            courseStructure[dIdx].scenarios[sIdx].completed = savedScenario.completed;
+                            ['A', 'B', 'C'].forEach(roleKey => {
+                                const lessons = courseStructure[dIdx].scenarios[sIdx].lessons[roleKey];
+                                const savedLessons = savedScenario.lessons[roleKey];
+
+                                if (lessons && savedLessons) {
+                                    lessons.forEach((lesson, lIdx) => {
+                                        if (savedLessons[lIdx] && lesson.id === savedLessons[lIdx].id) {
+                                            lesson.completed = savedLessons[lIdx].completed;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        };
+        
+        // [FUNÇÃO] Carrega o progresso do localStorage
+        const loadProgress = () => {
+            const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (saved) {
+                try {
+                    const savedData = JSON.parse(saved);
+                    updateCourseStructureFromSavedData(savedData);
+                    console.log("Progresso carregado com sucesso.");
+                } catch (e) {
+                    console.error("Erro ao carregar ou parsear o progresso do localStorage:", e);
+                    // Em caso de erro, limpa o progresso inválido
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                }
+            }
+        };
+
+        // [FUNÇÃO] Salva o progresso no localStorage
+        const saveProgress = () => {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(courseStructure));
+        };
+        
+        // FIX: Função para limpar a string para comparação
         const cleanStringForComparison = (str) => {
             if (!str) return '';
-            // 1. Converte para minúsculas (Ignora Case)
             let cleaned = str.toLowerCase();
-            
-            // 2. Remove pontuação, caracteres especiais comuns E Smart Quotes
             cleaned = cleaned.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"’“”]/g, "");
-
-            // 3. Remove acentos/diacríticos (Ignora Acentos)
             cleaned = cleaned.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-            // 4. Normaliza espaços em branco (substitui múltiplos espaços por um único e remove bordas)
             cleaned = cleaned.replace(/\s+/g, ' ').trim();
-            
             return cleaned;
         };
 
@@ -464,21 +559,18 @@
         
         const getConversation = () => getScenario()?.conversations;
         
-        // NOVO: Função para tocar o áudio do flashcard (usa o prefixo da pasta de conversa + /flashcard/)
+        // Função para tocar o áudio do flashcard 
         window.playCardAudio = (text, dIdx, sIdx) => {
             const scenario = courseStructure[dIdx]?.scenarios[sIdx];
             if (!scenario) return;
 
-            // 1. Pega o caminho de áudio de uma fala de exemplo (e.g., audio/scenario-dev-day-1-daily-standup/1.mp3)
             const sampleAudioPath = scenario.conversations?.A?.[0]?.audio;
             if (!sampleAudioPath) {
                 console.error("Não foi possível encontrar um caminho de áudio de exemplo para o cenário.");
                 return;
             }
-            // Isola o caminho base: audio/scenario-dev-day-1-daily-standup
             const baseAudioPath = sampleAudioPath.substring(0, sampleAudioPath.lastIndexOf('/')); 
             
-            // 2. Cria o slug do texto (e.g., start-with-you)
             const filename = text
                 .toLowerCase()
                 .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"’“”]/g, '') 
@@ -486,7 +578,6 @@
                 .trim()
                 .replace(/\s+/g, '-'); 
             
-            // 3. Caminho Final: audio/scenario-dev-day-1-daily-standup/flashcard/start-with-you.mp3
             const audioPath = `${baseAudioPath}/flashcard/${filename}.mp3`;
             
             console.log(`Tentando tocar audio em: ${audioPath}`);
@@ -534,7 +625,10 @@
                     <h2 style="text-align:center; margin-bottom: 1.5rem;">${day.title}</h2>
                     <div id="scenarios-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
                         ${day.scenarios.map((scenario, sIdx) => {
+                            // Verifica se todas as sub-lições (A, B, C) estão completas para marcar o Cenário
                             const allLessonsCompleted = scenario.lessons.A.every(l => l.completed) && scenario.lessons.B.every(l => l.completed) && scenario.lessons.C[0].completed;
+                            scenario.completed = allLessonsCompleted; // Atualiza o status do cenário
+                            
                             const statusClass = allLessonsCompleted ? 'completed' : 'active';
                             
                             return `
@@ -550,6 +644,7 @@
                     <button class="btn ghost" onclick="setStage('map')">Voltar aos Dias</button>
                 </div>
             `;
+            saveProgress(); // Salva após recalcular o status do cenário
         }
 
 
@@ -561,6 +656,7 @@
 
             const conversationLesson = lessons.C[0];
             const conversationCompleted = conversationLesson.completed;
+
             const conversationIcon = lessonTypes.find(t => t.id === conversationLesson.type).icon;
 
             const allRoleALessonsCompleted = lessons.A.every(l => l.completed);
@@ -645,6 +741,7 @@
             if (flashcardQueue.length === 0) {
                 // Se a fila estiver vazia, marca a lição como completa e volta
                 lesson.completed = true;
+                saveProgress(); // SALVA O PROGRESSO
                 setStage('flashcard-selector'); 
                 return;
             }
@@ -778,7 +875,6 @@
                      lastInputText = ci.value; 
                      if (lastInputFailed) {
                          lastInputFailed = false;
-                         // Força um re-render para remover o erro visualmente
                          render(); 
                      }
                 };
@@ -808,7 +904,6 @@
             currentRole = roleKey;
             currentLessonIndex = lIdx;
             
-            // 1. Inicializa a fila com os índices de 0 a N-1 dos cards da lição
             const lesson = courseStructure[dIdx].scenarios[sIdx].lessons[roleKey][lIdx];
             flashcardQueue = lesson.words.map((_, index) => index); 
             currentCardIndexInQueue = 0;
@@ -870,19 +965,15 @@
             const co = getConversation();
             const ul = role==='A' ? co.A[step] : co.B[step];
             
-            // 1. Pega o texto esperado
             const expectedText = (role==='A' ? ul?.pergunta : ul?.resposta) || '';
-            
-            // 2. Compara os textos limpos (ignora case, pontuação, acentos e espaços)
             const cleanedInput = cleanStringForComparison(t);
             const cleanedExpected = cleanStringForComparison(expectedText);
 
             const isCorrect = cleanedInput === cleanedExpected;
 
             if (isCorrect) {
-                // SUCESSO
                 lastInputFailed = false; 
-                lastInputText = ''; // Limpa o texto preservado
+                lastInputText = ''; 
                 
                 pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
 
@@ -895,13 +986,13 @@
                 const finished = (role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length);
                 if (finished) {
                     getScenario().lessons.C[0].completed = true; 
+                    saveProgress(); // SALVA O PROGRESSO
                 } 
                 render(); 
             } else {
-                // FALHA
                 lastInputFailed = true;
-                lastInputText = t; // Preserva a última tentativa
-                render(); // Re-renderiza para mostrar o erro
+                lastInputText = t; 
+                render(); 
             }
         };
 
@@ -921,7 +1012,8 @@
         });
 
 
-        // Init
+        // Init: 1. Carrega o progresso 2. Renderiza a tela
+        loadProgress(); 
         render();
     </script>
 </body>
