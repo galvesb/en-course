@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>DevSpeak - Inglês para Devs (Cenários)</title>
+    <title>Fluency2Work</title>
     <style>
         /* ====== CSS: Estilos da Aplicação ====== */
         
@@ -324,7 +324,7 @@
 
 <body>
     <header class="nav-header">
-        <h1 id="header-title">DevSpeak</h1>
+        <h1 id="header-title">Fluency2Work</h1>
         <div class="nav-header-icons">
             <div style="font-size:1.1rem;">❤️ 5</div>
             <div style="font-size:1.1rem;">🔥 10</div>
@@ -370,7 +370,7 @@
         let lessonData = {}; // Guarda dailyLessons e planningLessons
 
         // 2) ESTADO E UTILIDADES
-        const LOCAL_STORAGE_KEY = 'devspeak_course_progress';
+        const LOCAL_STORAGE_KEY = 'fluency2Work_course_progress';
 
         let stage='map', currentDayIndex=0, currentScenarioIndex=0, currentRole=null, currentLessonIndex=0;
         let flashcardQueue = []; 
@@ -520,8 +520,8 @@
         const render = () => {
              if (courseStructure.length === 0) { return; }
             
-            const currentTitle = courseStructure[currentDayIndex] ? courseStructure[currentDayIndex].title : 'DevSpeak';
-            document.getElementById('header-title').textContent = stage === 'map' ? 'DevSpeak' : currentTitle;
+            const currentTitle = courseStructure[currentDayIndex] ? courseStructure[currentDayIndex].title : 'Fluency2Work';
+            document.getElementById('header-title').textContent = stage === 'map' ? 'Fluency2Work' : currentTitle;
 
             if (stage === 'map') return renderMap();
             if (stage === 'day-scenarios') return renderDayScenarios(); 
