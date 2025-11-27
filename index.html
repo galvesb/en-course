@@ -1,410 +1,810 @@
-<!-- index.html — Chat Simulator (conversa oculta + botão único “Tocar roteiro”) -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Chat Simulator</title>
-  <style>
-    /* ====== Base / Theme ====== */
-    :root{
-      --blue:#93c5fd; --green:#86efac; --gray-bg:#f3f4f6; --gray-border:#d1d5db; --primary:#2563eb;
-      --rev-red:#f87171; --rev-yellow:#fbbf24;
-      /* fonte fluida entre 16–18px */
-      --font-base: clamp(16px, 2.5vw, 18px);
-      --radius: 1rem;
-      --shadow: 0 4px 12px rgba(0,0,0,.1);
-      --safe-top: env(safe-area-inset-top);
-      --safe-bottom: env(safe-area-inset-bottom);
-      --safe-left: env(safe-area-inset-left);
-      --safe-right: env(safe-area-inset-right);
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>DevSpeak - Inglês para Devs (Cenários)</title>
+    <style>
+        /* ====== CSS: Estilos da Aplicação (Integrado) ====== */
+        
+        /* Base / Theme Duolingo-style */
+        :root{
+            /* Cores Duolingo */
+            --duo-green-dark: #58cc02; /* Para Balão B e Elementos Primários */
+            --duo-green-light: #80e900;
+            --duo-blue-dark: #1cb0f6; /* Para Balão A e Elementos Secundários */
+            --duo-blue-light: #58d8ff;
+            --primary: var(--duo-blue-dark);
+            
+            --gray-bg: #f3f4f6;
+            --gray-border: #d1d5db;
+            --font-base: clamp(16px, 2.5vw, 18px);
+            --radius: 1rem;
+            --shadow: 0 4px 12px rgba(0,0,0,.1);
+            
+            /* Safe Areas (Para Mobile) */
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
 
-    * { box-sizing: border-box; }
+        * { box-sizing: border-box; }
 
-    html, body{
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      font-size: var(--font-base);
-      background: var(--gray-bg);
-      min-height: 100vh;
-    }
+        html, body{
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+            font-size: var(--font-base);
+            background: var(--gray-bg);
+            min-height: 100vh;
+        }
 
-    body{
-      display:flex;
-      align-items:flex-start;
-      justify-content:center;
-      padding: clamp(12px, 3.5vw, 32px);
-      padding-top: calc(clamp(12px, 3.5vw, 32px) + var(--safe-top));
-      padding-bottom: calc(clamp(12px, 3.5vw, 32px) + var(--safe-bottom));
-      padding-left: calc(clamp(12px, 3.5vw, 32px) + var(--safe-left));
-      padding-right: calc(clamp(12px, 3.5vw, 32px) + var(--safe-right));
-    }
+        body{
+            display:flex;
+            align-items:flex-start;
+            justify-content:center;
+            padding-top: calc(50px + var(--safe-top));
+            padding-bottom: var(--safe-bottom);
+        }
 
-    .card{
-      background:#fff; width:100%; max-width: 800px;
-      padding: clamp(16px, 3.5vw, 32px);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      display:flex; flex-direction:column;
-    }
+        .card{
+            background:#fff; width:100%; max-width: 800px;
+            padding: clamp(16px, 3.5vw, 32px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display:flex; flex-direction:column;
+        }
 
-    h2{ font-size: clamp(1.125rem, 3.5vw, 1.5rem); margin: 0 0 1rem 0; }
+        h2{ font-size: clamp(1.125rem, 3.5vw, 1.5rem); margin: 0 0 1rem 0; }
+        h3{ font-size: clamp(1rem, 3.5vw, 1.25rem); margin: 0 0 1rem 0; }
 
-    /* ====== Buttons & Inputs ====== */
-    .btn{
-      width:100%;
-      padding: clamp(12px, 3.2vw, 14px) clamp(16px, 3.5vw, 20px);
-      margin-top:.75rem; border:0; border-radius: .75rem;
-      font-weight:600; cursor:pointer; text-align:center; font-size: 1rem;
-      transition: filter .15s ease, transform .02s ease;
-      touch-action: manipulation;
-    }
-    .btn:active{ transform: scale(.99); }
-    .btn.primary{ background: var(--primary); color:#fff; }
-    .btn.secondary{ background:#e5e7eb; color:#111827; }
-    .btn.ghost{ background:transparent; color:var(--primary); }
 
-    input[type=text]{
-      flex:1; padding: .85rem .9rem; font-size:1rem;
-      border:1px solid var(--gray-border); border-radius:.75rem; outline: none;
-      min-width: 0; /* evita overflow em flex */
-    }
+        /* Nav Header (Topo) */
+        .nav-header{
+            background: var(--duo-blue-dark); color: #fff;
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 10px clamp(12px, 3.5vw, 32px);
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,.15);
+            z-index: 100;
+            height: calc(50px + var(--safe-top));
+            padding-top: var(--safe-top);
+        }
+        .nav-header h1{ font-size: 1.25rem; margin: 0; font-weight: 700; }
+        .nav-header-icons{ display: flex; align-items: center; gap: 1rem; }
 
-    .flex{ display:flex; }
-    .gap-md{ gap: 1rem; }
+        /* Buttons & Inputs */
+        .btn{
+            width:100%;
+            padding: clamp(12px, 3.2vw, 14px) clamp(16px, 3.5vw, 20px);
+            margin-top:.75rem; border:0; border-radius: .75rem;
+            font-weight:600; cursor:pointer; text-align:center; font-size: 1rem;
+            transition: filter .15s ease, transform .02s ease;
+            touch-action: manipulation;
+        }
+        .btn:active{ transform: scale(.99); }
+        .btn.primary{ background: var(--primary); color:#fff; }
+        .btn.secondary{ background:#e5e7eb; color:#111827; }
+        .btn.ghost{ background:transparent; color:var(--primary); }
 
-    .search-box{ margin-bottom: 1rem; }
+        .flex{ display:flex; }
+        .gap-md{ gap: 1rem; }
 
-    .hint-btn, .audio-btn{
-      background: transparent; border: none; cursor: pointer;
-      font-size: 1.5rem; padding: 0 .5rem; line-height: 1; height: 44px;
-    }
+        .hint-btn, .audio-btn{
+            background: transparent; border: none; cursor: pointer;
+            font-size: 1.5rem; padding: 0 .5rem; line-height: 1; height: 44px;
+        }
 
-    .input-group{
-      position: relative; display:flex; align-items:center; width:100%;
-      gap:.5rem; margin-bottom: .75rem; flex-wrap: wrap; /* empilha no mobile */
-    }
+        .input-group{
+            position: relative; display:flex; align-items:center; width:100%;
+            gap:.5rem; margin-bottom: .75rem; flex-wrap: wrap; 
+        }
 
-    .hint-bubble{
-      position: absolute; right: 0; bottom: calc(100% + 8px);
-      background:#111827; color:#fff; padding:.5rem .75rem; border-radius:.5rem;
-      font-size:.95rem; white-space:pre-wrap; display:none; max-width: min(92vw, 420px); z-index:10;
-    }
-    .hint-bubble::after{
-      content:''; position:absolute; bottom:-8px; right:12px; border-width:8px 8px 0 8px;
-      border-style:solid; border-color:#111827 transparent transparent transparent;
-    }
+        .hint-bubble{
+            position: absolute; right: 0; bottom: calc(100% + 8px);
+            background:#111827; color:#fff; padding:.5rem .75rem; border-radius:.5rem;
+            font-size:.95rem; white-space:pre-wrap; display:none; max-width: min(92vw, 420px); z-index:10;
+        }
+        .hint-bubble::after{
+            content:''; position:absolute; bottom:-8px; right:12px; border-width:8px 8px 0 8px;
+            border-style:solid; border-color:#111827 transparent transparent transparent;
+        }
 
-    .legend{ font-size:.95rem; color:#4b5563; margin: .25rem 0 .5rem; }
+        .toolbar{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: .75rem; margin-top:.25rem;
+        }
+        .toolbar .btn{ margin-top:0; }
 
-    .toolbar{
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: .75rem; margin-top:.25rem;
-    }
-    .toolbar .btn{ margin-top:0; }
+        /* Estilos de Mapa/Navegação Duolingo */
+        #map-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding-top: 10px;
+            padding-bottom: 80px;
+        }
 
-    /* ====== Chat ====== */
-    .chat-scroll{
-      flex:1; max-height: min(60vh, 520px); /* mais responsivo */
-      overflow-y:auto; margin-bottom: 1rem; padding-right: 4px;
-      -webkit-overflow-scrolling: touch;
-    }
+        .day-path {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 10px;
+            position: relative;
+        }
 
-    .chat-bubble{
-      max-width: 85%; /* bolhas mais largas em telas pequenas */
-      padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,.08);
-      font-size: 1rem; line-height: 1.45; margin: .25rem 0;
-      word-wrap: break-word; overflow-wrap: anywhere;
-    }
-    .bubble-a{ background: var(--blue); color:#000; }
-    .bubble-b{ background: var(--green); color:#000; }
+        .day-node {
+            position: relative;
+            z-index: 2;
+            padding-bottom: 20px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .day-node p {
+            margin: .5rem 0 0; 
+            text-align: center; 
+        }
+        
+        .day-path > div:not(.day-node){
+            height: 40px; 
+            width: 4px; 
+            background: var(--gray-border); 
+            margin: 0 auto;
+        }
 
-    .hidden-text{ filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
-    .hidden-text.revealed{ filter: none; user-select: text; }
 
-    audio{ width:100%; margin-top:.5rem; }
+        /* Bolha Principal (Dia no Mapa) */
+        .main-bubble {
+            width: 80px; height: 80px;
+            background: var(--duo-green-dark);
+            border: 4px solid var(--duo-green-light);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; color: #fff; font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,.2);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .main-bubble:hover { transform: scale(1.05); }
 
-    /* ====== Larger screens ====== */
-    @media (min-width: 640px){
-      .chat-bubble{ max-width: 70%; }
-      .toolbar{ grid-template-columns: repeat(4, 1fr); }
-      .chat-scroll{ max-height: 500px; }
-      .input-group{ flex-wrap: nowrap; }
-    }
+        /* Bolhas de Cenário e Sub-Lição */
+        .scenario-bubble, .sub-bubble {
+            width: 60px; height: 60px;
+            border: 4px solid var(--duo-blue-light);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,.15);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            font-size: 1.4rem;
+            font-weight: 500;
+        }
+        .scenario-bubble {
+            width: 70px; height: 70px;
+            font-size: 1.6rem;
+            background: var(--duo-blue-dark);
+            border-color: var(--duo-blue-light);
+        }
+        
+        .sub-bubble.role-A { background: var(--duo-blue-dark); border-color: var(--duo-blue-light); }
+        .sub-bubble.role-B { background: var(--duo-green-dark); border-color: var(--duo-green-light); }
+        .sub-bubble.completed, .scenario-bubble.completed {
+            background: var(--gray-border);
+            border-color: #9ca3af;
+            color: #4b5563;
+        }
+        .sub-bubble.active, .scenario-bubble.active {
+            animation: pulse-border 1.5s infinite;
+        }
 
-    /* ====== Very small phones ====== */
-    @media (max-width: 360px){
-      .hint-btn, .audio-btn{ height: 40px; }
-      .btn{ font-size: .95rem; }
-    }
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(43, 114, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(43, 114, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(43, 114, 255, 0); }
+        }
 
-    /* ====== Reduce motion ====== */
-    @media (prefers-reduced-motion: reduce){
-      .hidden-text{ transition: none; }
-      .btn{ transition: none; }
-    }
-  </style>
+        /* Estilo para a Tela de Flash Card */
+        .flashcard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+        .flashcard {
+            width: 100%; max-width: 400px; height: 250px;
+            background: #fff; border: 2px solid var(--duo-blue-dark);
+            border-radius: 15px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; font-weight: 600; color: #1f2937;
+            box-shadow: 0 8px 16px rgba(0,0,0,.15);
+            cursor: pointer;
+            perspective: 1000px; 
+            margin-bottom: 20px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%; height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden; 
+            display: flex; justify-content: center; align-items: center;
+            padding: 20px;
+            border-radius: 13px;
+        }
+        .card-front { background: var(--duo-blue-light); color: #fff; }
+        .card-back { background: var(--duo-green-light); color: #1f2937; transform: rotateY(180deg); } 
+        .flashcard-progress { margin-bottom: 15px; font-size: 1rem; color: #4b5563; }
+        .flashcard-nav { display: flex; gap: 10px; margin-top: 20px; }
+
+
+        /* Chat Simulator */
+        .chat-scroll{
+            flex:1; max-height: min(60vh, 520px); 
+            overflow-y:auto; margin-bottom: 1rem; padding-right: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-bubble{
+            max-width: 85%; padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,.08);
+            font-size: 1rem; line-height: 1.45; margin: .25rem 0;
+            word-wrap: break-word; overflow-wrap: anywhere; color: #fff;
+        }
+        .bubble-a{ background: var(--duo-blue-dark); }
+        .bubble-b{ background: var(--duo-green-dark); }
+        .hidden-text{ filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
+        .hidden-text.revealed{ filter: none; user-select: text; }
+        audio{ width:100%; margin-top:.5rem; }
+
+        @media (min-width: 640px){
+            .chat-bubble{ max-width: 70%; }
+            .toolbar{ grid-template-columns: repeat(4, 1fr); }
+        }
+    </style>
 </head>
 
 <body>
-  <div id="app" class="card"></div>
+    <header class="nav-header">
+        <h1 id="header-title">DevSpeak</h1>
+        <div class="nav-header-icons">
+            <div style="font-size:1.1rem;">❤️ 5</div>
+            <div style="font-size:1.1rem;">🔥 10</div>
+        </div>
+    </header>
 
-  <script>
-    // 1) DADOS — TODAS AS CONVERSAS ORIGINAIS
-    const conversationData = {
-      conversas: [
-        // ************ Entrevistas
-        {
-          title: '[Entrevista] comportamental',
-          A: [
-            { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/behavioral-interview/1.mp3' },
-            { id: '2', pergunta: 'Perfect. I’m really glad we could connect. Just to give you a quick idea this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?', audio: 'audio/behavioral-interview/3.mp3' },
-            { id: '3', pergunta: "Can you tell me about yourself and your professional background? let's start with the company luizalabs.", audio: 'audio/behavioral-interview/5.mp3' },
-            { id: '4', pergunta: "tell me about everis.", audio: 'audio/behavioral-interview/7.mp3' },
-            { id: '5', pergunta: "tell me about tembici.", audio: 'audio/behavioral-interview/9.mp3' },
-            { id: '6', pergunta: "tell me about Santander bank.", audio: 'audio/behavioral-interview/11.mp3' },
-            { id: '7', pergunta: "Why are you looking for new opportunities?", audio: 'audio/behavioral-interview/13.mp3' },
-            { id: '8', pergunta: "Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?", audio: 'audio/behavioral-interview/15.mp3' },
-            { id: '9', pergunta: "Tell me about a time you received critical feedback. How did you handle it?", audio: 'audio/behavioral-interview/17.mp3' },
-            { id: '10', pergunta: "Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.", audio: 'audio/behavioral-interview/19.mp3' },
-          ],
-          B: [
-            { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/behavioral-interview/2.mp3' },
-            { id: '2', resposta: 'Absolutely, sounds good.', audio: 'audio/behavioral-interview/4.mp3' },
-            { id: '3', resposta: 'I’m currently a Senior Software Developer at Luizalabs, where I focus on backend solutions using Python with FastAPI, MongoDB, Kafka, Kubernetes and ArgoCD. In this role, I’ve had the opportunity to worked on back-office applications that manage sellers and leads interested in selling on Magazine Luiza, a major retail company in Brazil. One of my main contributions here was building a risk analysis system that replaced an external legacy system, saving R$200,000 per year.', audio: 'audio/behavioral-interview/6.mp3' },
-            { id: '4', resposta: 'Before Luizalabs, I worked as a Mid-level Software Engineer at Everis, where I worked on B2B product team for ambev. There, I worked with Python, Django, Postgres, RabbitMQ and AWS.', audio: 'audio/behavioral-interview/8.mp3' },
-            { id: '5', resposta: 'before everis, I worked as a Mid-level Software Engineer at Tembici, where I worked on the IFood Pedal project, a bike rental app with over 18,000 delivery drivers.,The project won the Innovation of the Year award. There, I worked with Python, Django, Postgres, Celery and AWS', audio: 'audio/behavioral-interview/10.mp3' },
-            { id: '6', resposta: 'Finally, I started my career at Santander Bank as an Entry-Level Software Developer, working on both backend Python, Flask, React for payment team.', audio: 'audio/behavioral-interview/12.mp3' },
-            { id: '7', resposta: "I'm looking for a place where I can work in English daily and work with people from all over the world.", audio: 'audio/behavioral-interview/14.mp3' },
-            { id: '8', resposta: "One project where I faced a significant challenge was building a risk analysis tools for sellers at Luizalabs. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date", audio: 'audio/behavioral-interview/14.mp3' },
-            { id: '9', resposta: "At Santander, I received feedback from my tech lead that my code were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the code to be cleaner and easier to understand.", audio: 'audio/behavioral-interview/18.mp3' },
-            { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3' },
-          ]
-        },
+    <div id="app" style="width:100%;max-width:800px; padding: 0 clamp(12px, 3.5vw, 32px);"></div>
 
-        // ************** dia a dia dev
-        {
-          title: "[Scenario Dev day] 1 Daily Standup",
-          A: [
-            { id: "1", pergunta: "Good morning, team! Let’s start with you, Guilherme.", audio: "audio/scenario-dev-day-1-daily-standup/1.mp3" },
-            { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
-            { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
-          ],
-          B: [
-            { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
-            { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
-            { id: "3", resposta: "Perfect, thanks!", audio: "audio/scenario-dev-day-1-daily-standup/6.mp3" }
-          ]
-        },
-        {
-          title: "[Scenario dev day] 2 Code Pairing Session",
-          A: [
-            { id: "1", pergunta: "Can you explain why you used recursion here?", audio: "audio/scenario-dev-day-2-code-pairing-session/1.mp3" },
-            { id: "2", pergunta: "Would iteration work better for performance?", audio: "audio/scenario-dev-day-2-code-pairing-session/3.mp3" },
-            { id: "3", pergunta: "Let’s benchmark both approaches together.", audio: "audio/scenario-dev-day-2-code-pairing-session/5.mp3" }
-          ],
-          B: [
-            { id: "1", resposta: "Sure, it simplifies traversing nested structures.", audio: "audio/scenario-dev-day-2-code-pairing-session/2.mp3" },
-            { id: "2", resposta: "Possibly, I can refactor it to test.", audio: "audio/scenario-dev-day-2-code-pairing-session/4.mp3" },
-            { id: "3", resposta: "Sounds like a plan!", audio: "audio/scenario-dev-day-2-code-pairing-session/6.mp3" }
-          ]
-        },
-        {
-          title: "[Scenario dev day] 3 Sprint Planning",
-          A: [
-            { id: "1", pergunta: "This feature has top priority for the next sprint.", audio: "audio/scenario-dev-day-3-sprint-planning/1.mp3" },
-            { id: "2", pergunta: "Will that take much time to implement?", audio: "audio/scenario-dev-day-3-sprint-planning/3.mp3" },
-            { id: "3", pergunta: "Let’s allocate some buffer time.", audio: "audio/scenario-dev-day-3-sprint-planning/5.mp3" }
-          ],
-          B: [
-            { id: "1", resposta: "Got it. It needs changes in the database schema.", audio: "audio/scenario-dev-day-3-sprint-planning/2.mp3" },
-            { id: "2", resposta: "Around two days including testing.", audio: "audio/scenario-dev-day-3-sprint-planning/4.mp3" },
-            { id: "3", resposta: "Agreed, better to be safe.", audio: "audio/scenario-dev-day-3-sprint-planning/6.mp3" }
-          ]
-        },
-        {
-          title: "[Scenario dev day] 4 Code Review Feedback",
-          A: [
-            { id: "1", pergunta: "I noticed you didn’t add unit tests for this function.", audio: "audio/scenario-dev-day-4-code-review-feedback/1.mp3" },
-            { id: "2", pergunta: "Could you also handle null inputs here?", audio: "audio/scenario-dev-day-4-code-review-feedback/3.mp3" },
-            { id: "3", pergunta: "Great. Please push the changes before tomorrow’s build.", audio: "audio/scenario-dev-day-4-code-review-feedback/5.mp3" }
-          ],
-          B: [
-            { id: "1", resposta: "You’re right, I’ll write the tests now.", audio: "audio/scenario-dev-day-4-code-review-feedback/2.mp3" },
-            { id: "2", resposta: "Good point, I’ll add a check for that.", audio: "audio/scenario-dev-day-4-code-review-feedback/4.mp3" },
-            { id: "3", resposta: "Will do, thanks for the feedback.", audio: "audio/scenario-dev-day-4-code-review-feedback/6.mp3" }
-          ]
-        },
-        {
-          title: "[Scenario dev day] 5 Debugging Production Issue",
-          A: [
-            { id: "1", pergunta: "We just got an alert about high error rates in production.", audio: "audio/scenario-dev-day-5-debugging-production-issue/1.mp3" },
-            { id: "2", pergunta: "Can you check the logs and see what’s going on?", audio: "audio/scenario-dev-day-5-debugging-production-issue/3.mp3" },
-            { id: "3", pergunta: "Thanks. Let’s roll out a fix as soon as possible.", audio: "audio/scenario-dev-day-5-debugging-production-issue/5.mp3" }
-          ],
-          B: [
-            { id: "1", resposta: "Okay, I’ll take a look right now.", audio: "audio/scenario-dev-day-5-debugging-production-issue/2.mp3" },
-            { id: "2", resposta: "Looks like a null pointer issue after the last deployment.", audio: "audio/scenario-dev-day-5-debugging-production-issue/4.mp3" },
-            { id: "3", resposta: "On it. I’ll patch the bug and push the update.", audio: "audio/scenario-dev-day-5-debugging-production-issue/6.mp3" }
-          ]
+    <script>
+        // 1) DADOS — Estrutura Dia, Cenários e Lições
+        const lessonTypes = [
+            { id: 'words', title: 'Vocabulário', icon: '📖' },
+            { id: 'phrases', title: 'Frases', icon: '💬' },
+            { id: 'conversation', title: 'Simulação', icon: '🗣️' }
+        ];
+
+        // Definição das Lições para a Daily Standup (Reutilizada)
+        const dailyLessons = {
+            A: [ 
+                { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Start with you', translation: 'Vamos começar com você'}, {word:'Awesome!', translation: 'Incrível!'}, {word:'Noted', translation: 'Anotado'}] },
+                { id: 2, type: 'phrases', title: 'Frases A', completed: false, words: [{word:'Let’s start with you.', translation: 'Vamos começar com você.'}, {word:'Any blockers today?', translation: 'Algum impedimento hoje?'}, {word:'Let’s sync after the meeting.', translation: 'Vamos nos alinhar após a reunião.'}] },
+            ],
+            B: [ 
+                { id: 1, type: 'words', title: 'Vocabulário B', completed: false, words: [{word:'Finalized', translation: 'Finalizei'}, {word:'Blocker', translation: 'Impedimento'}, {word:'OAuth integration', translation: 'Integração OAuth'}] },
+                { id: 2, type: 'phrases', title: 'Frases B', completed: false, words: [{word:'I finalized the user authentication module.', translation: 'Eu finalizei o módulo de autenticação de usuário.'}, {word:'I’m facing an issue with OAuth integration.', translation: 'Estou enfrentando um problema com a integração OAuth.'}] },
+            ],
+            C: [
+                { id: 3, type: 'conversation', title: 'Simulação da Daily', completed: false }
+            ]
+        };
+        // Definição das Lições para a Sprint Planning (Reutilizada)
+        const planningLessons = {
+            A: [ 
+                { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Top priority', translation: 'Prioridade máxima'}, {word:'Implement', translation: 'Implementar'}, {word:'Allocate', translation: 'Alocar'}] },
+                { id: 2, type: 'phrases', title: 'Frases A', completed: false, words: [{word:'This feature has top priority.', translation: 'Essa funcionalidade tem prioridade máxima.'}, {word:'Let’s allocate some buffer time.', translation: 'Vamos alocar um tempo de reserva.'}] },
+            ],
+            B: [ 
+                { id: 1, type: 'words', title: 'Vocabulário B', completed: false, words: [{word:'Got it', translation: 'Entendi'}, {word:'Database schema', translation: 'Estrutura do banco'}, {word:'Better to be safe', translation: 'Melhor prevenir'}] },
+                { id: 2, type: 'phrases', title: 'Frases B', completed: false, words: [{word:'It needs changes in the database schema.', translation: 'Precisa de mudanças na estrutura do banco.'}, {word:'Around two days including testing.', translation: 'Cerca de dois dias, incluindo testes.'}] },
+            ],
+            C: [
+                { id: 3, type: 'conversation', title: 'Simulação de Planning', completed: false }
+            ]
+        };
+        
+        // Estrutura do Curso (Dias e Cenários)
+        const courseStructure = [
+            { 
+                id: 1, 
+                title: 'Dia 1: Introdução ao Time',
+                scenarios: [
+                    { 
+                        id: 1, name: 'Daily Standup', icon: '⏰', completed: false, lessons: dailyLessons,
+                        conversations: {
+                            A: [
+                                { id: "1", pergunta: "Good morning, team! Let’s start with you, Guilherme.", audio: "audio/scenario-dev-day-1-daily-standup/1.mp3" },
+                                { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
+                                { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
+                            ],
+                            B: [
+                                { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
+                                { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
+                                { id: "3", resposta: "Perfect, thanks!", audio: "audio/scenario-dev-day-1-daily-standup/6.mp3" }
+                            ]
+                        },
+                    },
+                    { 
+                        id: 2, name: 'Sprint Planning', icon: '📅', completed: false, lessons: planningLessons,
+                        conversations: {
+                            A: [
+                                { id: "1", pergunta: "This feature has top priority for the next sprint.", audio: "audio/scenario-dev-day-3-sprint-planning/1.mp3" },
+                                { id: "2", pergunta: "Will that take much time to implement?", audio: "audio/scenario-dev-day-3-sprint-planning/3.mp3" },
+                                { id: "3", pergunta: "Let’s allocate some buffer time.", audio: "audio/scenario-dev-day-3-sprint-planning/5.mp3" }
+                            ],
+                            B: [
+                                { id: "1", resposta: "Got it. It needs changes in the database schema.", audio: "audio/scenario-dev-day-3-sprint-planning/2.mp3" },
+                                { id: "2", resposta: "Around two days including testing.", audio: "audio/scenario-dev-day-3-sprint-planning/4.mp3" },
+                                { id: "3", resposta: "Agreed, better to be safe.", audio: "audio/scenario-dev-day-3-sprint-planning/6.mp3" }
+                            ]
+                        }
+                    },
+                    { id: 3, name: 'Discutindo Tecnologia', icon: '💻', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 4, name: 'Ajudando um Dev', icon: '🤝', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 5, name: 'Sendo Ajuda', icon: '🙋‍♂️', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 6, name: 'Resolvendo Problema', icon: '🐛', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 7, name: 'Entregando Projeto', icon: '✅', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 8, name: 'Regra de Negócio', icon: '📄', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 9, name: 'Conversa Aleatória', icon: '☕', completed: false, lessons: planningLessons, conversations: planningLessons },
+                    { id: 10, name: 'Final do Dia', icon: '😴', completed: false, lessons: planningLessons, conversations: planningLessons },
+                ]
+            },
+            { 
+                id: 2, 
+                title: 'Dia 2: Discussões Avançadas',
+                scenarios: [
+                    { 
+                        id: 1, name: 'Review de Código', icon: '🔍', completed: false, lessons: dailyLessons, conversations: dailyLessons 
+                    },
+                    { 
+                        id: 2, name: 'Reunião com Cliente', icon: '💼', completed: false, lessons: dailyLessons, conversations: dailyLessons 
+                    },
+                ]
+            }
+        ];
+
+        // 2) ESTADO E UTILIDADES (ATUALIZADO)
+        let stage='map', currentDayIndex=0, currentScenarioIndex=0, currentRole=null, currentLessonIndex=0;
+        // NOVOS ESTADOS PARA A FILA DE REPETIÇÃO DO FLASHCARD
+        let flashcardQueue = []; // A fila de IDs (índices na array words) dos cards que precisam ser repetidos
+        let currentCardIndexInQueue = 0; // Índice atual dentro desta fila
+        let isFlashcardFlipped = false;
+        
+        let role=null, step=0, history=[];
+
+        const app = document.getElementById('app');
+        const player = new Audio();
+
+        const scrollToBottom = () => {
+            const b = document.getElementById('chat-scroll');
+            if (b) b.scrollTop = b.scrollHeight;
+        };
+        const playAudio = src => { if(!src) return; try{ player.pause(); player.currentTime=0; player.src=src; player.play(); }catch{} };
+        const pushMessage = msg => { history.push(msg); if(msg.audio) playAudio(msg.audio); };
+        const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.add('revealed'));
+        const hideAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.remove('revealed'));
+        
+        const getScenario = () => courseStructure[currentDayIndex]?.scenarios[currentScenarioIndex];
+
+        const getLesson = () => {
+            const scenario = getScenario();
+            if (!scenario) return null;
+            const lessons = scenario.lessons;
+            
+            if (currentRole === 'A') return lessons.A[currentLessonIndex];
+            if (currentRole === 'B') return lessons.B[currentLessonIndex];
+            return lessons.C[0]; // Lição de Conversação
+        };
+        
+        const getConversation = () => getScenario()?.conversations;
+
+        // 3) RENDERIZAÇÃO PRINCIPAL
+        const render = () => {
+            const currentTitle = courseStructure[currentDayIndex] ? courseStructure[currentDayIndex].title : 'DevSpeak';
+            document.getElementById('header-title').textContent = stage === 'map' ? 'DevSpeak' : currentTitle;
+
+            if (stage === 'map') return renderMap();
+            if (stage === 'day-scenarios') return renderDayScenarios(); 
+            if (stage === 'role-choice-lessons') return renderRoleChoiceLessons(); 
+            if (stage === 'flashcard-selector') return renderFlashcardSelector();
+            if (stage === 'flashcard') return renderFlashcard();
+            if (stage === 'role') return renderRoles();
+            return renderChat();
+        };
+
+        // 4) TELA MAPA (Mostra os Dias)
+        function renderMap(){
+            app.innerHTML = `<div id="map-container"><div class="day-path"></div></div>`;
+            const path = document.querySelector('.day-path');
+
+            path.innerHTML = courseStructure.map((day, dIdx) => {
+                 const dayIcon = '📚'; 
+
+                 return `
+                    <div class="day-node" onclick="setStage('day-scenarios', ${dIdx})">
+                        <div class="main-bubble">${dayIcon}</div>
+                        <p style="font-weight:600">${day.title}</p>
+                    </div>
+                `;
+            }).join(`<div></div>`);
         }
-      ]
-    };
 
-    // 2) ESTADO E UTILIDADES
-    let stage='titles', selectedConv=null, role=null, step=0, history=[], searchTerm='';
-    const app = document.getElementById('app');
-    const player = new Audio();
+        // 5) TELA DE CENÁRIOS DO DIA (Mostra Daily, Planning, etc.)
+        function renderDayScenarios() {
+            const day = courseStructure[currentDayIndex];
+            
+            app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2 style="text-align:center; margin-bottom: 1.5rem;">${day.title}</h2>
+                    <div id="scenarios-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
+                        ${day.scenarios.map((scenario, sIdx) => {
+                            const allLessonsCompleted = scenario.lessons.A.every(l => l.completed) && scenario.lessons.B.every(l => l.completed) && scenario.lessons.C[0].completed;
+                            const statusClass = allLessonsCompleted ? 'completed' : 'active';
+                            
+                            return `
+                                <div class="day-node" onclick="setStage('role-choice-lessons', ${currentDayIndex}, ${sIdx})">
+                                    <div class="scenario-bubble ${statusClass}">${scenario.icon}</div>
+                                    <p style="font-weight:600; margin-bottom: 0;">${scenario.name}</p>
+                                    <p style="margin: 0; color:#6b7280; font-size:.9rem">${allLessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
+                                </div>
+                                <div></div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <button class="btn ghost" onclick="setStage('map')">Voltar aos Dias</button>
+                </div>
+            `;
+        }
 
-    const scrollToBottom = () => {
-      const b = document.getElementById('chat-scroll');
-      if (b) b.scrollTop = b.scrollHeight;
-    };
-    const playAudio = src => { if(!src) return; try{ player.pause(); player.currentTime=0; player.src=src; player.play(); }catch{} };
-    const pushMessage = msg => { history.push(msg); if(msg.audio) playAudio(msg.audio); };
-    const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.add('revealed'));
-    const hideAll   = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.remove('revealed'));
 
-    // 3) REPRODUZIR ROTEIRO (A1, B1, A2, B2...)
-    const playFullScript = async () => {
-      const conv = conversationData.conversas[selectedConv];
-      if (!conv) return;
-      const maxLen = Math.max(conv.A.length, conv.B.length);
-      for (let i=0;i<maxLen;i++){
-        if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
-        if (conv.B[i]?.audio) await playSequential(conv.B[i].audio);
-      }
-    };
-    const playSequential = src => new Promise(res=>{
-      player.onended = () => res();
-      player.onerror = () => res();
-      try{ player.src = src; player.play().catch(()=>res()); }catch{ res(); }
-    });
+        // 6) TELA DE LIÇÕES DETALHADAS POR PAPEL
+        function renderRoleChoiceLessons() {
+            const day = courseStructure[currentDayIndex];
+            const scenario = day.scenarios[currentScenarioIndex];
+            const lessons = scenario.lessons;
 
-    // 4) RENDERIZAÇÃO
-    const render = () => { if (stage==='titles') return renderTitles(); if (stage==='role') return renderRoles(); return renderChat(); };
+            const conversationLesson = lessons.C[0];
+            const conversationCompleted = conversationLesson.completed;
+            const conversationIcon = lessonTypes.find(t => t.id === conversationLesson.type).icon;
 
-    function renderTitles(){
-      app.innerHTML = `
-        <h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
-        <div class="search-box flex gap-md">
-          <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
-        </div>
-        <div id="scenario-list"></div>`;
-      document.getElementById('search-input').addEventListener('input', e=>{ searchTerm=e.target.value; renderScenarioList(); });
-      renderScenarioList();
-      document.getElementById('search-input').focus();
-    }
+            const allRoleALessonsCompleted = lessons.A.every(l => l.completed);
+            const allRoleBLessonsCompleted = lessons.B.every(l => l.completed);
+            
+            const conversationIsActive = allRoleALessonsCompleted && allRoleBLessonsCompleted;
 
-    function renderScenarioList(){
-      const list = document.getElementById('scenario-list');
-      const filtered = conversationData.conversas.filter(c=>c.title.toLowerCase().includes(searchTerm.toLowerCase()));
-      list.innerHTML = filtered.length
-        ? filtered.map(c=>{
-            const originalIdx = conversationData.conversas.indexOf(c);
-            return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
-          }).join('')
-        : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
-    }
+            app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2 style="text-align:center;">${scenario.name}</h2>
+                    <h3 style="text-align:center; margin-top: -1rem; color: #6b7280;">Escolha seu Papel e Treinamento</h3>
+                    <div id="lessons-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
+                        
+                        <div class="day-node" onclick="setStage('flashcard-selector', ${currentDayIndex}, ${currentScenarioIndex}, 'A')" style="cursor:pointer">
+                            <div class="sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}" 
+                                style="width: 80px; height: 80px; font-size: 2rem;">👤 A</div>
+                            <p style="font-weight:600">Pessoa A (Introdução/Perguntas)</p>
+                            <p style="margin: 0; color:#6b7280; font-size:.9rem">${allRoleALessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
+                        </div>
+                        <div></div>
 
-    function renderRoles(){
-      app.innerHTML = `
-        <h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
-        <div class="flex gap-md" style="flex-wrap:wrap">
-          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('A')">Pessoa A</button>
-          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('B')">Pessoa B</button>
-        </div>
-        <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
-    }
+                        <div class="day-node" onclick="setStage('flashcard-selector', ${currentDayIndex}, ${currentScenarioIndex}, 'B')" style="cursor:pointer">
+                            <div class="sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}" 
+                                style="width: 80px; height: 80px; font-size: 2rem;">👤 B</div>
+                            <p style="font-weight:600">Pessoa B (Respostas/Status)</p>
+                            <p style="margin: 0; color:#6b7280; font-size:.9rem">${allRoleBLessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
+                        </div>
+                        <div></div>
 
-    function renderChat(){
-      const conv = conversationData.conversas[selectedConv];
-      const finished = (role==='A' && step>=conv.A.length) || (role==='B' && step>=conv.B.length);
-      const hist = history.map(msg=>{
-        const a = msg.speaker===role ? 'flex-end' : 'flex-start';
-        const b = msg.speaker==='A' ? 'bubble-a' : 'bubble-b';
-        const au = msg.audio ? `<audio controls><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
-        const txt = `<span class="hidden-text" title="Clique para revelar" onclick="this.classList.toggle('revealed')">${msg.text}</span>`;
-        return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
-      }).join('');
+                        <div class="day-node" onclick="${conversationIsActive || conversationCompleted ? `startLessonConversation(${currentDayIndex}, ${currentScenarioIndex})` : `alert('Complete as lições da Pessoa A e B primeiro!')`}">
+                            <div class="sub-bubble ${conversationCompleted ? 'completed' : (conversationIsActive ? 'active' : '')}" 
+                                style="width: 80px; height: 80px; font-size: 2rem;">${conversationIcon}</div>
+                            <p style="font-weight:600">Simulação Completa</p>
+                            <p style="margin: 0; color:#6b7280; font-size:.9rem">${conversationLesson.completed ? 'COMPLETO' : 'PRONTO PARA INICIAR'}</p>
+                        </div>
+                        <div></div>
+                    </div>
+                    <button class="btn ghost" onclick="setStage('day-scenarios')">Voltar aos Cenários</button>
+                </div>
+            `;
+        }
 
-      const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
-        <div class="legend">Dica: as falas ficam <strong>ocultas</strong>. Toque para revelar. Você também pode usar os botões abaixo.</div>
-        <div class="input-group" style="margin-top:.5rem">
-          <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
-          <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala" aria-label="Mostrar dica">👁</button>
-          <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala" aria-label="Ouvir próxima fala">🔊</button>
-          <button class="btn primary" style="width:auto; flex: 0 0 auto" onclick="send()">Enviar</button>
-          <div id="hint-bubble" class="hint-bubble"></div>
-        </div>`;
+        // 7) TELA SELEÇÃO DE LIÇÃO FLASHCARD (Vocabulário ou Frases)
+        function renderFlashcardSelector() {
+            const day = courseStructure[currentDayIndex];
+            const scenario = day.scenarios[currentScenarioIndex];
+            const roleLessons = scenario.lessons[currentRole];
+            const roleName = currentRole === 'A' ? 'Pessoa A' : 'Pessoa B';
+            const roleClass = currentRole === 'A' ? 'role-A' : 'role-B';
 
-      app.innerHTML = `
-        <div id="chat-scroll" class="chat-scroll">${hist}</div>
-        ${inp}
-        <div class="toolbar">
-          <button class="btn secondary" onclick="playFullScript()">🎧 Tocar roteiro</button>
-          <button class="btn secondary" onclick="revealAll()">👁️ Revelar tudo</button>
-          <button class="btn secondary" onclick="hideAll()">🙈 Ocultar tudo</button>
-          <button class="btn secondary" onclick="setStage('titles')">📚 Novo Cenário</button>
-        </div>`;
+            app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2 style="text-align:center;">${scenario.name}</h2>
+                    <h3 style="text-align:center; margin-top: -1rem; color: ${currentRole === 'A' ? 'var(--duo-blue-dark)' : 'var(--duo-green-dark)'}">${roleName} - Seleção de Lição</h3>
+                    <div id="lessons-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
+                        ${roleLessons.map((lesson, lIdx) => {
+                            const icon = lessonTypes.find(t => t.id === lesson.type).icon;
+                            
+                            const nextLessonIndex = roleLessons.findIndex(l => !l.completed);
+                            const isActive = lIdx === nextLessonIndex;
+                            const statusClass = lesson.completed ? 'completed' : (isActive ? 'active' : '');
+                            const bubbleClass = statusClass + (lesson.completed ? '' : ` ${roleClass}`);
+                            
+                            return `
+                                <div class="day-node" onclick="${isActive || lesson.completed ? `startFlashcardLesson(${currentDayIndex}, ${currentScenarioIndex}, '${currentRole}', ${lIdx})` : `alert('Complete a lição anterior primeiro!')`}">
+                                    <div class="sub-bubble ${bubbleClass}" style="width: 60px; height: 60px; border-width: 4px;">${icon}</div>
+                                    <p style="font-weight:500">${lesson.title}</p>
+                                </div>
+                                <div></div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <button class="btn ghost" onclick="setStage('role-choice-lessons')">Voltar</button>
+                </div>
+            `;
+        }
 
-      const ci = document.getElementById('chat-input'),
-            hb = document.getElementById('hint-bubble'),
-            hbtn = document.getElementById('hint-btn'),
-            abtn = document.getElementById('audio-btn');
+        // 8) TELA FLASH CARD (ATUALIZADA)
+        function renderFlashcard(){
+            const lesson = getLesson();
+            
+            if (flashcardQueue.length === 0) {
+                // Se a fila estiver vazia, marca a lição como completa e volta
+                lesson.completed = true;
+                setStage('flashcard-selector'); 
+                return;
+            }
 
-      if (ci && hbtn && abtn && hb){
-        const hintText  = role==='A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
-        const hintAudio = role==='A' ? (conv.A[step]?.audio || '')    : (conv.B[step]?.audio || '');
-        hb.textContent = hintText;
+            // Pega o índice real do card na lista 'words' através do índice na fila
+            const realCardIndex = flashcardQueue[currentCardIndexInQueue]; 
+            const card = lesson.words[realCardIndex];
+            const remaining = flashcardQueue.length;
+            const max = lesson.words.length; // Tamanho total da lição (para fins de exibição)
+            const typeTitle = lessonTypes.find(t => t.id === lesson.type).title;
 
-        // Em dispositivos sem hover, o toggle por clique já funciona bem
-        hbtn.onmouseenter = () => { if (matchMedia('(hover: hover)').matches && hintText) hb.style.display = 'block'; };
-        hbtn.onmouseleave = () => { if (matchMedia('(hover: hover)').matches) hb.style.display = 'none'; };
-        hbtn.onclick = () => { hb.style.display = hb.style.display==='block' ? 'none' : 'block'; };
+            app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2 style="text-align:center;">${getScenario().name}</h2>
+                    <p style="text-align:center; color:#6b7280">${typeTitle} (${currentRole})</p>
+                    <div class="flashcard-container">
+                        <div class="flashcard-progress">Restantes: ${remaining} de ${max}</div>
+                        <div class="flashcard ${isFlashcardFlipped ? 'flipped' : ''}" onclick="flipCard()">
+                            <div class="card-inner">
+                                <div class="card-front">${card.word}</div>
+                                <div class="card-back">${card.translation}</div>
+                            </div>
+                        </div>
+                        
+                        ${isFlashcardFlipped ? `
+                            <div class="flashcard-nav" style="flex-direction: column; width: 100%; max-width: 400px; gap: 15px;">
+                                <button class="btn primary" style="background:var(--duo-green-dark);" onclick="markAsKnown()">✅ SEI (Remover da fila)</button>
+                                <button class="btn secondary" style="color:var(--duo-blue-dark);" onclick="markAsUnknown()">🔄 NÃO SEI (Repetir depois)</button>
+                            </div>
+                        ` : `
+                            <div class="flashcard-nav" style="width: 100%; max-width: 400px;">
+                                <button class="btn primary" onclick="flipCard()">REVELAR RESPOSTA</button>
+                            </div>
+                        `}
+                        
+                    </div>
+                    <button class="btn ghost" onclick="setStage('flashcard-selector')">Voltar às Lições</button>
+                </div>
+            `;
+        }
+        
+        // 9) TELA ESCOLHA DE PAPEL (Para a Conversa)
+        function renderRoles(){
+             app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2 style="text-align:center;margin-bottom:1rem">${getScenario().name} - Escolha seu Papel</h2>
+                    <div class="flex gap-md" style="flex-wrap:wrap">
+                        <button class="btn primary" style="flex:1 1 200px; background:var(--duo-blue-dark);" onclick="chooseRole('A')">Pessoa A (Ex: Scrum Master)</button>
+                        <button class="btn primary" style="flex:1 1 200px; background:var(--duo-green-dark);" onclick="chooseRole('B')">Pessoa B (Ex: Desenvolvedor)</button>
+                    </div>
+                    <button class="btn ghost" onclick="setStage('role-choice-lessons')">Voltar</button>
+                </div>`;
+        }
 
-        abtn.onclick = () => { if (hintAudio) playAudio(hintAudio); };
+        // 10) TELA DE CHAT
+        function renderChat(){
+            const conv = getConversation();
+            const finished = (role==='A' && step>=conv.A.length) || (role==='B' && step>=conv.B.length);
+            const hist = history.map(msg=>{
+                const a = msg.speaker===role ? 'flex-end' : 'flex-start';
+                const b = msg.speaker==='A' ? 'bubble-a' : 'bubble-b';
+                const au = msg.audio ? `<audio controls><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
+                const txt = `<span class="hidden-text" title="Clique para revelar" onclick="this.classList.toggle('revealed')">${msg.text}</span>`;
+                return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
+            }).join('');
 
-        ci.focus();
-        ci.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); send(); } };
-      }
-      scrollToBottom();
-    }
+            const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
+                <div class="input-group" style="margin-top:.5rem">
+                    <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
+                    <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala" aria-label="Mostrar dica">👁</button>
+                    <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala" aria-label="Ouvir próxima fala">🔊</button>
+                    <button class="btn primary" style="width:auto; flex: 0 0 auto" onclick="send()">Enviar</button>
+                    <div id="hint-bubble" class="hint-bubble"></div>
+                </div>`;
 
-    // 5) Ações
-    window.chooseConversation = i => { selectedConv=i; step=0; history=[]; stage='role'; render(); };
-    window.chooseRole = r => {
-      role=r; stage='chat';
-      if (r==='B'){
-        const first = conversationData.conversas[selectedConv].A[0];
-        pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
-        step=0;
-      }
-      render();
-    };
-    window.setStage = s => { stage=s; render(); };
-    window.send = () => {
-      const i = document.getElementById('chat-input');
-      if (!i || !i.value.trim()) return;
-      const t = i.value.trim();
-      const co = conversationData.conversas[selectedConv];
-      const ul = role==='A' ? co.A[step] : co.B[step];
-      pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
+            app.innerHTML = `
+                <div class="card" style="margin-top:20px;">
+                    <h2>${getScenario().name} - Simulação de Conversa</h2>
+                    <div id="chat-scroll" class="chat-scroll">${hist}</div>
+                    ${inp}
+                    <div class="toolbar">
+                        <button class="btn secondary" onclick="setStage('role-choice-lessons')">📚 Voltar ao Cenário</button>
+                        <button class="btn secondary" onclick="playFullScript()">🎧 Tocar roteiro</button>
+                        <button class="btn secondary" onclick="revealAll()">👁️ Revelar tudo</button>
+                        <button class="btn secondary" onclick="hideAll()">🙈 Ocultar tudo</button>
+                    </div>
+                </div>`;
 
-      const rl = role==='A' ? co.B[step] : co.A[step+1];
-      if (rl) pushMessage({ speaker: role==='A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio });
+            const ci = document.getElementById('chat-input'),
+                hb = document.getElementById('hint-bubble'),
+                hbtn = document.getElementById('hint-btn'),
+                abtn = document.getElementById('audio-btn');
 
-      step++;
-      if ((role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length)){
-        localStorage.setItem(`rev_${co.title}`, new Date().toISOString());
-      }
-      render();
-    };
+            if (ci && hbtn && abtn && hb){
+                const hintText = role==='A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
+                const hintAudio = role==='A' ? (conv.A[step]?.audio || '') : (conv.B[step]?.audio || '');
+                hb.textContent = hintText;
 
-    // Init
-    render();
-  </script>
+                hbtn.onmouseenter = () => { if (matchMedia('(hover: hover)').matches && hintText) hb.style.display = 'block'; };
+                hbtn.onmouseleave = () => { if (matchMedia('(hover: hover)').matches) hb.style.display = 'none'; };
+                hbtn.onclick = () => { hb.style.display = hb.style.display==='block' ? 'none' : 'block'; };
+
+                abtn.onclick = () => { if (hintAudio) playAudio(hintAudio); };
+
+                ci.focus();
+                ci.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); send(); } };
+            }
+            scrollToBottom();
+        }
+
+        // 11) Ações (Navegação e Lógica)
+        
+        window.setStage = (s, dIdx = currentDayIndex, sIdx = currentScenarioIndex, r = currentRole) => {
+            stage=s;
+            currentDayIndex = dIdx;
+            currentScenarioIndex = sIdx;
+            currentRole = r; 
+            
+            if (s !== 'chat'){ step=0; history=[]; }
+            if (s === 'day-scenarios') currentScenarioIndex = null;
+            if (s === 'role-choice-lessons') currentRole = null; 
+            
+            render();
+        };
+
+        // NOVO: startFlashcardLesson inicializa a fila
+        window.startFlashcardLesson = (dIdx, sIdx, roleKey, lIdx) => {
+            currentDayIndex = dIdx;
+            currentScenarioIndex = sIdx;
+            currentRole = roleKey;
+            currentLessonIndex = lIdx;
+            
+            // 1. Inicializa a fila com os índices de 0 a N-1 dos cards da lição
+            const lesson = courseStructure[dIdx].scenarios[sIdx].lessons[roleKey][lIdx];
+            flashcardQueue = lesson.words.map((_, index) => index); 
+            currentCardIndexInQueue = 0;
+            isFlashcardFlipped = false;
+            
+            setStage('flashcard');
+        };
+
+        // NOVO: marca como SABIDO e remove da fila
+        window.markAsKnown = () => {
+            // Remove o card atual da fila
+            flashcardQueue.splice(currentCardIndexInQueue, 1);
+            
+            // Se a fila ainda não estiver vazia, move o ponteiro para a próxima posição
+            // O operador % garante que o índice volte para 0 se o anterior era o último
+            if (flashcardQueue.length > 0) {
+                currentCardIndexInQueue = currentCardIndexInQueue % flashcardQueue.length;
+            }
+
+            isFlashcardFlipped = false;
+            render();
+        };
+
+        // NOVO: marca como NÃO SABIDO e joga para o final da fila
+        window.markAsUnknown = () => {
+            // Remove o card atual e guarda seu ID
+            const cardId = flashcardQueue.splice(currentCardIndexInQueue, 1)[0];
+            // Joga o ID do card para o final da fila
+            flashcardQueue.push(cardId);
+            
+            // O ponteiro (currentCardIndexInQueue) permanece na mesma posição, agora apontando para o item que foi 'empurrado' para frente
+            currentCardIndexInQueue = currentCardIndexInQueue % flashcardQueue.length;
+
+            isFlashcardFlipped = false;
+            render();
+        };
+
+        window.startLessonConversation = (dIdx, sIdx) => {
+            currentDayIndex = dIdx;
+            currentScenarioIndex = sIdx;
+            currentRole = 'C';
+            currentLessonIndex = 0;
+            
+            setStage('role'); 
+        };
+
+        window.flipCard = () => {
+            isFlashcardFlipped = !isFlashcardFlipped;
+            render();
+        };
+
+        window.chooseRole = r => {
+            role=r; setStage('chat');
+            const conv = getConversation();
+            if (r==='B'){
+                const first = conv.A[0];
+                pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
+                step=0;
+            } else {
+                step=0;
+            }
+            render();
+        };
+        
+        window.send = () => {
+            const i = document.getElementById('chat-input');
+            if (!i || !i.value.trim()) return;
+
+            const t = i.value.trim();
+            const co = getConversation();
+            
+            const ul = role==='A' ? co.A[step] : co.B[step];
+            pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
+
+            const nextSpeaker = role==='A' ? 'B' : 'A';
+            const rl = role==='A' ? co.B[step] : co.A[step+1];
+            if (rl) pushMessage({ speaker: nextSpeaker, text: rl.pergunta || rl.resposta, audio: rl.audio });
+
+            step++;
+            i.value = '';
+
+            const finished = (role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length);
+            if (finished) {
+                getScenario().lessons.C[0].completed = true; 
+                setTimeout(render, 500);
+            } else {
+                 render();
+            }
+        };
+
+        const playFullScript = async () => {
+            const conv = getConversation();
+            if (!conv) return;
+            const maxLen = Math.max(conv.A.length, conv.B.length);
+            for (let i=0;i<maxLen;i++){
+                if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
+                if (conv.B[i]?.audio) await playSequential(conv.B[i].audio);
+            }
+        };
+        const playSequential = src => new Promise(res=>{
+            player.onended = () => res();
+            player.onerror = () => res();
+            try{ player.src = src; player.play().catch(()=>res()); }catch{ res(); }
+        });
+
+
+        // Init
+        render();
+    </script>
 </body>
 </html>

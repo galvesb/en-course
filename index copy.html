@@ -1,0 +1,410 @@
+<!-- index.html — Chat Simulator (conversa oculta + botão único “Tocar roteiro”) -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Chat Simulator</title>
+  <style>
+    /* ====== Base / Theme ====== */
+    :root{
+      --blue:#93c5fd; --green:#86efac; --gray-bg:#f3f4f6; --gray-border:#d1d5db; --primary:#2563eb;
+      --rev-red:#f87171; --rev-yellow:#fbbf24;
+      /* fonte fluida entre 16–18px */
+      --font-base: clamp(16px, 2.5vw, 18px);
+      --radius: 1rem;
+      --shadow: 0 4px 12px rgba(0,0,0,.1);
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left: env(safe-area-inset-left);
+      --safe-right: env(safe-area-inset-right);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body{
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-size: var(--font-base);
+      background: var(--gray-bg);
+      min-height: 100vh;
+    }
+
+    body{
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: clamp(12px, 3.5vw, 32px);
+      padding-top: calc(clamp(12px, 3.5vw, 32px) + var(--safe-top));
+      padding-bottom: calc(clamp(12px, 3.5vw, 32px) + var(--safe-bottom));
+      padding-left: calc(clamp(12px, 3.5vw, 32px) + var(--safe-left));
+      padding-right: calc(clamp(12px, 3.5vw, 32px) + var(--safe-right));
+    }
+
+    .card{
+      background:#fff; width:100%; max-width: 800px;
+      padding: clamp(16px, 3.5vw, 32px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display:flex; flex-direction:column;
+    }
+
+    h2{ font-size: clamp(1.125rem, 3.5vw, 1.5rem); margin: 0 0 1rem 0; }
+
+    /* ====== Buttons & Inputs ====== */
+    .btn{
+      width:100%;
+      padding: clamp(12px, 3.2vw, 14px) clamp(16px, 3.5vw, 20px);
+      margin-top:.75rem; border:0; border-radius: .75rem;
+      font-weight:600; cursor:pointer; text-align:center; font-size: 1rem;
+      transition: filter .15s ease, transform .02s ease;
+      touch-action: manipulation;
+    }
+    .btn:active{ transform: scale(.99); }
+    .btn.primary{ background: var(--primary); color:#fff; }
+    .btn.secondary{ background:#e5e7eb; color:#111827; }
+    .btn.ghost{ background:transparent; color:var(--primary); }
+
+    input[type=text]{
+      flex:1; padding: .85rem .9rem; font-size:1rem;
+      border:1px solid var(--gray-border); border-radius:.75rem; outline: none;
+      min-width: 0; /* evita overflow em flex */
+    }
+
+    .flex{ display:flex; }
+    .gap-md{ gap: 1rem; }
+
+    .search-box{ margin-bottom: 1rem; }
+
+    .hint-btn, .audio-btn{
+      background: transparent; border: none; cursor: pointer;
+      font-size: 1.5rem; padding: 0 .5rem; line-height: 1; height: 44px;
+    }
+
+    .input-group{
+      position: relative; display:flex; align-items:center; width:100%;
+      gap:.5rem; margin-bottom: .75rem; flex-wrap: wrap; /* empilha no mobile */
+    }
+
+    .hint-bubble{
+      position: absolute; right: 0; bottom: calc(100% + 8px);
+      background:#111827; color:#fff; padding:.5rem .75rem; border-radius:.5rem;
+      font-size:.95rem; white-space:pre-wrap; display:none; max-width: min(92vw, 420px); z-index:10;
+    }
+    .hint-bubble::after{
+      content:''; position:absolute; bottom:-8px; right:12px; border-width:8px 8px 0 8px;
+      border-style:solid; border-color:#111827 transparent transparent transparent;
+    }
+
+    .legend{ font-size:.95rem; color:#4b5563; margin: .25rem 0 .5rem; }
+
+    .toolbar{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .75rem; margin-top:.25rem;
+    }
+    .toolbar .btn{ margin-top:0; }
+
+    /* ====== Chat ====== */
+    .chat-scroll{
+      flex:1; max-height: min(60vh, 520px); /* mais responsivo */
+      overflow-y:auto; margin-bottom: 1rem; padding-right: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chat-bubble{
+      max-width: 85%; /* bolhas mais largas em telas pequenas */
+      padding: 1rem; border-radius: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      font-size: 1rem; line-height: 1.45; margin: .25rem 0;
+      word-wrap: break-word; overflow-wrap: anywhere;
+    }
+    .bubble-a{ background: var(--blue); color:#000; }
+    .bubble-b{ background: var(--green); color:#000; }
+
+    .hidden-text{ filter: blur(8px); cursor: pointer; transition: filter 160ms ease; user-select: none; }
+    .hidden-text.revealed{ filter: none; user-select: text; }
+
+    audio{ width:100%; margin-top:.5rem; }
+
+    /* ====== Larger screens ====== */
+    @media (min-width: 640px){
+      .chat-bubble{ max-width: 70%; }
+      .toolbar{ grid-template-columns: repeat(4, 1fr); }
+      .chat-scroll{ max-height: 500px; }
+      .input-group{ flex-wrap: nowrap; }
+    }
+
+    /* ====== Very small phones ====== */
+    @media (max-width: 360px){
+      .hint-btn, .audio-btn{ height: 40px; }
+      .btn{ font-size: .95rem; }
+    }
+
+    /* ====== Reduce motion ====== */
+    @media (prefers-reduced-motion: reduce){
+      .hidden-text{ transition: none; }
+      .btn{ transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="card"></div>
+
+  <script>
+    // 1) DADOS — TODAS AS CONVERSAS ORIGINAIS
+    const conversationData = {
+      conversas: [
+        // ************ Entrevistas
+        {
+          title: '[Entrevista] comportamental',
+          A: [
+            { id: '1', pergunta: 'Hi Guilherme, it’s great to meet you! Can you hear and see me okay?', audio: 'audio/behavioral-interview/1.mp3' },
+            { id: '2', pergunta: 'Perfect. I’m really glad we could connect. Just to give you a quick idea this will be about a 45 minute chat. I’ll ask a few background questions, then some behavioral ones, and we’ll finish with your questions. Sound good?', audio: 'audio/behavioral-interview/3.mp3' },
+            { id: '3', pergunta: "Can you tell me about yourself and your professional background? let's start with the company luizalabs.", audio: 'audio/behavioral-interview/5.mp3' },
+            { id: '4', pergunta: "tell me about everis.", audio: 'audio/behavioral-interview/7.mp3' },
+            { id: '5', pergunta: "tell me about tembici.", audio: 'audio/behavioral-interview/9.mp3' },
+            { id: '6', pergunta: "tell me about Santander bank.", audio: 'audio/behavioral-interview/11.mp3' },
+            { id: '7', pergunta: "Why are you looking for new opportunities?", audio: 'audio/behavioral-interview/13.mp3' },
+            { id: '8', pergunta: "Can you tell me about a time when you faced a significant challenge in a project, and how you handled it?", audio: 'audio/behavioral-interview/15.mp3' },
+            { id: '9', pergunta: "Tell me about a time you received critical feedback. How did you handle it?", audio: 'audio/behavioral-interview/17.mp3' },
+            { id: '10', pergunta: "Thanks again, Guilherme! You’ve shared some really strong examples we’ll be in touch soon after reviewing internally.", audio: 'audio/behavioral-interview/19.mp3' },
+          ],
+          B: [
+            { id: '1', resposta: 'Hi! Yes, everything’s working fine. Thanks for having me today.', audio: 'audio/behavioral-interview/2.mp3' },
+            { id: '2', resposta: 'Absolutely, sounds good.', audio: 'audio/behavioral-interview/4.mp3' },
+            { id: '3', resposta: 'I’m currently a Senior Software Developer at Luizalabs, where I focus on backend solutions using Python with FastAPI, MongoDB, Kafka, Kubernetes and ArgoCD. In this role, I’ve had the opportunity to worked on back-office applications that manage sellers and leads interested in selling on Magazine Luiza, a major retail company in Brazil. One of my main contributions here was building a risk analysis system that replaced an external legacy system, saving R$200,000 per year.', audio: 'audio/behavioral-interview/6.mp3' },
+            { id: '4', resposta: 'Before Luizalabs, I worked as a Mid-level Software Engineer at Everis, where I worked on B2B product team for ambev. There, I worked with Python, Django, Postgres, RabbitMQ and AWS.', audio: 'audio/behavioral-interview/8.mp3' },
+            { id: '5', resposta: 'before everis, I worked as a Mid-level Software Engineer at Tembici, where I worked on the IFood Pedal project, a bike rental app with over 18,000 delivery drivers.,The project won the Innovation of the Year award. There, I worked with Python, Django, Postgres, Celery and AWS', audio: 'audio/behavioral-interview/10.mp3' },
+            { id: '6', resposta: 'Finally, I started my career at Santander Bank as an Entry-Level Software Developer, working on both backend Python, Flask, React for payment team.', audio: 'audio/behavioral-interview/12.mp3' },
+            { id: '7', resposta: "I'm looking for a place where I can work in English daily and work with people from all over the world.", audio: 'audio/behavioral-interview/14.mp3' },
+            { id: '8', resposta: "One project where I faced a significant challenge was building a risk analysis tools for sellers at Luizalabs. The project was challenging because the legacy system had no proper documentation, and the new risk analysis API was being developed in parallel with the frontend. I handled this by leading daily meetings to align both frontend and backend teams and ensuring new documentation was up to date", audio: 'audio/behavioral-interview/14.mp3' },
+            { id: '9', resposta: "At Santander, I received feedback from my tech lead that my code were too complex and hard to maintain. Instead of getting defensive, I asked for guidance and took the opportunity to refactor my code. I rewrote the code to be cleaner and easier to understand.", audio: 'audio/behavioral-interview/18.mp3' },
+            { id: '10', resposta: "Thank you! I really appreciate your time.", audio: 'audio/behavioral-interview/20.mp3' },
+          ]
+        },
+
+        // ************** dia a dia dev
+        {
+          title: "[Scenario Dev day] 1 Daily Standup",
+          A: [
+            { id: "1", pergunta: "Good morning, team! Let’s start with you, Guilherme.", audio: "audio/scenario-dev-day-1-daily-standup/1.mp3" },
+            { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
+            { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
+          ],
+          B: [
+            { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
+            { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
+            { id: "3", resposta: "Perfect, thanks!", audio: "audio/scenario-dev-day-1-daily-standup/6.mp3" }
+          ]
+        },
+        {
+          title: "[Scenario dev day] 2 Code Pairing Session",
+          A: [
+            { id: "1", pergunta: "Can you explain why you used recursion here?", audio: "audio/scenario-dev-day-2-code-pairing-session/1.mp3" },
+            { id: "2", pergunta: "Would iteration work better for performance?", audio: "audio/scenario-dev-day-2-code-pairing-session/3.mp3" },
+            { id: "3", pergunta: "Let’s benchmark both approaches together.", audio: "audio/scenario-dev-day-2-code-pairing-session/5.mp3" }
+          ],
+          B: [
+            { id: "1", resposta: "Sure, it simplifies traversing nested structures.", audio: "audio/scenario-dev-day-2-code-pairing-session/2.mp3" },
+            { id: "2", resposta: "Possibly, I can refactor it to test.", audio: "audio/scenario-dev-day-2-code-pairing-session/4.mp3" },
+            { id: "3", resposta: "Sounds like a plan!", audio: "audio/scenario-dev-day-2-code-pairing-session/6.mp3" }
+          ]
+        },
+        {
+          title: "[Scenario dev day] 3 Sprint Planning",
+          A: [
+            { id: "1", pergunta: "This feature has top priority for the next sprint.", audio: "audio/scenario-dev-day-3-sprint-planning/1.mp3" },
+            { id: "2", pergunta: "Will that take much time to implement?", audio: "audio/scenario-dev-day-3-sprint-planning/3.mp3" },
+            { id: "3", pergunta: "Let’s allocate some buffer time.", audio: "audio/scenario-dev-day-3-sprint-planning/5.mp3" }
+          ],
+          B: [
+            { id: "1", resposta: "Got it. It needs changes in the database schema.", audio: "audio/scenario-dev-day-3-sprint-planning/2.mp3" },
+            { id: "2", resposta: "Around two days including testing.", audio: "audio/scenario-dev-day-3-sprint-planning/4.mp3" },
+            { id: "3", resposta: "Agreed, better to be safe.", audio: "audio/scenario-dev-day-3-sprint-planning/6.mp3" }
+          ]
+        },
+        {
+          title: "[Scenario dev day] 4 Code Review Feedback",
+          A: [
+            { id: "1", pergunta: "I noticed you didn’t add unit tests for this function.", audio: "audio/scenario-dev-day-4-code-review-feedback/1.mp3" },
+            { id: "2", pergunta: "Could you also handle null inputs here?", audio: "audio/scenario-dev-day-4-code-review-feedback/3.mp3" },
+            { id: "3", pergunta: "Great. Please push the changes before tomorrow’s build.", audio: "audio/scenario-dev-day-4-code-review-feedback/5.mp3" }
+          ],
+          B: [
+            { id: "1", resposta: "You’re right, I’ll write the tests now.", audio: "audio/scenario-dev-day-4-code-review-feedback/2.mp3" },
+            { id: "2", resposta: "Good point, I’ll add a check for that.", audio: "audio/scenario-dev-day-4-code-review-feedback/4.mp3" },
+            { id: "3", resposta: "Will do, thanks for the feedback.", audio: "audio/scenario-dev-day-4-code-review-feedback/6.mp3" }
+          ]
+        },
+        {
+          title: "[Scenario dev day] 5 Debugging Production Issue",
+          A: [
+            { id: "1", pergunta: "We just got an alert about high error rates in production.", audio: "audio/scenario-dev-day-5-debugging-production-issue/1.mp3" },
+            { id: "2", pergunta: "Can you check the logs and see what’s going on?", audio: "audio/scenario-dev-day-5-debugging-production-issue/3.mp3" },
+            { id: "3", pergunta: "Thanks. Let’s roll out a fix as soon as possible.", audio: "audio/scenario-dev-day-5-debugging-production-issue/5.mp3" }
+          ],
+          B: [
+            { id: "1", resposta: "Okay, I’ll take a look right now.", audio: "audio/scenario-dev-day-5-debugging-production-issue/2.mp3" },
+            { id: "2", resposta: "Looks like a null pointer issue after the last deployment.", audio: "audio/scenario-dev-day-5-debugging-production-issue/4.mp3" },
+            { id: "3", resposta: "On it. I’ll patch the bug and push the update.", audio: "audio/scenario-dev-day-5-debugging-production-issue/6.mp3" }
+          ]
+        }
+      ]
+    };
+
+    // 2) ESTADO E UTILIDADES
+    let stage='titles', selectedConv=null, role=null, step=0, history=[], searchTerm='';
+    const app = document.getElementById('app');
+    const player = new Audio();
+
+    const scrollToBottom = () => {
+      const b = document.getElementById('chat-scroll');
+      if (b) b.scrollTop = b.scrollHeight;
+    };
+    const playAudio = src => { if(!src) return; try{ player.pause(); player.currentTime=0; player.src=src; player.play(); }catch{} };
+    const pushMessage = msg => { history.push(msg); if(msg.audio) playAudio(msg.audio); };
+    const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.add('revealed'));
+    const hideAll   = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.remove('revealed'));
+
+    // 3) REPRODUZIR ROTEIRO (A1, B1, A2, B2...)
+    const playFullScript = async () => {
+      const conv = conversationData.conversas[selectedConv];
+      if (!conv) return;
+      const maxLen = Math.max(conv.A.length, conv.B.length);
+      for (let i=0;i<maxLen;i++){
+        if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
+        if (conv.B[i]?.audio) await playSequential(conv.B[i].audio);
+      }
+    };
+    const playSequential = src => new Promise(res=>{
+      player.onended = () => res();
+      player.onerror = () => res();
+      try{ player.src = src; player.play().catch(()=>res()); }catch{ res(); }
+    });
+
+    // 4) RENDERIZAÇÃO
+    const render = () => { if (stage==='titles') return renderTitles(); if (stage==='role') return renderRoles(); return renderChat(); };
+
+    function renderTitles(){
+      app.innerHTML = `
+        <h2 style="text-align:center;margin-bottom:1rem">Escolha um Cenário</h2>
+        <div class="search-box flex gap-md">
+          <input id="search-input" type="text" placeholder="Buscar…" value="${searchTerm}" />
+        </div>
+        <div id="scenario-list"></div>`;
+      document.getElementById('search-input').addEventListener('input', e=>{ searchTerm=e.target.value; renderScenarioList(); });
+      renderScenarioList();
+      document.getElementById('search-input').focus();
+    }
+
+    function renderScenarioList(){
+      const list = document.getElementById('scenario-list');
+      const filtered = conversationData.conversas.filter(c=>c.title.toLowerCase().includes(searchTerm.toLowerCase()));
+      list.innerHTML = filtered.length
+        ? filtered.map(c=>{
+            const originalIdx = conversationData.conversas.indexOf(c);
+            return `<button class="btn primary" onclick="chooseConversation(${originalIdx})">${c.title}</button>`;
+          }).join('')
+        : `<p style="text-align:center;color:#6b7280">Nenhum cenário encontrado</p>`;
+    }
+
+    function renderRoles(){
+      app.innerHTML = `
+        <h2 style="text-align:center;margin-bottom:1rem">Quem você quer ser?</h2>
+        <div class="flex gap-md" style="flex-wrap:wrap">
+          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('A')">Pessoa A</button>
+          <button class="btn primary" style="flex:1 1 200px" onclick="chooseRole('B')">Pessoa B</button>
+        </div>
+        <button class="btn ghost" onclick="setStage('titles')">Voltar</button>`;
+    }
+
+    function renderChat(){
+      const conv = conversationData.conversas[selectedConv];
+      const finished = (role==='A' && step>=conv.A.length) || (role==='B' && step>=conv.B.length);
+      const hist = history.map(msg=>{
+        const a = msg.speaker===role ? 'flex-end' : 'flex-start';
+        const b = msg.speaker==='A' ? 'bubble-a' : 'bubble-b';
+        const au = msg.audio ? `<audio controls><source src="${msg.audio}" type="audio/mpeg"></audio>` : '';
+        const txt = `<span class="hidden-text" title="Clique para revelar" onclick="this.classList.toggle('revealed')">${msg.text}</span>`;
+        return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
+      }).join('');
+
+      const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
+        <div class="legend">Dica: as falas ficam <strong>ocultas</strong>. Toque para revelar. Você também pode usar os botões abaixo.</div>
+        <div class="input-group" style="margin-top:.5rem">
+          <input id="chat-input" type="text" placeholder="Digite e tecle Enter…" />
+          <button id="hint-btn" class="hint-btn" title="Mostrar sugestão da próxima fala" aria-label="Mostrar dica">👁</button>
+          <button id="audio-btn" class="audio-btn" title="Ouvir a próxima fala" aria-label="Ouvir próxima fala">🔊</button>
+          <button class="btn primary" style="width:auto; flex: 0 0 auto" onclick="send()">Enviar</button>
+          <div id="hint-bubble" class="hint-bubble"></div>
+        </div>`;
+
+      app.innerHTML = `
+        <div id="chat-scroll" class="chat-scroll">${hist}</div>
+        ${inp}
+        <div class="toolbar">
+          <button class="btn secondary" onclick="playFullScript()">🎧 Tocar roteiro</button>
+          <button class="btn secondary" onclick="revealAll()">👁️ Revelar tudo</button>
+          <button class="btn secondary" onclick="hideAll()">🙈 Ocultar tudo</button>
+          <button class="btn secondary" onclick="setStage('titles')">📚 Novo Cenário</button>
+        </div>`;
+
+      const ci = document.getElementById('chat-input'),
+            hb = document.getElementById('hint-bubble'),
+            hbtn = document.getElementById('hint-btn'),
+            abtn = document.getElementById('audio-btn');
+
+      if (ci && hbtn && abtn && hb){
+        const hintText  = role==='A' ? (conv.A[step]?.pergunta || '') : (conv.B[step]?.resposta || '');
+        const hintAudio = role==='A' ? (conv.A[step]?.audio || '')    : (conv.B[step]?.audio || '');
+        hb.textContent = hintText;
+
+        // Em dispositivos sem hover, o toggle por clique já funciona bem
+        hbtn.onmouseenter = () => { if (matchMedia('(hover: hover)').matches && hintText) hb.style.display = 'block'; };
+        hbtn.onmouseleave = () => { if (matchMedia('(hover: hover)').matches) hb.style.display = 'none'; };
+        hbtn.onclick = () => { hb.style.display = hb.style.display==='block' ? 'none' : 'block'; };
+
+        abtn.onclick = () => { if (hintAudio) playAudio(hintAudio); };
+
+        ci.focus();
+        ci.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); send(); } };
+      }
+      scrollToBottom();
+    }
+
+    // 5) Ações
+    window.chooseConversation = i => { selectedConv=i; step=0; history=[]; stage='role'; render(); };
+    window.chooseRole = r => {
+      role=r; stage='chat';
+      if (r==='B'){
+        const first = conversationData.conversas[selectedConv].A[0];
+        pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
+        step=0;
+      }
+      render();
+    };
+    window.setStage = s => { stage=s; render(); };
+    window.send = () => {
+      const i = document.getElementById('chat-input');
+      if (!i || !i.value.trim()) return;
+      const t = i.value.trim();
+      const co = conversationData.conversas[selectedConv];
+      const ul = role==='A' ? co.A[step] : co.B[step];
+      pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
+
+      const rl = role==='A' ? co.B[step] : co.A[step+1];
+      if (rl) pushMessage({ speaker: role==='A' ? 'B' : 'A', text: rl.pergunta || rl.resposta, audio: rl.audio });
+
+      step++;
+      if ((role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length)){
+        localStorage.setItem(`rev_${co.title}`, new Date().toISOString());
+      }
+      render();
+    };
+
+    // Init
+    render();
+  </script>
+</body>
+</html>
