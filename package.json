@@ -1,0 +1,26 @@
+{
+  "name": "typing-speed-game-main",
+  "version": "1.0.0",
+  "description": "",
+  "main": "conversationData.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/galvesb/en-course.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/galvesb/en-course/issues"
+  },
+  "homepage": "https://github.com/galvesb/en-course#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongoose": "^9.0.0"
+  }
+}
