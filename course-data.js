@@ -4,7 +4,7 @@
 window.courseStructureStatic = [
   { 
     "id": 1, 
-    "title": "Dia 1: Introdução ao Time",
+    "title": "Dia 1",
     "scenarios": [
       { 
         "id": 1, 

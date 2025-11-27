@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>DevSpeak - Inglês para Devs (Cenários)</title>
     <style>
-        /* ====== CSS: Estilos da Aplicação (Omitido por brevidade, mantém o mesmo) ====== */
+        /* ====== CSS: Estilos da Aplicação ====== */
         
         /* Base / Theme Duolingo-style */
         :root{
@@ -180,6 +180,12 @@
             transition: transform 0.1s ease;
         }
         .main-bubble:hover { transform: scale(1.05); }
+        /* CORREÇÃO APLICADA AQUI: */
+        .main-bubble.completed {
+            background: var(--gray-border) !important;
+            border-color: #9ca3af !important;
+            color: #4b5563 !important;
+        }
 
         /* Bolhas de Cenário e Sub-Lição */
         .scenario-bubble, .sub-bubble {
@@ -378,11 +384,10 @@
         const app = document.getElementById('app');
         const player = new Audio();
         
-        // NOVO: Função para carregar dados das variáveis globais estáticas (Substitui o fetch e o JSON.parse do <script>)
+        // NOVO: Função para carregar dados das variáveis globais estáticas 
         function loadDataFromStaticJS() {
-            // Verifica se as variáveis globais foram carregadas pelos scripts externos
             if (!window.lessonDataStatic || !window.courseStructureStatic) {
-                throw new Error("Dados estáticos não encontrados. Certifique-se de que 'lessons-data.js' e 'course-data.js' estão na mesma pasta e carregados corretamente.");
+                throw new Error("Dados estáticos não encontrados.");
             }
             
             // Atribui e faz cópias profundas para garantir que o estado inicial seja limpo
@@ -411,12 +416,16 @@
                 if (courseStructure[dIdx] && courseStructure[dIdx].id === savedDay.id) {
                     savedDay.scenarios.forEach((savedScenario, sIdx) => {
                         if (courseStructure[dIdx].scenarios[sIdx] && courseStructure[dIdx].scenarios[sIdx].id === savedScenario.id) {
+                            
+                            // Restaura o status 'completed' do CENÁRIO no objeto em memória
                             courseStructure[dIdx].scenarios[sIdx].completed = savedScenario.completed;
+                            
                             ['A', 'B', 'C'].forEach(roleKey => {
                                 const lessons = courseStructure[dIdx].scenarios[sIdx].lessons[roleKey];
                                 const savedLessons = savedScenario.lessons[roleKey];
 
                                 if (lessons && savedLessons) {
+                                    // Restaura o status 'completed' de CADA SUB-LIÇÃO no objeto em memória
                                     lessons.forEach((lesson, lIdx) => {
                                         if (savedLessons[lIdx] && lesson.id === savedLessons[lIdx].id) {
                                             lesson.completed = savedLessons[lIdx].completed;
@@ -445,6 +454,7 @@
         };
 
         const saveProgress = () => {
+            // Salva apenas a estrutura de curso com o status de conclusão
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(courseStructure));
         };
         
@@ -506,7 +516,7 @@
         };
 
 
-        // 3) RENDERIZAÇÃO PRINCIPAL (Inalterada)
+        // 3) RENDERIZAÇÃO PRINCIPAL
         const render = () => {
              if (courseStructure.length === 0) { return; }
             
@@ -522,24 +532,37 @@
             return renderChat();
         };
 
-        // 4) TELA MAPA
+        // 4) TELA MAPA (CORRIGIDA)
         function renderMap(){
             app.innerHTML = `<div id="map-container"><div class="day-path"></div></div>`;
             const path = document.querySelector('.day-path');
 
             path.innerHTML = courseStructure.map((day, dIdx) => {
                  const dayIcon = '📚'; 
+                 
+                 // [LÓGICA CORRIGIDA] Verifica se TODOS os cenários do dia estão completos
+                 // O status 'completed' do cenário é atualizado em renderDayScenarios
+                 const allScenariosCompleted = day.scenarios.every(s => s.completed);
+                 const statusClass = allScenariosCompleted ? 'completed' : 'active';
+                 
+                 // Aplica o estilo cinza (completed) ou verde (active)
+                 const bubbleColor = allScenariosCompleted ? 'var(--gray-border)' : 'var(--duo-green-dark)';
+                 const borderColor = allScenariosCompleted ? '#9ca3af' : 'var(--duo-green-light)';
+                 const textColor = allScenariosCompleted ? '#4b5563' : '#fff';
 
                  return `
                     <div class="day-node" onclick="setStage('day-scenarios', ${dIdx})">
-                        <div class="main-bubble">${dayIcon}</div>
+                        <div class="main-bubble ${statusClass}" 
+                             style="background:${bubbleColor}; border-color:${borderColor}; color:${textColor};">
+                            ${dayIcon}
+                        </div>
                         <p style="font-weight:600">${day.title}</p>
                     </div>
                 `;
             }).join(`<div></div>`);
         }
 
-        // 5) TELA DE CENÁRIOS DO DIA
+        // 5) TELA DE CENÁRIOS DO DIA (CORRIGIDA)
         function renderDayScenarios() {
             const day = courseStructure[currentDayIndex];
             
@@ -549,19 +572,20 @@
                     <div id="scenarios-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
                         ${day.scenarios.map((scenario, sIdx) => {
                             const lessons = scenario.lessons;
-                            const hasLessons = lessons && lessons.A && lessons.B && lessons.C;
                             
+                            // 1. CHECA STATUS DE CONCLUSÃO DO CENÁRIO
                             let allLessonsCompleted = false;
 
-                            if (hasLessons) {
+                            if (lessons && lessons.A && lessons.B && lessons.C) {
+                                // Um cenário é completo se todas as sub-lições (A, B e C) forem completas
                                 allLessonsCompleted = lessons.A.every(l => l.completed) && 
                                                       lessons.B.every(l => l.completed) && 
                                                       lessons.C[0]?.completed;
                             } else {
-                                console.warn(`Cenário ${scenario.name} não tem estrutura de lições válida.`);
                                 allLessonsCompleted = scenario.completed; 
                             }
                             
+                            // [IMPORTANTE] Atualiza o status do cenário no objeto principal (para persistência no LocalStorage e renderMap)
                             scenario.completed = allLessonsCompleted; 
                             
                             const statusClass = allLessonsCompleted ? 'completed' : 'active';
@@ -580,6 +604,11 @@
                 </div>
             `;
             saveProgress();
+            
+            // Força o re-render do mapa para atualizar cores do Dia, caso o último cenário tenha sido completado
+            if (stage === 'day-scenarios' && day.scenarios.every(s => s.completed)) {
+                setTimeout(render, 100); 
+            }
         }
 
 
@@ -617,7 +646,7 @@
                         
                         <div class="day-node" onclick="setStage('flashcard-selector', ${currentDayIndex}, ${currentScenarioIndex}, 'A')" style="cursor:pointer">
                             <div class="sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}" 
-                                style="width: 80px; height: 80px; font-size: 2rem;">👤 A</div>
+                                style="width: 80px; height: 80px; font-size: 2rem;">👤</div>
                             <p style="font-weight:600">Pessoa A (Introdução/Perguntas)</p>
                             <p style="margin: 0; color:#6b7280; font-size:.9rem">${allRoleALessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
                         </div>
@@ -625,7 +654,7 @@
 
                         <div class="day-node" onclick="setStage('flashcard-selector', ${currentDayIndex}, ${currentScenarioIndex}, 'B')" style="cursor:pointer">
                             <div class="sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}" 
-                                style="width: 80px; height: 80px; font-size: 2rem;">👤 B</div>
+                                style="width: 80px; height: 80px; font-size: 2rem;">👤</div>
                             <p style="font-weight:600">Pessoa B (Respostas/Status)</p>
                             <p style="margin: 0; color:#6b7280; font-size:.9rem">${allRoleBLessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
                         </div>
@@ -830,7 +859,7 @@
             scrollToBottom();
         }
 
-        // 11) Ações (Navegação e Lógica) (Inalteradas)
+        // 11) Ações (Navegação e Lógica)
         
         window.setStage = (s, dIdx = currentDayIndex, sIdx = currentScenarioIndex, r = currentRole) => {
             stage=s;
@@ -924,7 +953,9 @@
             const ul = conversationScript[step];
 
             if (!ul) {
-                getScenario().lessons.C[0].completed = true; 
+                // Marca a lição de conversa como completa ao final
+                const lesson = getLesson();
+                if (lesson) lesson.completed = true; 
                 saveProgress(); 
                 render(); 
                 return;
@@ -984,18 +1015,19 @@
         });
 
 
-        // 12) INICIALIZAÇÃO AGORA SINCRONA
+        // 12) INICIALIZAÇÃO
         
         function initializeApp() {
             try {
                 // 1. CARREGA OS DADOS DAS VARIÁVEIS GLOBAIS
                 let fetchedCourseStructure = loadDataFromStaticJS();
                 
-                // 2. Mesclar as lições nos cenários
+                // 2. Mesclar as lições nos cenários (Cria a chave 'lessons')
                 fetchedCourseStructure.forEach(day => {
                     day.scenarios.forEach(scenario => {
                         if (scenario.lessonKey && lessonData[scenario.lessonKey]) {
                             // Cria uma cópia profunda para que cada lição possa ter seu próprio status 'completed'
+                            // Nota: O uso de JSON.parse(JSON.stringify(obj)) aqui é uma forma simples de deep clone.
                             scenario.lessons = JSON.parse(JSON.stringify(lessonData[scenario.lessonKey]));
                         }
                     });
@@ -1004,7 +1036,7 @@
                 // 3. Salvar a estrutura inicial (sem status de completed) para o reset
                 window.initialCourseStructure = JSON.parse(JSON.stringify(fetchedCourseStructure));
 
-                // 4. Carregar o progresso salvo e mesclar
+                // 4. Carregar o progresso salvo e mesclar (Aplica os status 'completed' do LocalStorage)
                 courseStructure = fetchedCourseStructure;
                 loadProgress(); 
                 
