@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>DevSpeak - Inglês para Devs (Cenários)</title>
     <style>
-        /* ====== CSS: Estilos da Aplicação (Integrado) ====== */
+        /* ====== CSS: Estilos da Aplicação (Omitido por brevidade, mantém o mesmo) ====== */
         
         /* Base / Theme Duolingo-style */
         :root{
@@ -84,7 +84,7 @@
         .btn.primary{ background: var(--primary); color:#fff; }
         .btn.secondary{ background:#e5e7eb; color:#111827; }
         .btn.ghost{ background:transparent; color:var(--primary); }
-        .btn.danger{ background:#ef4444; color:#fff; } /* Estilo para o botão de reset */
+        .btn.danger{ background:#ef4444; color:#fff; }
 
 
         .flex{ display:flex; }
@@ -95,15 +95,13 @@
             font-size: 1.5rem; padding: 0 .5rem; line-height: 1; height: 44px;
         }
         
-        .audio-btn{ /* Estilo para o botão de áudio no flashcard */
+        .audio-btn{ 
             background: transparent; border: 2px solid; border-radius: 50%;
             cursor: pointer; font-size: 1rem; padding: 5px;
             width: 35px; height: 35px; display: flex; justify-content: center; align-items: center;
             transition: background 0.1s;
         }
-        /* Button on the new Front (English/Green) should be dark */
         .card-front .audio-btn { border-color: #1f2937; color: #1f2937;} 
-        /* Button on the new Back (Portuguese/Blue) should be white */
         .card-back .audio-btn { border-color: #fff; color: #fff;} 
         .audio-btn:hover { background: rgba(0,0,0,0.1); }
 
@@ -257,7 +255,6 @@
             padding: 20px;
             border-radius: 13px;
         }
-        /* SWAPPED COLORS for English (Front) and Portuguese (Back) */
         .card-front { background: var(--duo-green-light); color: #1f2937; } 
         .card-back { background: var(--duo-blue-light); color: #fff; transform: rotateY(180deg); } 
         
@@ -291,10 +288,10 @@
             transition: border-color 0.2s;
         }
         .input-group input.error-input {
-            border-color: #ef4444; /* Vermelho */
+            border-color: #ef4444; 
         }
         
-        /* NOVO: Menu de Configurações */
+        /* Menu de Configurações */
         .settings-menu{
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 200;
@@ -325,7 +322,7 @@
         <div class="nav-header-icons">
             <div style="font-size:1.1rem;">❤️ 5</div>
             <div style="font-size:1.1rem;">🔥 10</div>
-             <button class="hint-btn" style="color:white; font-size:1.8rem;" onclick="toggleSettingsMenu()">☰</button>
+            <button class="hint-btn" style="color:white; font-size:1.8rem;" onclick="toggleSettingsMenu()">☰</button>
         </div>
     </header>
     
@@ -344,106 +341,29 @@
         </div>
     </div>
 
-    <div id="app" style="width:100%;max-width:800px; padding: 0 clamp(12px, 3.5vw, 32px);"></div>
+    <div id="app" style="width:100%;max-width:800px; padding: 0 clamp(12px, 3.5vw, 32px);">
+        <div class="card">
+            <h2>Carregando...</h2>
+            <p>Aguarde o carregamento dos dados do curso.</p>
+        </div>
+    </div>
 
+    <script src="lessons-data.js"></script>
+    <script src="course-data.js"></script>
     <script>
-        // 1) DADOS — Estrutura Dia, Cenários e Lições (ESTRUTURA BASE INICIAL)
+        // 1) DADOS — Estrutura de tipos de lição (Hardcoded)
         const lessonTypes = [
             { id: 'words', title: 'Vocabulário', icon: '📖' },
             { id: 'phrases', title: 'Frases', icon: '💬' },
             { id: 'conversation', title: 'Simulação', icon: '🗣️' }
         ];
 
-        const dailyLessons = {
-            A: [ 
-                { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Start with you', translation: 'Vamos começar com você'}, {word:'Awesome!', translation: 'Incrível!'}, {word:'Noted', translation: 'Anotado'}] },
-                { id: 2, type: 'phrases', title: 'Frases A', completed: false, words: [{word:'Let’s start with you.', translation: 'Vamos começar com você.'}, {word:'Any blockers today?', translation: 'Algum impedimento hoje?'}, {word:'Let’s sync after the meeting.', translation: 'Vamos nos alinhar após a reunião.'}] },
-            ],
-            B: [ 
-                { id: 1, type: 'words', title: 'Vocabulário B', completed: false, words: [{word:'Finalized', translation: 'Finalizei'}, {word:'Blocker', translation: 'Impedimento'}, {word:'OAuth integration', translation: 'Integração OAuth'}] },
-                { id: 2, type: 'phrases', title: 'Frases B', completed: false, words: [{word:'I finalized the user authentication module.', translation: 'Eu finalizei o módulo de autenticação de usuário.'}, {word:'I’m facing an issue with OAuth integration.', translation: 'Estou enfrentando um problema com a integração OAuth.'}] },
-            ],
-            C: [
-                { id: 3, type: 'conversation', title: 'Simulação da Daily', completed: false }
-            ]
-        };
-        const planningLessons = {
-            A: [ 
-                { id: 1, type: 'words', title: 'Vocabulário A', completed: false, words: [{word:'Top priority', translation: 'Prioridade máxima'}, {word:'Implement', translation: 'Implementar'}, {word:'Allocate', translation: 'Alocar'}] },
-                { id: 2, type: 'phrases', title: 'Frases A', completed: false, words: [{word:'This feature has top priority.', translation: 'Essa funcionalidade tem prioridade máxima.'}, {word:'Let’s allocate some buffer time.', translation: 'Vamos alocar um tempo de reserva.'}] },
-            ],
-            B: [ 
-                { id: 1, type: 'words', title: 'Vocabulário B', completed: false, words: [{word:'Got it', translation: 'Entendi'}, {word:'Database schema', translation: 'Estrutura do banco'}, {word:'Better to be safe', translation: 'Melhor prevenir'}] },
-                { id: 2, type: 'phrases', title: 'Frases B', completed: false, words: [{word:'It needs changes in the database schema.', translation: 'Precisa de mudanças na estrutura do banco.'}, {word:'Around two days including testing.', translation: 'Cerca de dois dias, incluindo testes.'}] },
-            ],
-            C: [
-                { id: 3, type: 'conversation', title: 'Simulação de Planning', completed: false }
-            ]
-        };
-        
-        // Estrutura do Curso (Dias e Cenários) - Inicial (USADO PARA RESET)
-        const initialCourseStructure = [
-            { 
-                id: 1, 
-                title: 'Dia 1: Introdução ao Time',
-                scenarios: [
-                    { 
-                        id: 1, name: 'Daily Standup', icon: '⏰', completed: false, lessons: dailyLessons,
-                        conversations: {
-                            A: [
-                                { id: "1", pergunta: "Good morning, team! Let’s start with you, Guilherme.", audio: "audio/scenario-dev-day-1-daily-standup/1.mp3" },
-                                { id: "2", pergunta: "Awesome! Any blockers today?", audio: "audio/scenario-dev-day-1-daily-standup/3.mp3" },
-                                { id: "3", pergunta: "Noted. Let’s sync after the meeting.", audio: "audio/scenario-dev-day-1-daily-standup/5.mp3" }
-                            ],
-                            B: [
-                                { id: "1", resposta: "Yesterday I finalized the user authentication module.", audio: "audio/scenario-dev-day-1-daily-standup/2.mp3" },
-                                { id: "2", resposta: "Yes, I’m facing an issue with OAuth integration.", audio: "audio/scenario-dev-day-1-daily-standup/4.mp3" },
-                                { id: "3", resposta: "Perfect, thanks!", audio: "audio/scenario-dev-day-1-daily-standup/6.mp3" }
-                            ]
-                        },
-                    },
-                    { 
-                        id: 2, name: 'Sprint Planning', icon: '📅', completed: false, lessons: planningLessons,
-                        conversations: {
-                            A: [
-                                { id: "1", pergunta: "This feature has top priority for the next sprint.", audio: "audio/scenario-dev-day-3-sprint-planning/1.mp3" },
-                                { id: "2", pergunta: "Will that take much time to implement?", audio: "audio/scenario-dev-day-3-sprint-planning/3.mp3" },
-                                { id: "3", pergunta: "Let’s allocate some buffer time.", audio: "audio/scenario-dev-day-3-sprint-planning/5.mp3" }
-                            ],
-                            B: [
-                                { id: "1", resposta: "Got it. It needs changes in the database schema.", audio: "audio/scenario-dev-day-3-sprint-planning/2.mp3" },
-                                { id: "2", resposta: "Around two days including testing.", audio: "audio/scenario-dev-day-3-sprint-planning/4.mp3" },
-                                { id: "3", resposta: "Agreed, better to be safe.", audio: "audio/scenario-dev-day-3-sprint-planning/6.mp3" }
-                            ]
-                        }
-                    },
-                    { id: 3, name: 'Discutindo Tecnologia', icon: '💻', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 4, name: 'Ajudando um Dev', icon: '🤝', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 5, name: 'Sendo Ajuda', icon: '🙋‍♂️', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 6, name: 'Resolvendo Problema', icon: '🐛', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 7, name: 'Entregando Projeto', icon: '✅', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 8, name: 'Regra de Negócio', icon: '📄', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 9, name: 'Conversa Aleatória', icon: '☕', completed: false, lessons: planningLessons, conversations: planningLessons },
-                    { id: 10, name: 'Final do Dia', icon: '😴', completed: false, lessons: planningLessons, conversations: planningLessons },
-                ]
-            },
-            { 
-                id: 2, 
-                title: 'Dia 2: Discussões Avançadas',
-                scenarios: [
-                    { 
-                        id: 1, name: 'Review de Código', icon: '🔍', completed: false, lessons: dailyLessons, conversations: dailyLessons 
-                    },
-                    { 
-                        id: 2, name: 'Reunião com Cliente', icon: '💼', completed: false, lessons: dailyLessons, conversations: dailyLessons 
-                    },
-                ]
-            }
-        ];
-        
-        let courseStructure = JSON.parse(JSON.stringify(initialCourseStructure)); // Cria uma cópia mutável
+        // Variáveis que serão preenchidas pelas variáveis globais estáticas (window.lessonDataStatic e window.courseStructureStatic)
+        let courseStructure = [];
+        window.initialCourseStructure = []; // Usado para reset
+        let lessonData = {}; // Guarda dailyLessons e planningLessons
 
-        // 2) ESTADO E UTILIDADES (ATUALIZADO COM LOCALSTORAGE E RESET)
+        // 2) ESTADO E UTILIDADES
         const LOCAL_STORAGE_KEY = 'devspeak_course_progress';
 
         let stage='map', currentDayIndex=0, currentScenarioIndex=0, currentRole=null, currentLessonIndex=0;
@@ -458,28 +378,34 @@
         const app = document.getElementById('app');
         const player = new Audio();
         
-        // NOVO: Função para abrir/fechar o menu de configurações
+        // NOVO: Função para carregar dados das variáveis globais estáticas (Substitui o fetch e o JSON.parse do <script>)
+        function loadDataFromStaticJS() {
+            // Verifica se as variáveis globais foram carregadas pelos scripts externos
+            if (!window.lessonDataStatic || !window.courseStructureStatic) {
+                throw new Error("Dados estáticos não encontrados. Certifique-se de que 'lessons-data.js' e 'course-data.js' estão na mesma pasta e carregados corretamente.");
+            }
+            
+            // Atribui e faz cópias profundas para garantir que o estado inicial seja limpo
+            lessonData = JSON.parse(JSON.stringify(window.lessonDataStatic));
+            return JSON.parse(JSON.stringify(window.courseStructureStatic));
+        }
+
         window.toggleSettingsMenu = () => {
             const menu = document.getElementById('settings-menu');
             menu.classList.toggle('visible');
         };
 
-        // NOVO: Função para resetar o progresso
         window.resetProgress = () => {
             if (confirm("Tem certeza que deseja resetar todo o seu progresso? Esta ação é irreversível.")) {
                 localStorage.removeItem(LOCAL_STORAGE_KEY);
-                // Reinicia a estrutura do curso para o estado inicial
-                courseStructure = JSON.parse(JSON.stringify(initialCourseStructure));
-                // Redefine o estado da aplicação
+                courseStructure = JSON.parse(JSON.stringify(window.initialCourseStructure)); 
                 setStage('map', 0, 0, null);
-                // Fecha o menu
                 toggleSettingsMenu();
                 alert("Progresso resetado com sucesso!");
                 console.log("LocalStorage limpo e aplicação resetada.");
             }
         };
 
-        // [UTILIDADE] Atualiza a estrutura base com o progresso salvo
         const updateCourseStructureFromSavedData = (savedData) => {
             savedData.forEach((savedDay, dIdx) => {
                 if (courseStructure[dIdx] && courseStructure[dIdx].id === savedDay.id) {
@@ -504,28 +430,24 @@
             });
         };
         
-        // [FUNÇÃO] Carrega o progresso do localStorage
         const loadProgress = () => {
             const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (saved) {
+            if (saved && courseStructure.length > 0) {
                 try {
                     const savedData = JSON.parse(saved);
                     updateCourseStructureFromSavedData(savedData);
                     console.log("Progresso carregado com sucesso.");
                 } catch (e) {
                     console.error("Erro ao carregar ou parsear o progresso do localStorage:", e);
-                    // Em caso de erro, limpa o progresso inválido
                     localStorage.removeItem(LOCAL_STORAGE_KEY);
                 }
             }
         };
 
-        // [FUNÇÃO] Salva o progresso no localStorage
         const saveProgress = () => {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(courseStructure));
         };
         
-        // FIX: Função para limpar a string para comparação
         const cleanStringForComparison = (str) => {
             if (!str) return '';
             let cleaned = str.toLowerCase();
@@ -554,19 +476,18 @@
             
             if (currentRole === 'A') return lessons.A[currentLessonIndex];
             if (currentRole === 'B') return lessons.B[currentLessonIndex];
-            return lessons.C[0]; // Lição de Conversação
+            return lessons.C?.[0]; 
         };
         
         const getConversation = () => getScenario()?.conversations;
         
-        // Função para tocar o áudio do flashcard 
         window.playCardAudio = (text, dIdx, sIdx) => {
             const scenario = courseStructure[dIdx]?.scenarios[sIdx];
             if (!scenario) return;
 
             const sampleAudioPath = scenario.conversations?.A?.[0]?.audio;
             if (!sampleAudioPath) {
-                console.error("Não foi possível encontrar um caminho de áudio de exemplo para o cenário.");
+                console.error("Não foi possível encontrar um caminho de áudio de exemplo para o cenário. Áudio do flashcard indisponível.");
                 return;
             }
             const baseAudioPath = sampleAudioPath.substring(0, sampleAudioPath.lastIndexOf('/')); 
@@ -585,8 +506,10 @@
         };
 
 
-        // 3) RENDERIZAÇÃO PRINCIPAL
+        // 3) RENDERIZAÇÃO PRINCIPAL (Inalterada)
         const render = () => {
+             if (courseStructure.length === 0) { return; }
+            
             const currentTitle = courseStructure[currentDayIndex] ? courseStructure[currentDayIndex].title : 'DevSpeak';
             document.getElementById('header-title').textContent = stage === 'map' ? 'DevSpeak' : currentTitle;
 
@@ -599,7 +522,7 @@
             return renderChat();
         };
 
-        // 4) TELA MAPA (Mostra os Dias)
+        // 4) TELA MAPA
         function renderMap(){
             app.innerHTML = `<div id="map-container"><div class="day-path"></div></div>`;
             const path = document.querySelector('.day-path');
@@ -616,7 +539,7 @@
             }).join(`<div></div>`);
         }
 
-        // 5) TELA DE CENÁRIOS DO DIA (Mostra Daily, Planning, etc.)
+        // 5) TELA DE CENÁRIOS DO DIA
         function renderDayScenarios() {
             const day = courseStructure[currentDayIndex];
             
@@ -625,9 +548,21 @@
                     <h2 style="text-align:center; margin-bottom: 1.5rem;">${day.title}</h2>
                     <div id="scenarios-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
                         ${day.scenarios.map((scenario, sIdx) => {
-                            // Verifica se todas as sub-lições (A, B, C) estão completas para marcar o Cenário
-                            const allLessonsCompleted = scenario.lessons.A.every(l => l.completed) && scenario.lessons.B.every(l => l.completed) && scenario.lessons.C[0].completed;
-                            scenario.completed = allLessonsCompleted; // Atualiza o status do cenário
+                            const lessons = scenario.lessons;
+                            const hasLessons = lessons && lessons.A && lessons.B && lessons.C;
+                            
+                            let allLessonsCompleted = false;
+
+                            if (hasLessons) {
+                                allLessonsCompleted = lessons.A.every(l => l.completed) && 
+                                                      lessons.B.every(l => l.completed) && 
+                                                      lessons.C[0]?.completed;
+                            } else {
+                                console.warn(`Cenário ${scenario.name} não tem estrutura de lições válida.`);
+                                allLessonsCompleted = scenario.completed; 
+                            }
+                            
+                            scenario.completed = allLessonsCompleted; 
                             
                             const statusClass = allLessonsCompleted ? 'completed' : 'active';
                             
@@ -644,7 +579,7 @@
                     <button class="btn ghost" onclick="setStage('map')">Voltar aos Dias</button>
                 </div>
             `;
-            saveProgress(); // Salva após recalcular o status do cenário
+            saveProgress();
         }
 
 
@@ -654,10 +589,20 @@
             const scenario = day.scenarios[currentScenarioIndex];
             const lessons = scenario.lessons;
 
+            if (!lessons || !lessons.A || !lessons.B || !lessons.C) {
+                 app.innerHTML = `<div class="card" style="margin-top:20px;">
+                    <h2>Erro de Estrutura</h2>
+                    <p>Estrutura de lições inválida para este cenário. Verifique se os arquivos de dados JS foram carregados corretamente.</p>
+                    <button class="btn ghost" onclick="setStage('day-scenarios')">Voltar aos Cenários</button>
+                </div>`;
+                return;
+            }
+
+
             const conversationLesson = lessons.C[0];
             const conversationCompleted = conversationLesson.completed;
 
-            const conversationIcon = lessonTypes.find(t => t.id === conversationLesson.type).icon;
+            const conversationIcon = lessonTypes.find(t => t.id === conversationLesson.type)?.icon || '🗣️';
 
             const allRoleALessonsCompleted = lessons.A.every(l => l.completed);
             const allRoleBLessonsCompleted = lessons.B.every(l => l.completed);
@@ -699,7 +644,7 @@
             `;
         }
 
-        // 7) TELA SELEÇÃO DE LIÇÃO FLASHCARD (Vocabulário ou Frases)
+        // 7) TELA SELEÇÃO DE LIÇÃO FLASHCARD
         function renderFlashcardSelector() {
             const day = courseStructure[currentDayIndex];
             const scenario = day.scenarios[currentScenarioIndex];
@@ -713,7 +658,7 @@
                     <h3 style="text-align:center; margin-top: -1rem; color: ${currentRole === 'A' ? 'var(--duo-blue-dark)' : 'var(--duo-green-dark)'}">${roleName} - Seleção de Lição</h3>
                     <div id="lessons-list" class="day-path" style="padding:0; margin:0; width:100%; position:relative;">
                         ${roleLessons.map((lesson, lIdx) => {
-                            const icon = lessonTypes.find(t => t.id === lesson.type).icon;
+                            const icon = lessonTypes.find(t => t.id === lesson.type)?.icon || '📖';
                             
                             const nextLessonIndex = roleLessons.findIndex(l => !l.completed);
                             const isActive = lIdx === nextLessonIndex;
@@ -734,24 +679,30 @@
             `;
         }
 
-        // 8) TELA FLASH CARD (COM ÁUDIO E FLIP INVERTIDO)
+        // 8) TELA FLASH CARD
         function renderFlashcard(){
             const lesson = getLesson();
             
-            if (flashcardQueue.length === 0) {
-                // Se a fila estiver vazia, marca a lição como completa e volta
+            if (!lesson || !lesson.words || lesson.words.length === 0) {
+                console.error("Lição de Flashcard sem conteúdo 'words'. Marcando como completa e voltando.");
                 lesson.completed = true;
-                saveProgress(); // SALVA O PROGRESSO
+                saveProgress();
                 setStage('flashcard-selector'); 
                 return;
             }
 
-            // Pega o índice real do card na lista 'words' através do índice na fila
+            if (flashcardQueue.length === 0) {
+                lesson.completed = true;
+                saveProgress(); 
+                setStage('flashcard-selector'); 
+                return;
+            }
+
             const realCardIndex = flashcardQueue[currentCardIndexInQueue]; 
             const card = lesson.words[realCardIndex];
             const remaining = flashcardQueue.length;
-            const max = lesson.words.length; // Tamanho total da lição (para fins de exibição)
-            const typeTitle = lessonTypes.find(t => t.id === lesson.type).title;
+            const max = lesson.words.length; 
+            const typeTitle = lessonTypes.find(t => t.id === lesson.type)?.title || 'Lição';
 
             app.innerHTML = `
                 <div class="card" style="margin-top:20px;">
@@ -769,7 +720,6 @@
                                         <button class="audio-btn" title="Ouvir Pronúncia" onclick="event.stopPropagation(); playCardAudio('${card.word}', ${currentDayIndex}, ${currentScenarioIndex})">🔊</button>
                                     </div>
                                 </div>
-                                
                                 <div class="card-back">
                                     <div style="font-weight: 500; font-size:1.5rem; color: #fff;">
                                         ${card.translation}
@@ -820,7 +770,6 @@
                 return `<div style="display:flex;justify-content:${a}"><div class="chat-bubble ${b}"><p style="margin:0">${txt}</p>${au}</div></div>`;
             }).join('');
 
-            // Input field with error class and preserved text
             const inp = finished ? `<div style="text-align:center;color:#6b7280">Fim da conversa 🎉</div>` : `
                 <div class="input-group" style="flex-wrap: nowrap; margin-top:.5rem">
                     <input id="chat-input" type="text" placeholder="Digite a resposta correta..." 
@@ -870,7 +819,6 @@
                     }
                 };
                 
-                // Limpa o estado de erro assim que o usuário digita algo
                 ci.oninput = () => {
                      lastInputText = ci.value; 
                      if (lastInputFailed) {
@@ -882,7 +830,7 @@
             scrollToBottom();
         }
 
-        // 11) Ações (Navegação e Lógica)
+        // 11) Ações (Navegação e Lógica) (Inalteradas)
         
         window.setStage = (s, dIdx = currentDayIndex, sIdx = currentScenarioIndex, r = currentRole) => {
             stage=s;
@@ -890,7 +838,6 @@
             currentScenarioIndex = sIdx;
             currentRole = r; 
             
-            // Limpa o estado do chat ao sair
             if (s !== 'chat'){ step=0; history=[]; lastInputFailed = false; lastInputText = ''; }
             if (s === 'day-scenarios') currentScenarioIndex = null;
             if (s === 'role-choice-lessons') currentRole = null; 
@@ -905,6 +852,11 @@
             currentLessonIndex = lIdx;
             
             const lesson = courseStructure[dIdx].scenarios[sIdx].lessons[roleKey][lIdx];
+             if (!lesson || !lesson.words) {
+                console.error("Tentativa de iniciar lição sem conteúdo 'words'.");
+                return;
+            }
+
             flashcardQueue = lesson.words.map((_, index) => index); 
             currentCardIndexInQueue = 0;
             isFlashcardFlipped = false;
@@ -947,8 +899,8 @@
             role=r; setStage('chat');
             const conv = getConversation();
             if (r==='B'){
-                const first = conv.A[0];
-                pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
+                const first = conv.A?.[0];
+                if(first) pushMessage({ speaker:'A', text:first.pergunta, audio:first.audio });
                 step=0;
             } else {
                 step=0;
@@ -956,16 +908,29 @@
             render();
         };
         
-        // FUNÇÃO SEND
         window.send = () => {
             const i = document.getElementById('chat-input');
             if (!i || !i.value.trim()) return;
 
             const t = i.value.trim();
             const co = getConversation();
-            const ul = role==='A' ? co.A[step] : co.B[step];
             
-            const expectedText = (role==='A' ? ul?.pergunta : ul?.resposta) || '';
+            if (!co || (!co.A && !co.B)) {
+                alert("Erro: Estrutura de conversação não definida ou vazia.");
+                return;
+            }
+            
+            const conversationScript = role==='A' ? co.A : co.B;
+            const ul = conversationScript[step];
+
+            if (!ul) {
+                getScenario().lessons.C[0].completed = true; 
+                saveProgress(); 
+                render(); 
+                return;
+            }
+            
+            const expectedText = (role==='A' ? ul.pergunta : ul.resposta) || '';
             const cleanedInput = cleanStringForComparison(t);
             const cleanedExpected = cleanStringForComparison(expectedText);
 
@@ -975,10 +940,13 @@
                 lastInputFailed = false; 
                 lastInputText = ''; 
                 
-                pushMessage({ speaker: role, text: t, audio: ul?.audio || null });
+                pushMessage({ speaker: role, text: t, audio: ul.audio || null });
 
                 const nextSpeaker = role==='A' ? 'B' : 'A';
-                const rl = role==='A' ? co.B[step] : co.A[step+1];
+                const nextStepIndex = role==='A' ? step : step + 1;
+                const nextConversationScript = role==='A' ? co.B : co.A;
+                const rl = nextConversationScript[nextStepIndex];
+                
                 if (rl) pushMessage({ speaker: nextSpeaker, text: rl.pergunta || rl.resposta, audio: rl.audio });
 
                 step++;
@@ -986,7 +954,7 @@
                 const finished = (role==='A' && step>=co.A.length) || (role==='B' && step>=co.B.length);
                 if (finished) {
                     getScenario().lessons.C[0].completed = true; 
-                    saveProgress(); // SALVA O PROGRESSO
+                    saveProgress(); 
                 } 
                 render(); 
             } else {
@@ -998,7 +966,11 @@
 
         const playFullScript = async () => {
             const conv = getConversation();
-            if (!conv) return;
+             if (!conv || !conv.A || !conv.B) {
+                alert("Erro: Estrutura de conversação inválida.");
+                return;
+            }
+
             const maxLen = Math.max(conv.A.length, conv.B.length);
             for (let i=0;i<maxLen;i++){
                 if (conv.A[i]?.audio) await playSequential(conv.A[i].audio);
@@ -1012,9 +984,40 @@
         });
 
 
-        // Init: 1. Carrega o progresso 2. Renderiza a tela
-        loadProgress(); 
-        render();
+        // 12) INICIALIZAÇÃO AGORA SINCRONA
+        
+        function initializeApp() {
+            try {
+                // 1. CARREGA OS DADOS DAS VARIÁVEIS GLOBAIS
+                let fetchedCourseStructure = loadDataFromStaticJS();
+                
+                // 2. Mesclar as lições nos cenários
+                fetchedCourseStructure.forEach(day => {
+                    day.scenarios.forEach(scenario => {
+                        if (scenario.lessonKey && lessonData[scenario.lessonKey]) {
+                            // Cria uma cópia profunda para que cada lição possa ter seu próprio status 'completed'
+                            scenario.lessons = JSON.parse(JSON.stringify(lessonData[scenario.lessonKey]));
+                        }
+                    });
+                });
+
+                // 3. Salvar a estrutura inicial (sem status de completed) para o reset
+                window.initialCourseStructure = JSON.parse(JSON.stringify(fetchedCourseStructure));
+
+                // 4. Carregar o progresso salvo e mesclar
+                courseStructure = fetchedCourseStructure;
+                loadProgress(); 
+                
+                // 5. Iniciar a renderização
+                render();
+
+            } catch (error) {
+                console.error("Erro ao carregar os dados JS. Verifique o console.", error);
+                app.innerHTML = '<div class="card" style="color:red;"><h2>Erro de Inicialização</h2><p>Não foi possível carregar os dados do curso. Verifique se os arquivos <b>lessons-data.js</b> e <b>course-data.js</b> estão na mesma pasta que o <b>index.html</b> e se a sintaxe JavaScript está correta.</p></div>';
+            }
+        }
+
+        initializeApp();
     </script>
 </body>
 </html>

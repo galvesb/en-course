@@ -1,0 +1,31 @@
+// lessons-data.js
+// ATENÇÃO: Os dados estão em um arquivo .js, não .json.
+
+window.lessonDataStatic = {
+  "dailyLessons": {
+    "A": [ 
+      { "id": 1, "type": "words", "title": "Vocabulário A", "completed": false, "words": [{"word":"Start with you", "translation": "Vamos começar com você"}, {"word":"Awesome!", "translation": "Incrível!"}, {"word":"Noted", "translation": "Anotado"}] },
+      { "id": 2, "type": "phrases", "title": "Frases A", "completed": false, "words": [{"word":"Let’s start with you.", "translation": "Vamos começar com você."}, {"word":"Any blockers today?", "translation": "Algum impedimento hoje?"}, {"word":"Let’s sync after the meeting.", "translation": "Vamos nos alinhar após a reunião."}] }
+    ],
+    "B": [ 
+      { "id": 1, "type": "words", "title": "Vocabulário B", "completed": false, "words": [{"word":"Finalized", "translation": "Finalizei"}, {"word":"Blocker", "translation": "Impedimento"}, {"word":"OAuth integration", "translation": "Integração OAuth"}] },
+      { "id": 2, "type": "phrases", "title": "Frases B", "completed": false, "words": [{"word":"I finalized the user authentication module.", "translation": "Eu finalizei o módulo de autenticação de usuário."}, {"word":"I’m facing an issue with OAuth integration.", "translation": "Estou enfrentando um problema com a integração OAuth."}] }
+    ],
+    "C": [
+      { "id": 3, "type": "conversation", "title": "Simulação da Daily", "completed": false }
+    ]
+  },
+  "planningLessons": {
+    "A": [ 
+      { "id": 1, "type": "words", "title": "Vocabulário A", "completed": false, "words": [{"word":"Top priority", "translation": "Prioridade máxima"}, {"word":"Implement", "translation": "Implementar"}, {"word":"Allocate", "translation": "Alocar"}] },
+      { "id": 2, "type": "phrases", "title": "Frases A", "completed": false, "words": [{"word":"This feature has top priority.", "translation": "Essa funcionalidade tem prioridade máxima."}, {"word":"Let’s allocate some buffer time.", "translation": "Vamos alocar um tempo de reserva."}] }
+    ],
+    "B": [ 
+      { "id": 1, "type": "words", "title": "Vocabulário B", "completed": false, "words": [{"word":"Got it", "translation": "Entendi"}, {"word":"Database schema", "translation": "Estrutura do banco"}, {"word":"Better to be safe", "translation": "Melhor prevenir"}] },
+      { "id": 2, "type": "phrases", "title": "Frases B", "completed": false, "words": [{"word":"It needs changes in the database schema.", "translation": "Precisa de mudanças na estrutura do banco."}, {"word":"Around two days including testing.", "translation": "Cerca de dois dias, incluindo testes."}] }
+    ],
+    "C": [
+      { "id": 3, "type": "conversation", "title": "Simulação de Planning", "completed": false }
+    ]
+  }
+};
