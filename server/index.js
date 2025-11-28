@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
+const multer = require('multer');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
 const authRoutes = require('./routes/authRoutes');
@@ -9,9 +11,24 @@ const { authMiddleware, adminMiddleware } = require('./middleware/authMiddleware
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// File upload config (for admin audio uploads)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'uploads'));
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        const base = path.basename(file.originalname, ext).replace(/[^a-z0-9\-]/gi, '_');
+        cb(null, `${base}-${Date.now()}${ext}`);
+    }
+});
+
+const upload = multer({ storage });
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/fluency')
@@ -216,6 +233,30 @@ app.get('/api/courses', async (req, res) => {
         res.json(courses);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Audio upload for admin (returns path to use in JSON)
+app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('file'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Nenhum arquivo enviado' });
+        }
+
+        const relativePath = `/uploads/${req.file.filename}`;
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const url = `${protocol}://${host}${relativePath}`;
+
+        res.json({
+            message: 'Upload realizado com sucesso',
+            path: relativePath,
+            url,
+            filename: req.file.filename
+        });
+    } catch (err) {
+        console.error('Error uploading audio:', err);
+        res.status(500).json({ message: 'Erro ao fazer upload do áudio', error: err.message });
     }
 });
 
