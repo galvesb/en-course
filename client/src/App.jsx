@@ -801,9 +801,11 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const [finished, setFinished] = useState(false);
 
   const audioRef = useRef(new Audio());
+  const manualAudioRef = useRef(new Audio());
   const chatScrollRef = useRef(null);
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
+  const queueGenerationRef = useRef(0);
 
   // Use a ref to track the current scenario ID to prevent unnecessary resets
   const scenarioIdRef = useRef(scenario?.id);
@@ -812,7 +814,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   useEffect(() => {
     if (!scenario || !scenario.conversations) return;
 
-    // Only reset if the scenario ID changes or role changes
     if (scenarioIdRef.current === scenario.id && history.length > 0) {
       return;
     }
@@ -824,17 +825,21 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     setInput('');
     setLastWrong(false);
     setFinished(false);
+
+    // Reset audio state
+    queueGenerationRef.current++;
     audioQueueRef.current = [];
     isPlayingRef.current = false;
+    audioRef.current.pause();
+    manualAudioRef.current.pause();
 
     if (role === 'B') {
-      // Se sou B, A começa falando
       const first = conv.A?.[0];
       if (first) {
         pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio });
       }
     }
-  }, [scenario?.id, role]); // Depend on scenario.id instead of scenario object
+  }, [scenario?.id, role]);
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -842,8 +847,12 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     }
   }, [history]);
 
-  const processAudioQueue = async () => {
-    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+  const processAudioQueue = async (generation) => {
+    if (generation !== queueGenerationRef.current) return;
+    if (audioQueueRef.current.length === 0) {
+      isPlayingRef.current = false;
+      return;
+    }
 
     isPlayingRef.current = true;
     const src = audioQueueRef.current.shift();
@@ -854,37 +863,60 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       audioRef.current.src = src;
 
       await new Promise((resolve) => {
+        // Se a geração mudar durante a espera, resolvemos imediatamente para sair
+        const checkGen = () => {
+          if (generation !== queueGenerationRef.current) {
+            audioRef.current.pause();
+            resolve();
+            return true;
+          }
+          return false;
+        };
+
         audioRef.current.onended = resolve;
         audioRef.current.onerror = resolve;
-        audioRef.current.play().catch(resolve);
+
+        audioRef.current.play().catch(() => {
+          // Se der erro (ex: abort), resolve para tentar o próximo
+          resolve();
+        });
       });
     } catch (e) {
       console.error("Audio playback error", e);
     } finally {
-      isPlayingRef.current = false;
-      processAudioQueue();
+      if (generation === queueGenerationRef.current) {
+        processAudioQueue(generation);
+      }
     }
   };
 
   const queueAudio = (src) => {
     if (!src) return;
     audioQueueRef.current.push(src);
-    processAudioQueue();
+    if (!isPlayingRef.current) {
+      processAudioQueue(queueGenerationRef.current);
+    }
   };
 
   const playAudioImmediate = (src) => {
-    // For hints or manual clicks, we might want to interrupt or play immediately
-    // But for conversation flow, we use the queue.
-    // If the user clicks the speaker button, let's just play it.
     if (!src) return;
-    try {
-      // Pause queue processing if needed? Or just play over?
-      // Let's just play over for manual clicks
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.src = src;
-      audioRef.current.play().catch(e => console.error(e));
-    } catch (e) { }
+
+    // Pausa a fila principal temporariamente
+    const wasPlaying = !audioRef.current.paused;
+    audioRef.current.pause();
+
+    manualAudioRef.current.pause();
+    manualAudioRef.current.currentTime = 0;
+    manualAudioRef.current.src = src;
+
+    manualAudioRef.current.onended = () => {
+      // Retoma a fila se estava tocando
+      if (wasPlaying && queueGenerationRef.current === queueGenerationRef.current) {
+        audioRef.current.play().catch(() => { });
+      }
+    };
+
+    manualAudioRef.current.play().catch(e => console.error(e));
   };
 
   const pushMessage = (msg) => {
@@ -913,6 +945,14 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       setLastWrong(false);
       setInput('');
 
+      // RESET AUDIO STATE ON NEW INTERACTION
+      // Incrementa geração para matar loop anterior
+      queueGenerationRef.current++;
+      audioQueueRef.current = [];
+      isPlayingRef.current = false;
+      audioRef.current.pause();
+      manualAudioRef.current.pause();
+
       // Adiciona minha fala
       pushMessage({ speaker: role, text: input, audio: ul.audio || null });
 
@@ -923,7 +963,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       const rl = nextConversationScript[nextStepIndex];
 
       if (rl) {
-        // Small delay for visual pacing, but audio will queue
         setTimeout(() => {
           pushMessage({ speaker: nextSpeaker, text: rl.pergunta || rl.resposta, audio: rl.audio });
         }, 500);
@@ -935,7 +974,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       const isFinished = (role === 'A' && nextStep >= conv.A.length) || (role === 'B' && nextStep >= conv.B.length);
       if (isFinished) {
         setFinished(true);
-        // Call onComplete to save progress
         onComplete();
       }
 
@@ -948,7 +986,8 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     const conv = scenario.conversations;
     const maxLen = Math.max(conv.A.length, conv.B.length);
 
-    // Clear queue first?
+    // Reset queue for full script
+    queueGenerationRef.current++;
     audioQueueRef.current = [];
     isPlayingRef.current = false;
     audioRef.current.pause();
