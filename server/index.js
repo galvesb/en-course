@@ -4,7 +4,7 @@ const cors = require('cors');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
 const authRoutes = require('./routes/authRoutes');
-const { authMiddleware } = require('./middleware/authMiddleware');
+const { authMiddleware, adminMiddleware } = require('./middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -209,13 +209,74 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
 
 console.log('✅ Progress routes mounted at /api/progress');
 
-// Routes
+// Public course routes
 app.get('/api/courses', async (req, res) => {
     try {
         const courses = await Course.find().sort({ id: 1 });
         res.json(courses);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Admin Course Management (CRUD)
+app.post('/api/courses', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const data = { ...req.body };
+
+        // Garante um id sequencial se não for enviado
+        if (data.id === undefined || data.id === null) {
+            const lastCourse = await Course.findOne().sort({ id: -1 });
+            data.id = lastCourse ? (lastCourse.id || 0) + 1 : 1;
+        }
+
+        const course = new Course(data);
+        await course.save();
+        res.status(201).json(course);
+    } catch (err) {
+        console.error('Error creating course:', err);
+        res.status(500).json({ message: 'Error creating course', error: err.message });
+    }
+});
+
+app.put('/api/courses/:id', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = { ...req.body };
+
+        // Nunca sobrescreve o _id
+        delete data._id;
+        delete data.__v;
+
+        const updated = await Course.findByIdAndUpdate(id, data, {
+            new: true,
+            runValidators: false
+        });
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Error updating course:', err);
+        res.status(500).json({ message: 'Error updating course', error: err.message });
+    }
+});
+
+app.delete('/api/courses/:id', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deleted = await Course.findByIdAndDelete(id);
+
+        if (!deleted) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        res.json({ message: 'Course deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting course:', err);
+        res.status(500).json({ message: 'Error deleting course', error: err.message });
     }
 });
 
