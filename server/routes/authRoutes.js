@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Register
 router.post('/register', async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password } = req.body;
 
     try {
         let user = await User.findOne({ username });
@@ -20,11 +20,11 @@ router.post('/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user (allow setting role for demo purposes, in prod restrict this)
+        // Create user (always as 'user' role for security)
         user = new User({
             username,
             password: hashedPassword,
-            role: role || 'user'
+            role: 'user'
         });
 
         await user.save();

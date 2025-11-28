@@ -5,14 +5,13 @@ import { useNavigate, Link } from 'react-router-dom';
 const Register = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('user'); // For demo purposes
     const [error, setError] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const res = await register(username, password, role);
+        const res = await register(username, password, 'user'); // Always register as user
         if (res.success) {
             navigate('/');
         } else {
@@ -40,14 +39,6 @@ const Register = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        style={{ padding: '10px', borderRadius: '8px', border: '2px solid var(--gray-border)' }}
-                    >
-                        <option value="user">User</option>
-                        <option value="admin">Admin</option>
-                    </select>
                 </div>
                 <button type="submit" className="btn primary">Register</button>
             </form>
