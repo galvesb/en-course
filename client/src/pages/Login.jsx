@@ -13,7 +13,8 @@ const Login = () => {
         e.preventDefault();
         const res = await login(email, password);
         if (res.success) {
-            navigate('/');
+            // Após login, força usuário a escolher uma profissão
+            navigate('/profession');
         } else {
             setError(res.message);
         }

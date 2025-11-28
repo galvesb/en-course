@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Course = require('./models/Course');
 const User = require('./models/User');
+const Profession = require('./models/Profession');
 const bcrypt = require('bcryptjs');
 
 mongoose.connect('mongodb://localhost:27017/fluency')
@@ -52,10 +53,12 @@ const addLessonsToScenarios = (courseData, lessonData) => {
     }));
 };
 
+// Dias base da trilha "Software Developer" (professionKey: "developer")
 const courseData = [
     {
         "id": 1,
         "title": "Dia 1",
+        "professionKey": "developer",
         "scenarios": [
             {
                 "id": 1,
@@ -100,6 +103,7 @@ const courseData = [
     {
         "id": 2,
         "title": "Dia 2",
+        "professionKey": "developer",
         "scenarios": [
             {
                 "id": 1,
@@ -128,7 +132,8 @@ const seedDB = async () => {
     try {
         // Limpar dados existentes
         await Course.deleteMany({});
-        console.log('Courses collection cleared');
+        await Profession.deleteMany({});
+        console.log('Courses and professions collections cleared');
 
         // Adicionar lessons aos scenarios
         const courseDataWithLessons = addLessonsToScenarios(courseData, lessonData);
@@ -136,6 +141,16 @@ const seedDB = async () => {
         // Inserir courses com lessons incluídos
         await Course.insertMany(courseDataWithLessons);
         console.log('Courses with lessons inserted');
+
+        // Criar profissão padrão "Software Developer"
+        const devProfession = new Profession({
+            id: 1,
+            key: 'developer',
+            name: 'Software Developer',
+            icon: '💻'
+        });
+        await devProfession.save();
+        console.log('Profession created: Software Developer (key: developer)');
 
         // Seed Admin User
         await User.deleteMany({});

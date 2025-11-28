@@ -5,6 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
+const Profession = require('./models/Profession');
 const authRoutes = require('./routes/authRoutes');
 const { authMiddleware, adminMiddleware } = require('./middleware/authMiddleware');
 
@@ -229,10 +230,26 @@ console.log('✅ Progress routes mounted at /api/progress');
 // Public course routes
 app.get('/api/courses', async (req, res) => {
     try {
-        const courses = await Course.find().sort({ id: 1 });
+        const filter = {};
+        if (req.query.professionKey) {
+            filter.professionKey = req.query.professionKey;
+        }
+
+        const courses = await Course.find(filter).sort({ id: 1 });
         res.json(courses);
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Professions
+app.get('/api/professions', async (req, res) => {
+    try {
+        const professions = await Profession.find().sort({ id: 1 });
+        res.json(professions);
+    } catch (err) {
+        console.error('Error fetching professions:', err);
+        res.status(500).json({ message: 'Error fetching professions', error: err.message });
     }
 });
 

@@ -33,6 +33,11 @@ const ScenarioSchema = new mongoose.Schema({
 const DaySchema = new mongoose.Schema({
     id: Number,
     title: String,
+    // chave da profissão (em inglês) à qual esse dia pertence, ex: "developer"
+    professionKey: {
+        type: String,
+        default: null
+    },
     scenarios: [ScenarioSchema]
 });
 

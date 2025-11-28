@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import SelectProfession from './pages/SelectProfession';
 
 
 const cleanStringForComparison = (str) => {
@@ -41,7 +42,13 @@ function MainApp() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchCourses();
+    // Garante que o usuário tenha escolhido uma profissão antes de carregar os cursos
+    const professionKey = localStorage.getItem('selectedProfessionKey');
+    if (!professionKey) {
+      navigate('/profession');
+      return;
+    }
+    fetchCourses(professionKey);
   }, []);
 
   // Carrega o progresso após os cursos serem carregados
@@ -51,9 +58,16 @@ function MainApp() {
     }
   }, [user, courseStructure.length]);
 
-  const fetchCourses = async () => {
+  const fetchCourses = async (professionKeyParam) => {
     try {
-      const res = await axios.get('http://localhost:5000/api/courses');
+      const key = professionKeyParam || localStorage.getItem('selectedProfessionKey');
+      if (!key) {
+        console.warn('No profession selected, redirecting to /profession');
+        navigate('/profession');
+        return;
+      }
+
+      const res = await axios.get(`http://localhost:5000/api/courses?professionKey=${encodeURIComponent(key)}`);
       setCourseStructure(res.data);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -819,7 +833,10 @@ function MainApp() {
   return (
     <>
       <header className="nav-header">
-        <h1 id="header-title">Fluency2Work</h1>
+        <h1 id="header-title" style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+          <span>{localStorage.getItem('selectedProfessionIcon') || '📚'}</span>
+          <span>Fluency2Work</span>
+        </h1>
         <div className="nav-header-icons">
           <div style={{ fontSize: '1.1rem' }}>❤️ 5</div>
           <div style={{ fontSize: '1.1rem' }}>🔥 10</div>
@@ -841,6 +858,14 @@ function MainApp() {
               Admin Dashboard
             </button>
           )}
+          <button className="btn secondary" style={{ marginTop: '1rem' }} onClick={() => {
+            setSettingsVisible(false);
+            localStorage.removeItem('selectedProfessionKey');
+            localStorage.removeItem('selectedProfessionName');
+            navigate('/profession');
+          }}>
+            Trocar profissão
+          </button>
           <button className="btn danger" style={{ marginTop: '1rem' }} onClick={() => {
             setSettingsVisible(false);
             logout();
@@ -1170,6 +1195,11 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profession" element={
+            <ProtectedRoute>
+              <SelectProfession />
+            </ProtectedRoute>
+          } />
           <Route path="/admin" element={
             <ProtectedRoute adminOnly={true}>
               <AdminDashboard />
