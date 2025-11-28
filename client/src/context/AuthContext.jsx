@@ -19,9 +19,9 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = async (username, password) => {
+    const login = async (email, password) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', { username, password });
+            const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
             const { token, user } = res.data;
 
             localStorage.setItem('token', token);
@@ -34,9 +34,15 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (username, password, role = 'user') => {
+    const register = async (name, email, cpf, address, password) => {
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/register', { username, password, role });
+            const res = await axios.post('http://localhost:5000/api/auth/register', {
+                name,
+                email,
+                cpf,
+                address,
+                password
+            });
             const { token, user } = res.data;
 
             localStorage.setItem('token', token);
@@ -45,7 +51,14 @@ export const AuthProvider = ({ children }) => {
             setUser(user);
             return { success: true };
         } catch (err) {
-            return { success: false, message: err.response?.data?.message || 'Registration failed' };
+            console.error('Registration error:', err);
+            if (err.response?.data?.message) {
+                return { success: false, message: err.response.data.message };
+            }
+            if (err.code === 'ECONNREFUSED' || err.message === 'Network Error') {
+                return { success: false, message: 'Não foi possível conectar ao servidor. Verifique se o servidor está rodando.' };
+            }
+            return { success: false, message: err.message || 'Erro ao registrar usuário. Tente novamente.' };
         }
     };
 

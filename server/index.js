@@ -14,8 +14,27 @@ app.use(express.json());
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/fluency')
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+    .then(() => {
+        console.log('MongoDB connected successfully');
+    })
+    .catch(err => {
+        console.error('MongoDB connection error:', err.message);
+        console.error('Warning: Server will start but database operations may fail.');
+        console.error('Make sure MongoDB is running on localhost:27017');
+    });
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('MongoDB disconnected');
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB connection established');
+});
 
 // Auth Routes
 console.log('Loading auth routes...');

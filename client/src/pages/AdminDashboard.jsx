@@ -37,14 +37,16 @@ const AdminDashboard = () => {
                 <h2>Admin Dashboard</h2>
                 <button className="btn secondary" style={{ width: 'auto' }} onClick={() => { logout(); navigate('/login'); }}>Logout</button>
             </div>
-            <p>Welcome, {user?.username}!</p>
+            <p>Welcome, {user?.name || user?.email}!</p>
 
             <h3>User Management</h3>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ borderBottom: '2px solid var(--gray-border)' }}>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>Username</th>
+                            <th style={{ padding: '10px', textAlign: 'left' }}>Name</th>
+                            <th style={{ padding: '10px', textAlign: 'left' }}>Email</th>
+                            <th style={{ padding: '10px', textAlign: 'left' }}>CPF</th>
                             <th style={{ padding: '10px', textAlign: 'left' }}>Role</th>
                             <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
                         </tr>
@@ -52,7 +54,9 @@ const AdminDashboard = () => {
                     <tbody>
                         {users.map(u => (
                             <tr key={u._id} style={{ borderBottom: '1px solid var(--gray-border)' }}>
-                                <td style={{ padding: '10px' }}>{u.username}</td>
+                                <td style={{ padding: '10px' }}>{u.name}</td>
+                                <td style={{ padding: '10px' }}>{u.email}</td>
+                                <td style={{ padding: '10px' }}>{u.cpf}</td>
                                 <td style={{ padding: '10px' }}>{u.role}</td>
                                 <td style={{ padding: '10px' }}>
                                     {u.role !== 'admin' && (

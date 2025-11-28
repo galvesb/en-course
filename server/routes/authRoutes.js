@@ -8,12 +8,31 @@ const router = express.Router();
 
 // Register
 router.post('/register', async (req, res) => {
-    const { username, password } = req.body;
+    const { name, email, cpf, address, password } = req.body;
 
     try {
-        let user = await User.findOne({ username });
+        // Validate required fields
+        if (!name || !email || !cpf || !address || !password) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+
+        // Normalize CPF (remove formatting)
+        const normalizedCpf = cpf.replace(/\D/g, '');
+
+        // Validate CPF length
+        if (normalizedCpf.length !== 11) {
+            return res.status(400).json({ message: 'CPF must have 11 digits' });
+        }
+
+        // Check if user already exists by email or CPF
+        let user = await User.findOne({ $or: [{ email: email.toLowerCase().trim() }, { cpf: normalizedCpf }] });
         if (user) {
-            return res.status(400).json({ message: 'User already exists' });
+            if (user.email === email.toLowerCase().trim()) {
+                return res.status(400).json({ message: 'Email already registered' });
+            }
+            if (user.cpf === normalizedCpf) {
+                return res.status(400).json({ message: 'CPF already registered' });
+            }
         }
 
         // Hash password
@@ -22,7 +41,10 @@ router.post('/register', async (req, res) => {
 
         // Create user (always as 'user' role for security)
         user = new User({
-            username,
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            cpf: normalizedCpf,
+            address: address.trim(),
             password: hashedPassword,
             role: 'user'
         });
@@ -37,19 +59,44 @@ router.post('/register', async (req, res) => {
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ token, user: { id: user.id, username: user.username, role: user.role } });
+        res.status(201).json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
+        console.error('Registration error:', err);
+        
+        // Handle Mongoose validation errors
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(e => e.message);
+            return res.status(400).json({ message: messages.join(', ') });
+        }
+
+        // Handle duplicate key errors (unique constraint violations)
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(400).json({ message: `${field} already registered` });
+        }
+
+        // Handle other errors
+        res.status(500).json({ 
+            message: 'Server error',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 });
 
-// Login
+// Login (using email as username)
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -66,7 +113,15 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');

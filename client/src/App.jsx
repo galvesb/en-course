@@ -267,7 +267,7 @@ function MainApp() {
         <div className="settings-menu-content">
           <h3>Configurações</h3>
           <p style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '1.5rem' }}>
-            Usuário: {user?.username} ({user?.role})
+            Usuário: {user?.name || user?.email} ({user?.role})
           </p>
           {user?.role === 'admin' && (
             <button className="btn primary" onClick={() => {
