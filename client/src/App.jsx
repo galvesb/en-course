@@ -148,9 +148,13 @@ function MainApp() {
               if (savedScenario.lessons[role] && updatedData[role]) {
                 updatedData[role] = updatedData[role].map(lesson => {
                   const savedLesson = savedScenario.lessons[role].find(sl => sl.id === lesson.id);
-                  if (savedLesson && savedLesson.completed) {
-                    console.log(`✅ Marking lesson ${lesson.id} in role ${role} as completed`);
-                    return { ...lesson, completed: true };
+                  if (savedLesson) {
+                    // console.log(`✅ Restoring lesson ${lesson.id} in role ${role}`);
+                    return {
+                      ...lesson,
+                      completed: savedLesson.completed || false,
+                      completedRoles: savedLesson.completedRoles || []
+                    };
                   }
                   return lesson;
                 });
@@ -227,7 +231,8 @@ function MainApp() {
             }));
             lessons.C = (lessonDataForScenario.C || []).map(lesson => ({
               id: lesson.id,
-              completed: lesson.completed || false
+              completed: lesson.completed || false,
+              completedRoles: lesson.completedRoles || []
             }));
           }
 
@@ -361,7 +366,13 @@ function MainApp() {
             <div className={`sub-bubble ${conversationLesson?.completed ? 'completed' : (conversationIsActive ? 'active' : '')}`}
               style={{ width: '80px', height: '80px', fontSize: '2rem' }}>🗣️</div>
             <p style={{ fontWeight: 600 }}>Simulação Completa</p>
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{conversationLesson?.completed ? 'COMPLETO' : 'PRONTO PARA INICIAR'}</p>
+            <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>
+              {conversationLesson?.completed
+                ? 'COMPLETO'
+                : (conversationLesson?.completedRoles?.length > 0
+                  ? `Falta: ${['A', 'B'].find(r => !conversationLesson.completedRoles.includes(r)) === 'A' ? 'Pessoa A' : 'Pessoa B'}`
+                  : 'PRONTO PARA INICIAR')}
+            </p>
           </div>
         </div>
         <button className="btn ghost" onClick={() => setStage('day-scenarios')}>Voltar aos Cenários</button>
@@ -501,7 +512,8 @@ function MainApp() {
                 }));
                 lessons.C = (lessonDataForScenario.C || []).map(lesson => ({
                   id: lesson.id,
-                  completed: lesson.completed || false
+                  completed: lesson.completed || false,
+                  completedRoles: lesson.completedRoles || []
                 }));
               }
 
@@ -609,15 +621,30 @@ function MainApp() {
     setStage('role');
   };
 
-  const handleSimulacaoComplete = async () => {
+  const handleSimulacaoComplete = async (completedRole) => {
     const day = courseStructure[currentDayIndex];
     const scenario = day.scenarios[currentScenarioIndex];
     const key = scenario.lessonKey;
 
     // Update local state
     const updatedLessonData = { ...lessonData };
+    let isFullyComplete = false;
+
     if (updatedLessonData[key] && updatedLessonData[key].C) {
-      updatedLessonData[key].C[0].completed = true;
+      const lesson = updatedLessonData[key].C[0];
+      const completedRoles = lesson.completedRoles || [];
+
+      if (!completedRoles.includes(completedRole)) {
+        completedRoles.push(completedRole);
+      }
+
+      lesson.completedRoles = completedRoles;
+
+      // Check if both roles are completed
+      if (completedRoles.includes('A') && completedRoles.includes('B')) {
+        lesson.completed = true;
+        isFullyComplete = true;
+      }
     }
     setLessonData(updatedLessonData);
 
@@ -628,7 +655,15 @@ function MainApp() {
       const updatedScenario = { ...updatedScenarios[currentScenarioIndex] };
 
       if (updatedScenario.lessons && updatedScenario.lessons.C) {
-        updatedScenario.lessons.C[0].completed = true;
+        const lesson = updatedScenario.lessons.C[0];
+        const completedRoles = lesson.completedRoles || [];
+        if (!completedRoles.includes(completedRole)) {
+          completedRoles.push(completedRole);
+        }
+        lesson.completedRoles = completedRoles;
+        if (completedRoles.includes('A') && completedRoles.includes('B')) {
+          lesson.completed = true;
+        }
       }
 
       updatedScenarios[currentScenarioIndex] = updatedScenario;
@@ -641,12 +676,6 @@ function MainApp() {
     try {
       const token = localStorage.getItem('token');
       if (token && user) {
-        // Re-use logic from saveProgress or call it directly if possible, 
-        // but here we construct the data manually to be safe and quick
-        // Actually, since we updated state, we can just call saveProgress() if it uses current state?
-        // saveProgress uses courseStructure and lessonData state, but state updates are async.
-        // So better to construct the payload manually here as done in renderFlashcard.
-
         // Construct payload similar to renderFlashcard logic
         const progressData = courseStructure.map((d, dIdx) => {
           if (dIdx !== currentDayIndex) {
@@ -660,7 +689,11 @@ function MainApp() {
                 lessons: {
                   A: (lessonData[s.lessonKey]?.A || []).map(l => ({ id: l.id, completed: l.completed })),
                   B: (lessonData[s.lessonKey]?.B || []).map(l => ({ id: l.id, completed: l.completed })),
-                  C: (lessonData[s.lessonKey]?.C || []).map(l => ({ id: l.id, completed: l.completed }))
+                  C: (lessonData[s.lessonKey]?.C || []).map(l => ({
+                    id: l.id,
+                    completed: l.completed,
+                    completedRoles: l.completedRoles || []
+                  }))
                 }
               }))
             };
@@ -676,7 +709,11 @@ function MainApp() {
               const lessons = {
                 A: (lData?.A || []).map(l => ({ id: l.id, completed: l.completed })),
                 B: (lData?.B || []).map(l => ({ id: l.id, completed: l.completed })),
-                C: (lData?.C || []).map(l => ({ id: l.id, completed: l.completed }))
+                C: (lData?.C || []).map(l => ({
+                  id: l.id,
+                  completed: l.completed,
+                  completedRoles: l.completedRoles || []
+                }))
               };
 
               const allCompleted =
@@ -697,7 +734,7 @@ function MainApp() {
           { courseProgress: progressData },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        console.log('Simulação completa salva!');
+        console.log('Simulação parcial/completa salva!');
       }
     } catch (e) {
       console.error("Erro ao salvar simulação", e);
@@ -708,17 +745,38 @@ function MainApp() {
     const day = courseStructure[currentDayIndex];
     const scenario = day.scenarios[currentScenarioIndex];
 
+    // Get lesson data to check completion status
+    const key = scenario.lessonKey;
+    const data = lessonData[key];
+    const conversationLesson = data?.C?.[0];
+    const completedRoles = conversationLesson?.completedRoles || [];
+
+    const isACompleted = completedRoles.includes('A');
+    const isBCompleted = completedRoles.includes('B');
+
     return (
       <div className="card" style={{ marginTop: '20px' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>{scenario.name} - Escolha seu Papel</h2>
         <div className="flex gap-md" style={{ flexWrap: 'wrap' }}>
-          <button className="btn primary" style={{ flex: '1 1 200px', background: 'var(--duo-blue-dark)' }}
+          <button className="btn primary"
+            style={{
+              flex: '1 1 200px',
+              background: isACompleted ? 'var(--gray-border)' : 'var(--duo-blue-dark)',
+              color: isACompleted ? '#4b5563' : '#fff',
+              border: isACompleted ? '1px solid #9ca3af' : '0'
+            }}
             onClick={() => { setCurrentRole('A'); setStage('chat'); }}>
-            Pessoa A (Ex: Scrum Master)
+            Pessoa A (Ex: Scrum Master) {isACompleted && '✓'}
           </button>
-          <button className="btn primary" style={{ flex: '1 1 200px', background: 'var(--duo-green-dark)' }}
+          <button className="btn primary"
+            style={{
+              flex: '1 1 200px',
+              background: isBCompleted ? 'var(--gray-border)' : 'var(--duo-green-dark)',
+              color: isBCompleted ? '#4b5563' : '#fff',
+              border: isBCompleted ? '1px solid #9ca3af' : '0'
+            }}
             onClick={() => { setCurrentRole('B'); setStage('chat'); }}>
-            Pessoa B (Ex: Desenvolvedor)
+            Pessoa B (Ex: Desenvolvedor) {isBCompleted && '✓'}
           </button>
         </div>
         <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
@@ -933,7 +991,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
     if (!ul) {
       setFinished(true);
-      onComplete();
+      onComplete(role);
       return;
     }
 
@@ -974,7 +1032,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       const isFinished = (role === 'A' && nextStep >= conv.A.length) || (role === 'B' && nextStep >= conv.B.length);
       if (isFinished) {
         setFinished(true);
-        onComplete();
+        onComplete(role);
       }
 
     } else {
