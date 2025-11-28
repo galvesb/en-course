@@ -26,10 +26,14 @@ function MainApp() {
 
   useEffect(() => {
     fetchCourses();
-    if (user) {
+  }, []);
+
+  // Carrega o progresso após os cursos serem carregados
+  useEffect(() => {
+    if (user && courseStructure.length > 0) {
       fetchUserProgress();
     }
-  }, [user]);
+  }, [user, courseStructure.length]);
 
   const fetchCourses = async () => {
     try {
@@ -41,36 +45,76 @@ function MainApp() {
   };
 
   const fetchLessonData = async (key) => {
-    if (lessonData[key]) return;
+    if (lessonData[key]) return lessonData[key];
     try {
       const res = await axios.get(`http://localhost:5000/api/lessons/${key}`);
-      setLessonData(prev => ({ ...prev, [key]: res.data }));
+      const data = res.data;
+      setLessonData(prev => ({ ...prev, [key]: data }));
+      return data;
     } catch (err) {
       console.error("Error fetching lesson data:", err);
+      return null;
     }
   };
 
   const fetchUserProgress = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        console.log('No token found, skipping progress fetch');
+        return;
+      }
       
+      console.log('Fetching user progress...');
       const res = await axios.get('http://localhost:5000/api/progress', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       const { courseProgress } = res.data;
+      console.log('Progress fetched:', courseProgress);
+      
       if (courseProgress && courseProgress.length > 0) {
         // Aplica o progresso salvo à estrutura de cursos
-        applyProgressToCourses(courseProgress);
+        await applyProgressToCourses(courseProgress);
+        console.log('Progress applied to courses');
+      } else {
+        console.log('No progress found for user');
       }
     } catch (err) {
       console.error("Error fetching user progress:", err);
+      if (err.response?.status === 404) {
+        console.log('Progress endpoint not found - server may need restart');
+      }
     }
   };
 
-  const applyProgressToCourses = (savedProgress) => {
-    // Primeiro atualiza o lessonData
+  const applyProgressToCourses = async (savedProgress) => {
+    console.log('Applying progress to courses:', savedProgress);
+    
+    // Primeiro, carrega todos os lessonData necessários
+    const lessonKeysToLoad = new Set();
+    savedProgress.forEach(savedDay => {
+      const day = courseStructure.find(d => d.id === savedDay.id);
+      if (!day) return;
+      savedDay.scenarios?.forEach(savedScenario => {
+        const scenario = day.scenarios.find(s => s.id === savedScenario.id);
+        if (scenario?.lessonKey) {
+          lessonKeysToLoad.add(scenario.lessonKey);
+        }
+      });
+    });
+    
+    // Carrega todos os lessonData que ainda não foram carregados
+    const loadPromises = Array.from(lessonKeysToLoad).map(key => {
+      if (!lessonData[key]) {
+        return fetchLessonData(key);
+      }
+      return Promise.resolve(lessonData[key]);
+    });
+    
+    await Promise.all(loadPromises);
+    
+    // Agora aplica o progresso ao lessonData
     setLessonData(prev => {
       const updated = { ...prev };
       savedProgress.forEach(savedDay => {
@@ -88,7 +132,11 @@ function MainApp() {
               if (savedScenario.lessons[role] && updatedData[role]) {
                 updatedData[role] = updatedData[role].map(lesson => {
                   const savedLesson = savedScenario.lessons[role].find(sl => sl.id === lesson.id);
-                  return savedLesson ? { ...lesson, completed: savedLesson.completed || false } : lesson;
+                  if (savedLesson && savedLesson.completed) {
+                    console.log(`✅ Marking lesson ${lesson.id} in role ${role} as completed`);
+                    return { ...lesson, completed: true };
+                  }
+                  return lesson;
                 });
               }
             });
@@ -113,9 +161,9 @@ function MainApp() {
             
             // Atualiza o status do cenário baseado nas lições completas
             const allLessonsCompleted = 
-              savedScenario.lessons?.A?.every(l => l.completed) &&
-              savedScenario.lessons?.B?.every(l => l.completed) &&
-              savedScenario.lessons?.C?.every(l => l.completed);
+              savedScenario.lessons?.A?.length > 0 && savedScenario.lessons.A.every(l => l.completed) &&
+              savedScenario.lessons?.B?.length > 0 && savedScenario.lessons.B.every(l => l.completed) &&
+              savedScenario.lessons?.C?.length > 0 && savedScenario.lessons.C.every(l => l.completed);
             
             return {
               ...scenario,
@@ -324,7 +372,8 @@ function MainApp() {
             const nextLessonIndex = roleLessons.findIndex(l => !l.completed);
             const isActive = lIdx === nextLessonIndex;
             const statusClass = lesson.completed ? 'completed' : (isActive ? 'active' : '');
-            const bubbleClass = statusClass + (lesson.completed ? '' : ` ${roleClass}`);
+            // Quando completed, não adiciona roleClass para ficar cinza
+            const bubbleClass = lesson.completed ? 'completed' : `${statusClass} ${roleClass}`;
 
             return (
               <div key={lesson.id} className="day-node" onClick={() => {
@@ -339,7 +388,8 @@ function MainApp() {
                 }
               }}>
                 <div className={`sub-bubble ${bubbleClass}`} style={{ width: '60px', height: '60px', borderWidth: '4px' }}>{icon}</div>
-                <p style={{ fontWeight: 500 }}>{lesson.title}</p>
+                <p style={{ fontWeight: 500, color: lesson.completed ? '#6b7280' : '#1f2937' }}>{lesson.title}</p>
+                {lesson.completed && <p style={{ margin: 0, color: '#6b7280', fontSize: '.8rem' }}>✓ Completo</p>}
               </div>
             );
           })}
@@ -461,6 +511,11 @@ function MainApp() {
           );
           
           console.log('✅ Progress saved successfully!', response.data);
+          
+          // Recarrega o progresso para garantir que está sincronizado
+          setTimeout(() => {
+            fetchUserProgress();
+          }, 300);
         } catch (err) {
           console.error("❌ Error saving progress:", err);
           if (err.response) {
