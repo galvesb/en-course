@@ -10,6 +10,7 @@ const AdminDashboard = () => {
     const [courseJson, setCourseJson] = useState('');
     const [courseMessage, setCourseMessage] = useState('');
     const [courseError, setCourseError] = useState('');
+    const [activeTab, setActiveTab] = useState('users'); // 'users' | 'courses'
 
     // Representação em objeto do JSON (para helper visual)
     const [parsedCourse, setParsedCourse] = useState(null);
@@ -312,51 +313,83 @@ const AdminDashboard = () => {
             </div>
             <p>Welcome, {user?.name || user?.email}!</p>
 
-            {/* Gestão de usuários */}
-            <h3>User Management</h3>
-            <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '2px solid var(--gray-border)' }}>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>Name</th>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>Email</th>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>CPF</th>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>Role</th>
-                            <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(u => (
-                            <tr key={u._id} style={{ borderBottom: '1px solid var(--gray-border)' }}>
-                                <td style={{ padding: '10px' }}>{u.name}</td>
-                                <td style={{ padding: '10px' }}>{u.email}</td>
-                                <td style={{ padding: '10px' }}>{u.cpf}</td>
-                                <td style={{ padding: '10px' }}>{u.role}</td>
-                                <td style={{ padding: '10px' }}>
-                                    {u.role !== 'admin' && (
-                                        <button
-                                            className="btn danger"
-                                            style={{ width: 'auto', padding: '5px 10px', marginTop: 0 }}
-                                            onClick={() => deleteUser(u._id)}
-                                        >
-                                            Delete
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            {/* Menu de navegação entre seções */}
+            <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
+                <button
+                    type="button"
+                    className={`btn ${activeTab === 'users' ? 'primary' : 'secondary'}`}
+                    style={{
+                        width: 'auto',
+                        padding: '6px 14px',
+                        fontSize: '.9rem'
+                    }}
+                    onClick={() => setActiveTab('users')}
+                >
+                    User Management
+                </button>
+                <button
+                    type="button"
+                    className={`btn ${activeTab === 'courses' ? 'primary' : 'secondary'}`}
+                    style={{
+                        width: 'auto',
+                        padding: '6px 14px',
+                        fontSize: '.9rem'
+                    }}
+                    onClick={() => setActiveTab('courses')}
+                >
+                    Course / Days Management
+                </button>
             </div>
 
-            {/* Gestão de Dias / Cursos */}
-            <h3>Course / Days Management</h3>
-            <p style={{ fontSize: '.9rem', color: '#6b7280' }}>
-                Aqui você pode criar e editar os dias com cenários, conversas e lessons usando o JSON
-                no mesmo formato do documento de exemplo (incluindo <code>scenarios</code>, <code>conversations</code> e <code>lessons</code>).
-            </p>
+            {activeTab === 'users' && (
+                <>
+                    <h3>User Management</h3>
+                    <div style={{ overflowX: 'auto', marginBottom: '2rem' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '2px solid var(--gray-border)' }}>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>Name</th>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>Email</th>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>CPF</th>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>Role</th>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map(u => (
+                                    <tr key={u._id} style={{ borderBottom: '1px solid var(--gray-border)' }}>
+                                        <td style={{ padding: '10px' }}>{u.name}</td>
+                                        <td style={{ padding: '10px' }}>{u.email}</td>
+                                        <td style={{ padding: '10px' }}>{u.cpf}</td>
+                                        <td style={{ padding: '10px' }}>{u.role}</td>
+                                        <td style={{ padding: '10px' }}>
+                                            {u.role !== 'admin' && (
+                                                <button
+                                                    className="btn danger"
+                                                    style={{ width: 'auto', padding: '5px 10px', marginTop: 0 }}
+                                                    onClick={() => deleteUser(u._id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
 
-            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            {activeTab === 'courses' && (
+                <>
+                    <h3>Course / Days Management</h3>
+                    <p style={{ fontSize: '.9rem', color: '#6b7280' }}>
+                        Aqui você pode criar e editar os dias com cenários, conversas e lessons usando o JSON
+                        no mesmo formato do documento de exemplo (incluindo <code>scenarios</code>, <code>conversations</code> e <code>lessons</code>).
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
                 <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.5rem' }}>
                         <h4 style={{ margin: 0 }}>Dias existentes</h4>
@@ -521,7 +554,9 @@ const AdminDashboard = () => {
                         </div>
                     )}
                 </div>
-            </div>
+                    </div>
+                </>
+            )}
 
             <div style={{ marginTop: '2rem' }}>
                 <button className="btn ghost" onClick={() => navigate('/')}>Go to App</button>
