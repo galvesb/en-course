@@ -425,99 +425,101 @@ const AdminDashboard = () => {
                         <p style={{ marginTop: '.5rem', color: '#ef4444', fontSize: '.9rem' }}>{courseError}</p>
                     )}
 
-                    {/* Upload auxiliar de áudio com helper visual */}
-                    <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--gray-border)' }}>
-                        <h5 style={{ margin: 0, marginBottom: '.5rem' }}>Upload de Áudio</h5>
-                        {parsedCourse && Array.isArray(parsedCourse.scenarios) && parsedCourse.scenarios.length > 0 ? (
-                            <>
+                    {/* Upload auxiliar de áudio com helper visual (apenas quando um dia existente está selecionado) */}
+                    {selectedCourse && (
+                        <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--gray-border)' }}>
+                            <h5 style={{ margin: 0, marginBottom: '.5rem' }}>Upload de Áudio</h5>
+                            {parsedCourse && Array.isArray(parsedCourse.scenarios) && parsedCourse.scenarios.length > 0 ? (
+                                <>
+                                    <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
+                                        Escolha o cenário, o papel (A/B) e a fala; depois envie o arquivo. O caminho do áudio será inserido automaticamente no campo <code>"audio"</code> daquela fala no JSON.
+                                    </p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '.5rem' }}>
+                                        <select
+                                            value={selectedScenarioIdx}
+                                            onChange={(e) => setSelectedScenarioIdx(Number(e.target.value) || 0)}
+                                            style={{ flex: '1 1 140px', padding: '4px' }}
+                                        >
+                                            {parsedCourse.scenarios.map((s, idx) => (
+                                                <option key={idx} value={idx}>
+                                                    {s.name || s.title || `Cenário ${idx + 1}`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            value={selectedRole}
+                                            onChange={(e) => {
+                                                const role = e.target.value === 'B' ? 'B' : 'A';
+                                                setSelectedRole(role);
+                                                setSelectedLineIdx(0);
+                                            }}
+                                            style={{ flex: '0 0 90px', padding: '4px' }}
+                                        >
+                                            <option value="A">Pessoa A</option>
+                                            <option value="B">Pessoa B</option>
+                                        </select>
+                                        {(() => {
+                                            const scenario = parsedCourse.scenarios[selectedScenarioIdx] || {};
+                                            const convList = scenario.conversations?.[selectedRole] || [];
+                                            const safeValue = Math.min(selectedLineIdx, Math.max(convList.length - 1, 0));
+                                            return (
+                                                <select
+                                                    value={safeValue}
+                                                    onChange={(e) => setSelectedLineIdx(Number(e.target.value) || 0)}
+                                                    style={{ flex: '2 1 220px', padding: '4px' }}
+                                                >
+                                                    {convList.length === 0 && (
+                                                        <option value={0}>Sem falas cadastradas para esse papel</option>
+                                                    )}
+                                                    {convList.map((line, idx) => (
+                                                        <option key={idx} value={idx}>
+                                                            {(line.id || idx + 1) + ' - ' + (line.pergunta || line.resposta || 'Sem texto')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            );
+                                        })()}
+                                    </div>
+                                </>
+                            ) : (
                                 <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
-                                    Escolha o cenário, o papel (A/B) e a fala; depois envie o arquivo. O caminho do áudio será inserido automaticamente no campo <code>"audio"</code> daquela fala no JSON.
+                                    Para usar o helper de áudio, garanta que o JSON acima é válido e possui um array <code>scenarios</code> com <code>conversations.A</code> e/ou <code>conversations.B</code>.
                                 </p>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '.5rem' }}>
-                                    <select
-                                        value={selectedScenarioIdx}
-                                        onChange={(e) => setSelectedScenarioIdx(Number(e.target.value) || 0)}
-                                        style={{ flex: '1 1 140px', padding: '4px' }}
-                                    >
-                                        {parsedCourse.scenarios.map((s, idx) => (
-                                            <option key={idx} value={idx}>
-                                                {s.name || s.title || `Cenário ${idx + 1}`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <select
-                                        value={selectedRole}
-                                        onChange={(e) => {
-                                            const role = e.target.value === 'B' ? 'B' : 'A';
-                                            setSelectedRole(role);
-                                            setSelectedLineIdx(0);
-                                        }}
-                                        style={{ flex: '0 0 90px', padding: '4px' }}
-                                    >
-                                        <option value="A">Pessoa A</option>
-                                        <option value="B">Pessoa B</option>
-                                    </select>
-                                    {(() => {
-                                        const scenario = parsedCourse.scenarios[selectedScenarioIdx] || {};
-                                        const convList = scenario.conversations?.[selectedRole] || [];
-                                        const safeValue = Math.min(selectedLineIdx, Math.max(convList.length - 1, 0));
-                                        return (
-                                            <select
-                                                value={safeValue}
-                                                onChange={(e) => setSelectedLineIdx(Number(e.target.value) || 0)}
-                                                style={{ flex: '2 1 220px', padding: '4px' }}
-                                            >
-                                                {convList.length === 0 && (
-                                                    <option value={0}>Sem falas cadastradas para esse papel</option>
-                                                )}
-                                                {convList.map((line, idx) => (
-                                                    <option key={idx} value={idx}>
-                                                        {(line.id || idx + 1) + ' - ' + (line.pergunta || line.resposta || 'Sem texto')}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        );
-                                    })()}
-                                </div>
-                            </>
-                        ) : (
-                            <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
-                                Para usar o helper de áudio, garanta que o JSON acima é válido e possui um array <code>scenarios</code> com <code>conversations.A</code> e/ou <code>conversations.B</code>.
-                            </p>
-                        )}
+                            )}
 
-                        <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <input
-                                type="file"
-                                accept="audio/*"
-                                onChange={handleAudioFileChange}
-                                style={{ flex: '1 1 180px' }}
-                            />
-                            <button
-                                className="btn secondary"
-                                type="button"
-                                style={{ width: 'auto' }}
-                                onClick={handleUploadAudio}
-                            >
-                                Enviar Áudio
-                            </button>
+                            <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input
+                                    type="file"
+                                    accept="audio/*"
+                                    onChange={handleAudioFileChange}
+                                    style={{ flex: '1 1 180px' }}
+                                />
+                                <button
+                                    className="btn secondary"
+                                    type="button"
+                                    style={{ width: 'auto' }}
+                                    onClick={handleUploadAudio}
+                                >
+                                    Enviar Áudio
+                                </button>
+                            </div>
+                            {audioPath && (
+                                <p style={{ marginTop: '.5rem', fontSize: '.8rem' }}>
+                                    Caminho: <code>{audioPath}</code>
+                                </p>
+                            )}
+                            {audioMessage && (
+                                <p style={{ marginTop: '.25rem', color: 'var(--duo-green-dark)', fontSize: '.8rem' }}>
+                                    {audioMessage}
+                                </p>
+                            )}
+                            {audioError && (
+                                <p style={{ marginTop: '.25rem', color: '#ef4444', fontSize: '.8rem' }}>
+                                    {audioError}
+                                </p>
+                            )}
                         </div>
-                        {audioPath && (
-                            <p style={{ marginTop: '.5rem', fontSize: '.8rem' }}>
-                                Caminho: <code>{audioPath}</code>
-                            </p>
-                        )}
-                        {audioMessage && (
-                            <p style={{ marginTop: '.25rem', color: 'var(--duo-green-dark)', fontSize: '.8rem' }}>
-                                {audioMessage}
-                            </p>
-                        )}
-                        {audioError && (
-                            <p style={{ marginTop: '.25rem', color: '#ef4444', fontSize: '.8rem' }}>
-                                {audioError}
-                            </p>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
 
