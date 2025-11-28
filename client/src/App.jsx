@@ -919,9 +919,9 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     manualAudioRef.current.play().catch(e => console.error(e));
   };
 
-  const pushMessage = (msg) => {
+  const pushMessage = (msg, playAudio = true) => {
     setHistory(prev => [...prev, msg]);
-    if (msg.audio) queueAudio(msg.audio);
+    if (msg.audio && playAudio) queueAudio(msg.audio);
   };
 
   const handleSend = () => {
@@ -953,8 +953,8 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       audioRef.current.pause();
       manualAudioRef.current.pause();
 
-      // Adiciona minha fala
-      pushMessage({ speaker: role, text: input, audio: ul.audio || null });
+      // Adiciona minha fala (SEM AUDIO)
+      pushMessage({ speaker: role, text: input, audio: ul.audio || null }, false);
 
       // Resposta do outro
       const nextSpeaker = role === 'A' ? 'B' : 'A';
