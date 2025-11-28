@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import './index.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+function MainApp() {
   const [courseStructure, setCourseStructure] = useState([]);
   const [lessonData, setLessonData] = useState({});
-  const [stage, setStage] = useState('map'); // map, day-scenarios, role-choice-lessons, flashcard-selector, flashcard, role, chat
+  const [stage, setStage] = useState('map');
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [currentRole, setCurrentRole] = useState(null);
@@ -14,6 +20,9 @@ function App() {
   const [currentCardIndexInQueue, setCurrentCardIndexInQueue] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCourses();
@@ -129,7 +138,6 @@ function App() {
 
           <div className="day-node" onClick={() => {
             if (conversationIsActive || conversationLesson?.completed) {
-              // Start conversation logic
               alert("Conversation simulator not fully implemented in this demo.");
             } else {
               alert('Complete as lições da Pessoa A e B primeiro!');
@@ -161,7 +169,7 @@ function App() {
         <h3 style={{ textAlign: 'center', marginTop: '-1rem', color: currentRole === 'A' ? 'var(--duo-blue-dark)' : 'var(--duo-green-dark)' }}>{roleName} - Seleção de Lição</h3>
         <div id="lessons-list" className="day-path" style={{ padding: 0, margin: 0, width: '100%', position: 'relative' }}>
           {roleLessons.map((lesson, lIdx) => {
-            const icon = lesson.type === 'words' ? '📖' : '💬'; // Simplified icon logic
+            const icon = lesson.type === 'words' ? '📖' : '💬';
             const nextLessonIndex = roleLessons.findIndex(l => !l.completed);
             const isActive = lIdx === nextLessonIndex;
             const statusClass = lesson.completed ? 'completed' : (isActive ? 'active' : '');
@@ -193,21 +201,13 @@ function App() {
   const renderFlashcard = () => {
     if (flashcardQueue.length === 0) return <div>No cards</div>;
     const card = flashcardQueue[currentCardIndexInQueue];
-    const remaining = flashcardQueue.length - currentCardIndexInQueue; // Simplified logic, original was queue length
-
-    // In original app, queue shrinks. Here I'll just iterate.
-    // Actually, original app removed known cards.
 
     const markAsKnown = () => {
-      // Logic to remove from queue or move to next
       if (currentCardIndexInQueue < flashcardQueue.length - 1) {
         setCurrentCardIndexInQueue(prev => prev + 1);
         setIsFlashcardFlipped(false);
       } else {
-        // Lesson complete
         alert("Lição Completa!");
-        // Update local state to mark lesson as complete (in a real app, send to backend)
-        // For now, just go back
         setStage('flashcard-selector');
       }
     };
@@ -267,13 +267,22 @@ function App() {
         <div className="settings-menu-content">
           <h3>Configurações</h3>
           <p style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '1.5rem' }}>
-            Atenção: Resetar o progresso apagará todos os dados salvos localmente.
+            Usuário: {user?.username} ({user?.role})
           </p>
-          <button className="btn danger" onClick={() => {
+          {user?.role === 'admin' && (
+            <button className="btn primary" onClick={() => {
+              setSettingsVisible(false);
+              navigate('/admin');
+            }}>
+              Admin Dashboard
+            </button>
+          )}
+          <button className="btn danger" style={{ marginTop: '1rem' }} onClick={() => {
             setSettingsVisible(false);
-            alert("Reset not implemented in this demo");
+            logout();
+            navigate('/login');
           }}>
-            ❌ Resetar Progresso
+            Sair
           </button>
           <button className="btn secondary" style={{ marginTop: '1rem' }} onClick={() => setSettingsVisible(false)}>
             Voltar
@@ -298,6 +307,29 @@ function App() {
         )}
       </div>
     </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/admin" element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <MainApp />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

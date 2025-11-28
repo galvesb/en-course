@@ -120,6 +120,23 @@ const seedDB = async () => {
 
     await LessonContent.insertMany(lessonDocs);
 
+    // Seed Admin User
+    const bcrypt = require('bcryptjs');
+    const User = require('./models/User');
+    await User.deleteMany({});
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+
+    const adminUser = new User({
+        username: 'admin',
+        password: hashedPassword,
+        role: 'admin'
+    });
+
+    await adminUser.save();
+    console.log('Admin user created: admin / admin123');
+
     console.log('Database seeded!');
     mongoose.connection.close();
 };

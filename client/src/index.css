@@ -43,6 +43,13 @@ body {
   padding-bottom: var(--safe-bottom);
 }
 
+/* Fix for React Root */
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .card {
   background: #fff;
   width: 100%;
