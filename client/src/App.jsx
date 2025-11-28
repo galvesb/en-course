@@ -125,14 +125,14 @@ function MainApp() {
           <div className="day-node" onClick={() => { setCurrentRole('A'); setStage('flashcard-selector'); }} style={{ cursor: 'pointer' }}>
             <div className={`sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}`}
               style={{ width: '80px', height: '80px', fontSize: '2rem' }}>👤</div>
-            <p style={{ fontWeight: 600 }}>Pessoa A (Introdução/Perguntas)</p>
+            <p style={{ fontWeight: 600 }}>Pessoa A</p>
             <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{allRoleALessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
           </div>
 
           <div className="day-node" onClick={() => { setCurrentRole('B'); setStage('flashcard-selector'); }} style={{ cursor: 'pointer' }}>
             <div className={`sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}`}
               style={{ width: '80px', height: '80px', fontSize: '2rem' }}>👤</div>
-            <p style={{ fontWeight: 600 }}>Pessoa B (Respostas/Status)</p>
+            <p style={{ fontWeight: 600 }}>Pessoa B</p>
             <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{allRoleBLessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
           </div>
 

@@ -4,7 +4,7 @@
 window.lessonDataStatic = {
   "dailyLessons": {
     "A": [ 
-      { "id": 1, "type": "words", "title": "Vocabulário A", "completed": false, "words": [{"word":"Start with you", "translation": "Vamos começar com você"}, {"word":"Awesome!", "translation": "Incrível!"}, {"word":"Noted", "translation": "Anotado"}] },
+      { "id": 1, "type": "words", "title": "Vocabulário A", "completed": false, "words": [{"word":"Start with youw", "translation": "Vamos começar com você"}, {"word":"Awesome!", "translation": "Incrível!"}, {"word":"Noted", "translation": "Anotado"}] },
       { "id": 2, "type": "phrases", "title": "Frases A", "completed": false, "words": [{"word":"Let’s start with you.", "translation": "Vamos começar com você."}, {"word":"Any blockers today?", "translation": "Algum impedimento hoje?"}, {"word":"Let’s sync after the meeting.", "translation": "Vamos nos alinhar após a reunião."}] }
     ],
     "B": [ 
