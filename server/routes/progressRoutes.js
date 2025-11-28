@@ -1,53 +1,14 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const Course = require('./models/Course');
-const Progress = require('./models/Progress');
-const authRoutes = require('./routes/authRoutes');
-const { authMiddleware } = require('./middleware/authMiddleware');
+const Progress = require('../models/Progress');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const router = express.Router();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/fluency')
-    .then(() => {
-        console.log('MongoDB connected successfully');
-    })
-    .catch(err => {
-        console.error('MongoDB connection error:', err.message);
-        console.error('Warning: Server will start but database operations may fail.');
-        console.error('Make sure MongoDB is running on localhost:27017');
-    });
-
-// Handle MongoDB connection events
-mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err.message);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.warn('MongoDB disconnected');
-});
-
-mongoose.connection.on('connected', () => {
-    console.log('MongoDB connection established');
-});
-
-// Auth Routes
-console.log('Loading auth routes...');
-console.log('authRoutes type:', typeof authRoutes);
-app.use('/api/auth', authRoutes);
-console.log('Auth routes mounted at /api/auth');
-
-// Progress Routes (requires authentication)
-console.log('Loading progress routes...');
+// Todas as rotas requerem autenticação
+router.use(authMiddleware);
 
 // Buscar progresso do usuário atual
-app.get('/api/progress', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const userId = req.user.userId;
         
@@ -73,7 +34,7 @@ app.get('/api/progress', authMiddleware, async (req, res) => {
 });
 
 // Salvar/Atualizar progresso completo do usuário
-app.post('/api/progress', authMiddleware, async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const userId = req.user.userId;
         const { courseProgress } = req.body;
@@ -119,7 +80,7 @@ app.post('/api/progress', authMiddleware, async (req, res) => {
 });
 
 // Atualizar progresso de um item específico (curso, cenário ou lição)
-app.patch('/api/progress', authMiddleware, async (req, res) => {
+router.patch('/', async (req, res) => {
     try {
         const userId = req.user.userId;
         const { courseId, scenarioId, lessonId, role, completed } = req.body;
@@ -194,7 +155,7 @@ app.patch('/api/progress', authMiddleware, async (req, res) => {
 });
 
 // Resetar progresso do usuário
-app.delete('/api/progress', authMiddleware, async (req, res) => {
+router.delete('/', async (req, res) => {
     try {
         const userId = req.user.userId;
         
@@ -207,64 +168,5 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
     }
 });
 
-console.log('✅ Progress routes mounted at /api/progress');
+module.exports = router;
 
-// Routes
-app.get('/api/courses', async (req, res) => {
-    try {
-        const courses = await Course.find().sort({ id: 1 });
-        res.json(courses);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-});
-
-app.get('/api/lessons/:key', async (req, res) => {
-    try {
-        // Buscar o scenario que tem o lessonKey correspondente na collection Course
-        // Usando projection para buscar apenas o scenario necessário
-        const course = await Course.findOne(
-            { 'scenarios.lessonKey': req.params.key },
-            { 'scenarios.$': 1 } // Retorna apenas o scenario que corresponde
-        );
-        
-        if (!course || !course.scenarios || course.scenarios.length === 0) {
-            return res.status(404).json({ message: 'Lesson content not found in Course collection' });
-        }
-
-        // Pegar o primeiro scenario (que é o que corresponde ao lessonKey)
-        const scenario = course.scenarios[0];
-        
-        if (!scenario.lessons) {
-            return res.status(404).json({ message: 'Lessons not found in scenario' });
-        }
-
-        // Retornar os lessons no formato esperado pelo frontend
-        res.json({
-            key: req.params.key,
-            A: scenario.lessons.A || [],
-            B: scenario.lessons.B || [],
-            C: scenario.lessons.C || []
-        });
-    } catch (err) {
-        console.error('Error fetching lessons:', err);
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// Test route to verify server is working
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'Server is running', routes: ['/api/auth', '/api/progress', '/api/courses', '/api/lessons/:key'] });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('Available routes:');
-    console.log('  - GET  /api/test');
-    console.log('  - POST /api/auth/register');
-    console.log('  - POST /api/auth/login');
-    console.log('  - GET  /api/progress (requires auth)');
-    console.log('  - POST /api/progress (requires auth)');
-    console.log('  - GET  /api/courses');
-    console.log('  - GET  /api/lessons/:key');
-});

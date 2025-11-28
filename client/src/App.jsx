@@ -26,7 +26,10 @@ function MainApp() {
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+    if (user) {
+      fetchUserProgress();
+    }
+  }, [user]);
 
   const fetchCourses = async () => {
     try {
@@ -44,6 +47,154 @@ function MainApp() {
       setLessonData(prev => ({ ...prev, [key]: res.data }));
     } catch (err) {
       console.error("Error fetching lesson data:", err);
+    }
+  };
+
+  const fetchUserProgress = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const res = await axios.get('http://localhost:5000/api/progress', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const { courseProgress } = res.data;
+      if (courseProgress && courseProgress.length > 0) {
+        // Aplica o progresso salvo à estrutura de cursos
+        applyProgressToCourses(courseProgress);
+      }
+    } catch (err) {
+      console.error("Error fetching user progress:", err);
+    }
+  };
+
+  const applyProgressToCourses = (savedProgress) => {
+    // Primeiro atualiza o lessonData
+    setLessonData(prev => {
+      const updated = { ...prev };
+      savedProgress.forEach(savedDay => {
+        const day = courseStructure.find(d => d.id === savedDay.id);
+        if (!day) return;
+        
+        savedDay.scenarios?.forEach(savedScenario => {
+          const scenario = day.scenarios.find(s => s.id === savedScenario.id);
+          if (!scenario || !scenario.lessonKey) return;
+          
+          const key = scenario.lessonKey;
+          if (updated[key] && savedScenario.lessons) {
+            const updatedData = { ...updated[key] };
+            ['A', 'B', 'C'].forEach(role => {
+              if (savedScenario.lessons[role] && updatedData[role]) {
+                updatedData[role] = updatedData[role].map(lesson => {
+                  const savedLesson = savedScenario.lessons[role].find(sl => sl.id === lesson.id);
+                  return savedLesson ? { ...lesson, completed: savedLesson.completed || false } : lesson;
+                });
+              }
+            });
+            updated[key] = updatedData;
+          }
+        });
+      });
+      return updated;
+    });
+    
+    // Depois atualiza o courseStructure
+    setCourseStructure(prev => {
+      return prev.map(day => {
+        const savedDay = savedProgress.find(sd => sd.id === day.id);
+        if (!savedDay) return day;
+        
+        return {
+          ...day,
+          scenarios: day.scenarios.map(scenario => {
+            const savedScenario = savedDay.scenarios?.find(ss => ss.id === scenario.id);
+            if (!savedScenario) return scenario;
+            
+            // Atualiza o status do cenário baseado nas lições completas
+            const allLessonsCompleted = 
+              savedScenario.lessons?.A?.every(l => l.completed) &&
+              savedScenario.lessons?.B?.every(l => l.completed) &&
+              savedScenario.lessons?.C?.every(l => l.completed);
+            
+            return {
+              ...scenario,
+              completed: allLessonsCompleted || savedScenario.completed || false
+            };
+          })
+        };
+      });
+    });
+  };
+
+  const saveProgress = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !user) {
+        console.warn('Cannot save progress: no token or user');
+        return;
+      }
+      
+      console.log('Saving progress...', { user: user.email, lessonDataKeys: Object.keys(lessonData) });
+      
+      // Prepara o progresso no formato esperado usando lessonData como fonte de verdade
+      const progressData = courseStructure.map(day => ({
+        id: day.id,
+        title: day.title,
+        scenarios: day.scenarios.map(scenario => {
+          const key = scenario.lessonKey;
+          const lessonDataForScenario = lessonData[key];
+          
+          const lessons = {
+            A: [],
+            B: [],
+            C: []
+          };
+          
+          // Usa lessonData como fonte de verdade
+          if (lessonDataForScenario) {
+            lessons.A = (lessonDataForScenario.A || []).map(lesson => ({
+              id: lesson.id,
+              completed: lesson.completed || false
+            }));
+            lessons.B = (lessonDataForScenario.B || []).map(lesson => ({
+              id: lesson.id,
+              completed: lesson.completed || false
+            }));
+            lessons.C = (lessonDataForScenario.C || []).map(lesson => ({
+              id: lesson.id,
+              completed: lesson.completed || false
+            }));
+          }
+          
+          // Determina se o cenário está completo
+          const allLessonsCompleted = 
+            lessons.A.every(l => l.completed) &&
+            lessons.B.every(l => l.completed) &&
+            lessons.C.every(l => l.completed);
+          
+          return {
+            id: scenario.id,
+            completed: allLessonsCompleted,
+            lessons
+          };
+        })
+      }));
+      
+      console.log('Progress data to save:', JSON.stringify(progressData, null, 2));
+      
+      const response = await axios.post('http://localhost:5000/api/progress', 
+        { courseProgress: progressData },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      console.log('Progress saved successfully:', response.data);
+    } catch (err) {
+      console.error("Error saving progress:", err);
+      if (err.response) {
+        console.error("Response error:", err.response.data);
+        console.error("Status:", err.response.status);
+      }
     }
   };
 
@@ -202,11 +353,123 @@ function MainApp() {
     if (flashcardQueue.length === 0) return <div>No cards</div>;
     const card = flashcardQueue[currentCardIndexInQueue];
 
-    const markAsKnown = () => {
+    const markAsKnown = async () => {
       if (currentCardIndexInQueue < flashcardQueue.length - 1) {
         setCurrentCardIndexInQueue(prev => prev + 1);
         setIsFlashcardFlipped(false);
       } else {
+        // Marca a lição como completa
+        const day = courseStructure[currentDayIndex];
+        const scenario = day.scenarios[currentScenarioIndex];
+        const key = scenario.lessonKey;
+        
+        // Prepara os dados atualizados ANTES de atualizar o estado
+        const updatedLessonData = { ...lessonData };
+        if (updatedLessonData[key] && updatedLessonData[key][currentRole]) {
+          updatedLessonData[key] = {
+            ...updatedLessonData[key],
+            [currentRole]: updatedLessonData[key][currentRole].map((lesson, idx) => 
+              idx === currentLessonIndex ? { ...lesson, completed: true } : lesson
+            )
+          };
+        }
+        
+        // Atualiza o lessonData
+        setLessonData(updatedLessonData);
+        
+        // Atualiza o courseStructure
+        setCourseStructure(prev => {
+          const updated = [...prev];
+          const updatedDay = { ...updated[currentDayIndex] };
+          const updatedScenarios = [...updatedDay.scenarios];
+          const updatedScenario = { ...updatedScenarios[currentScenarioIndex] };
+          
+          if (updatedScenario.lessons && updatedScenario.lessons[currentRole]) {
+            updatedScenario.lessons = {
+              ...updatedScenario.lessons,
+              [currentRole]: updatedScenario.lessons[currentRole].map((lesson, idx) =>
+                idx === currentLessonIndex ? { ...lesson, completed: true } : lesson
+              )
+            };
+          }
+          
+          updatedScenarios[currentScenarioIndex] = updatedScenario;
+          updatedDay.scenarios = updatedScenarios;
+          updated[currentDayIndex] = updatedDay;
+          
+          return updated;
+        });
+        
+        // Salva o progresso IMEDIATAMENTE usando os dados preparados
+        try {
+          const token = localStorage.getItem('token');
+          if (!token || !user) {
+            console.warn('Cannot save: no token or user');
+            alert("Lição Completa!");
+            setStage('flashcard-selector');
+            return;
+          }
+          
+          // Prepara o progresso usando os dados atualizados
+          const progressData = courseStructure.map(day => ({
+            id: day.id,
+            title: day.title,
+            scenarios: day.scenarios.map(scenario => {
+              const scenarioKey = scenario.lessonKey;
+              const lessonDataForScenario = updatedLessonData[scenarioKey];
+              
+              const lessons = {
+                A: [],
+                B: [],
+                C: []
+              };
+              
+              if (lessonDataForScenario) {
+                lessons.A = (lessonDataForScenario.A || []).map(lesson => ({
+                  id: lesson.id,
+                  completed: lesson.completed || false
+                }));
+                lessons.B = (lessonDataForScenario.B || []).map(lesson => ({
+                  id: lesson.id,
+                  completed: lesson.completed || false
+                }));
+                lessons.C = (lessonDataForScenario.C || []).map(lesson => ({
+                  id: lesson.id,
+                  completed: lesson.completed || false
+                }));
+              }
+              
+              const allLessonsCompleted = 
+                lessons.A.length > 0 && lessons.A.every(l => l.completed) &&
+                lessons.B.length > 0 && lessons.B.every(l => l.completed) &&
+                lessons.C.length > 0 && lessons.C.every(l => l.completed);
+              
+              return {
+                id: scenario.id,
+                completed: allLessonsCompleted,
+                lessons
+              };
+            })
+          }));
+          
+          console.log('💾 Saving progress immediately after lesson completion...');
+          console.log('Progress data:', JSON.stringify(progressData, null, 2));
+          
+          const response = await axios.post('http://localhost:5000/api/progress', 
+            { courseProgress: progressData },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          console.log('✅ Progress saved successfully!', response.data);
+        } catch (err) {
+          console.error("❌ Error saving progress:", err);
+          if (err.response) {
+            console.error("Response error:", err.response.data);
+            console.error("Status:", err.response.status);
+          }
+          // Não bloqueia o fluxo, apenas mostra erro no console
+        }
+        
         alert("Lição Completa!");
         setStage('flashcard-selector');
       }
