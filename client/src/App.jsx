@@ -470,6 +470,22 @@ function MainApp() {
             };
           }
 
+          // Recalculate scenario completion
+          const lData = updatedLessonData[key];
+          if (lData) {
+            const lessons = {
+              A: (lData.A || []).map(l => ({ completed: l.completed })),
+              B: (lData.B || []).map(l => ({ completed: l.completed })),
+              C: (lData.C || []).map(l => ({ completed: l.completed }))
+            };
+            const allCompleted =
+              lessons.A.every(l => l.completed) &&
+              lessons.B.every(l => l.completed) &&
+              lessons.C.every(l => l.completed);
+
+            updatedScenario.completed = allCompleted;
+          }
+
           updatedScenarios[currentScenarioIndex] = updatedScenario;
           updatedDay.scenarios = updatedScenarios;
           updated[currentDayIndex] = updatedDay;
@@ -664,6 +680,22 @@ function MainApp() {
         if (completedRoles.includes('A') && completedRoles.includes('B')) {
           lesson.completed = true;
         }
+      }
+
+      // Recalculate scenario completion
+      const lData = updatedLessonData[key];
+      if (lData) {
+        const lessons = {
+          A: (lData.A || []).map(l => ({ completed: l.completed })),
+          B: (lData.B || []).map(l => ({ completed: l.completed })),
+          C: (lData.C || []).map(l => ({ completed: l.completed }))
+        };
+        const allCompleted =
+          lessons.A.every(l => l.completed) &&
+          lessons.B.every(l => l.completed) &&
+          lessons.C.every(l => l.completed);
+
+        updatedScenario.completed = allCompleted;
       }
 
       updatedScenarios[currentScenarioIndex] = updatedScenario;
