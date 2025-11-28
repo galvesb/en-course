@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const WordSchema = new mongoose.Schema({
     word: String,
-    translation: String
+    translation: String,
+    // caminho para o áudio desse item (opcional)
+    audio: String
 }, { _id: false });
 
 const LessonSchema = new mongoose.Schema({

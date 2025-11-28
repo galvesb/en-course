@@ -444,6 +444,33 @@ function MainApp() {
     if (flashcardQueue.length === 0) return <div>No cards</div>;
     const card = flashcardQueue[currentCardIndexInQueue];
 
+    // Tenta buscar áudio equivalente na conversação se o card não tiver audio próprio
+    const findConversationAudioForCard = () => {
+      try {
+        const day = courseStructure[currentDayIndex];
+        const scenario = day?.scenarios?.[currentScenarioIndex];
+        if (!scenario || !scenario.conversations) return null;
+
+        const normalize = (s) => (s || '').trim();
+        const target = normalize(card.word);
+        if (!target) return null;
+
+        const convA = Array.isArray(scenario.conversations.A) ? scenario.conversations.A : [];
+        const convB = Array.isArray(scenario.conversations.B) ? scenario.conversations.B : [];
+
+        // Procura primeiro nas respostas (B), depois nas perguntas (A)
+        const matchB = convB.find(l => normalize(l.resposta) === target);
+        if (matchB?.audio) return matchB.audio;
+
+        const matchA = convA.find(l => normalize(l.pergunta) === target);
+        if (matchA?.audio) return matchA.audio;
+
+        return null;
+      } catch {
+        return null;
+      }
+    };
+
     const markAsKnown = async () => {
       if (currentCardIndexInQueue < flashcardQueue.length - 1) {
         setCurrentCardIndexInQueue(prev => prev + 1);
@@ -618,7 +645,26 @@ function MainApp() {
                   <div style={{ fontWeight: 600, fontSize: '1.8rem', marginBottom: '10px' }}>
                     {card.word}
                   </div>
-                  <button className="audio-btn" title="Ouvir Pronúncia" onClick={(e) => { e.stopPropagation(); alert('Audio playing not implemented'); }}>🔊</button>
+                  <button
+                    className="audio-btn"
+                    title="Ouvir Pronúncia"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const src = card.audio || findConversationAudioForCard();
+                      if (!src) {
+                        alert('Áudio ainda não configurado para este item.');
+                        return;
+                      }
+                      try {
+                        const audio = new Audio(src);
+                        audio.play().catch(() => {});
+                      } catch {
+                        // silencia erro de áudio
+                      }
+                    }}
+                  >
+                    🔊
+                  </button>
                 </div>
               </div>
               <div className="card-back">

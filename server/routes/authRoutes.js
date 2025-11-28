@@ -79,8 +79,9 @@ router.post('/register', async (req, res) => {
 
         // Handle duplicate key errors (unique constraint violations)
         if (err.code === 11000) {
+            console.log(`Error -------------: ${err}`);
             const field = Object.keys(err.keyPattern)[0];
-            return res.status(400).json({ message: `${field} already registered` });
+            return res.status(400).json({ message: `${field} already registereds` });
         }
 
         // Handle other errors

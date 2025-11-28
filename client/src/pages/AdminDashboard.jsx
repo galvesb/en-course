@@ -12,11 +12,17 @@ const AdminDashboard = () => {
     const [courseError, setCourseError] = useState('');
     const [activeTab, setActiveTab] = useState('users'); // 'users' | 'courses'
 
+    const [professions, setProfessions] = useState([]);
+    const [selectedProfessionKey, setSelectedProfessionKey] = useState('');
+
     // Representação em objeto do JSON (para helper visual)
     const [parsedCourse, setParsedCourse] = useState(null);
     const [selectedScenarioIdx, setSelectedScenarioIdx] = useState(0);
     const [selectedRole, setSelectedRole] = useState('A');
     const [selectedLineIdx, setSelectedLineIdx] = useState(0);
+    const [audioTargetType, setAudioTargetType] = useState('conversation'); // 'conversation' | 'word'
+    const [selectedLessonIdx, setSelectedLessonIdx] = useState(0); // índice dentro do filtro (words/phrases)
+    const [selectedWordIdx, setSelectedWordIdx] = useState(0); // índice dentro de lesson.words
 
     const [audioFile, setAudioFile] = useState(null);
     const [audioMessage, setAudioMessage] = useState('');
@@ -28,7 +34,7 @@ const AdminDashboard = () => {
 
     useEffect(() => {
         fetchUsers();
-        fetchCourses();
+        fetchProfessions();
     }, []);
 
     // Mantém uma versão em objeto do JSON para facilitar escolha de fala na hora do upload
@@ -49,9 +55,29 @@ const AdminDashboard = () => {
                 const convList = scenario?.conversations?.[selectedRole] || [];
                 const safeLineIdx = Math.min(selectedLineIdx, Math.max(convList.length - 1, 0));
                 setSelectedLineIdx(safeLineIdx);
+
+                // Ajusta índices de lesson/word para não sair do range
+                const lessonsForRole = scenario?.lessons?.[selectedRole] || [];
+                const filteredLessons = lessonsForRole
+                    .map((l, idx) => ({ l, idx }))
+                    .filter(entry => entry.l.type === (audioTargetType === 'word' ? 'words' : 'phrases'));
+                if (filteredLessons.length > 0) {
+                    const safeLessonIdx = Math.min(selectedLessonIdx, filteredLessons.length - 1);
+                    setSelectedLessonIdx(safeLessonIdx);
+
+                    const targetLesson = filteredLessons[safeLessonIdx].l;
+                    const words = targetLesson.words || [];
+                    const safeWordIdx = Math.min(selectedWordIdx, Math.max(words.length - 1, 0));
+                    setSelectedWordIdx(safeWordIdx);
+                } else {
+                    setSelectedLessonIdx(0);
+                    setSelectedWordIdx(0);
+                }
             } else {
                 setSelectedScenarioIdx(0);
                 setSelectedLineIdx(0);
+                setSelectedLessonIdx(0);
+                setSelectedWordIdx(0);
             }
         } catch {
             // JSON inválido: desabilita helper visual
@@ -62,6 +88,15 @@ const AdminDashboard = () => {
     const authHeaders = () => {
         const token = localStorage.getItem('token');
         return token ? { Authorization: `Bearer ${token}` } : {};
+    };
+
+    const fetchProfessions = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/professions');
+            setProfessions(res.data || []);
+        } catch (err) {
+            console.error("Error fetching professions", err);
+        }
     };
 
     const fetchUsers = async () => {
@@ -87,9 +122,14 @@ const AdminDashboard = () => {
         }
     };
 
-    const fetchCourses = async () => {
+    const fetchCourses = async (professionKeyParam) => {
         try {
-            const res = await axios.get('http://localhost:5000/api/courses');
+            const key = professionKeyParam || selectedProfessionKey;
+            if (!key) {
+                setCourses([]);
+                return;
+            }
+            const res = await axios.get(`http://localhost:5000/api/courses?professionKey=${encodeURIComponent(key)}`);
             setCourses(res.data);
         } catch (err) {
             console.error("Error fetching courses", err);
@@ -114,6 +154,7 @@ const AdminDashboard = () => {
         const template = {
             id: courses.length > 0 ? (Math.max(...courses.map(c => c.id || 0)) + 1) : 1,
             title: `Dia ${courses.length + 1}`,
+            professionKey: selectedProfessionKey || null,
             scenarios: []
         };
         setCourseJson(JSON.stringify(template, null, 2));
@@ -256,40 +297,126 @@ const AdminDashboard = () => {
                 setAudioMessage('Upload concluído!');
             }
 
-            // Atualiza automaticamente o campo "audio" da fala selecionada no JSON (se possível)
+            // Atualiza automaticamente o campo "audio" conforme o tipo selecionado (conversação / words / phrases)
             if (path && parsedCourse && Array.isArray(parsedCourse.scenarios) && parsedCourse.scenarios.length > 0) {
                 const safeScenarioIdx = Math.min(selectedScenarioIdx, parsedCourse.scenarios.length - 1);
                 const scenario = parsedCourse.scenarios[safeScenarioIdx];
                 if (scenario) {
-                    const conversations = scenario.conversations || {};
-                    const list = Array.isArray(conversations[selectedRole]) ? [...conversations[selectedRole]] : [];
+                    let updatedScenario = { ...scenario };
 
-                    if (list.length > 0) {
-                        const safeLineIdx = Math.min(selectedLineIdx, list.length - 1);
-                        const line = list[safeLineIdx];
-                        if (line) {
-                            const updatedLine = { ...line, audio: path };
-                            list[safeLineIdx] = updatedLine;
+                    // 1) Conversação (sempre atualizamos se tipo for conversação ou frase)
+                    if (audioTargetType === 'conversation' || audioTargetType === 'phrase') {
+                        const conversations = scenario.conversations || {};
+                        const list = Array.isArray(conversations[selectedRole]) ? [...conversations[selectedRole]] : [];
 
-                            const updatedScenario = {
-                                ...scenario,
-                                conversations: {
-                                    ...conversations,
-                                    [selectedRole]: list
-                                }
-                            };
+                        if (list.length > 0) {
+                            const safeLineIdx = Math.min(selectedLineIdx, list.length - 1);
+                            const line = list[safeLineIdx];
+                            if (line) {
+                                const updatedLine = { ...line, audio: path };
+                                list[safeLineIdx] = updatedLine;
 
-                            const updatedCourse = {
-                                ...parsedCourse,
-                                scenarios: parsedCourse.scenarios.map((s, idx) =>
-                                    idx === safeScenarioIdx ? updatedScenario : s
-                                )
-                            };
-
-                            setParsedCourse(updatedCourse);
-                            setCourseJson(JSON.stringify(updatedCourse, null, 2));
+                                updatedScenario = {
+                                    ...updatedScenario,
+                                    conversations: {
+                                        ...conversations,
+                                        [selectedRole]: list
+                                    }
+                                };
+                            }
                         }
                     }
+
+                    // 2) Words: atualização manual de lesson.words[*].audio
+                    if (audioTargetType === 'word') {
+                        const lessonsForRole = updatedScenario.lessons?.[selectedRole] || [];
+
+                        const filtered = lessonsForRole
+                            .map((l, idx) => ({ l, idx }))
+                            .filter(entry => entry.l.type === 'words');
+
+                        if (filtered.length > 0) {
+                            const updatedLessonsForRole = lessonsForRole.map((lesson, idx) => {
+                                const matchEntry = filtered.find(e => e.idx === idx);
+                                if (!matchEntry) return lesson;
+
+                                const originalWords = Array.isArray(lesson.words) ? lesson.words : [];
+                                if (originalWords.length === 0) return lesson;
+
+                                const safeLessonIdxInner = Math.min(selectedLessonIdx, filtered.length - 1);
+                                if (filtered[safeLessonIdxInner].idx !== idx) return lesson;
+
+                                const safeWordIdxInner = Math.min(selectedWordIdx, Math.max(originalWords.length - 1, 0));
+                                const wordItem = originalWords[safeWordIdxInner];
+                                if (!wordItem) return lesson;
+
+                                const newWords = originalWords.map((w, wIdx) =>
+                                    wIdx === safeWordIdxInner ? { ...w, audio: path } : w
+                                );
+
+                                return {
+                                    ...lesson,
+                                    words: newWords
+                                };
+                            });
+
+                            updatedScenario = {
+                                ...updatedScenario,
+                                lessons: {
+                                    ...updatedScenario.lessons,
+                                    [selectedRole]: updatedLessonsForRole
+                                }
+                            };
+                        }
+                    }
+
+                    // 3) Phrases: sempre sincroniza frases cujo texto é igual ao da conversação atual
+                    {
+                        const lessonsForRole = updatedScenario.lessons?.[selectedRole] || [];
+
+                        // Texto base para comparação (pergunta/resposta da conversação)
+                        let baseText = '';
+                        const conversationsForPhrases = updatedScenario.conversations || {};
+                        const convListForPhrases = Array.isArray(conversationsForPhrases[selectedRole])
+                            ? conversationsForPhrases[selectedRole]
+                            : [];
+                        if (convListForPhrases.length > 0) {
+                            const safeLineIdxForPhrases = Math.min(selectedLineIdx, convListForPhrases.length - 1);
+                            const lineForPhrases = convListForPhrases[safeLineIdxForPhrases];
+                            baseText = (lineForPhrases?.pergunta || lineForPhrases?.resposta || '').trim();
+                        }
+
+                        if (baseText) {
+                            const updatedLessonsForRole = lessonsForRole.map((lesson) => {
+                                if (lesson.type !== 'phrases' || !Array.isArray(lesson.words)) return lesson;
+                                const newWords = lesson.words.map(w => {
+                                    if ((w.word || '').trim() === baseText) {
+                                        return { ...w, audio: path };
+                                    }
+                                    return w;
+                                });
+                                return { ...lesson, words: newWords };
+                            });
+
+                            updatedScenario = {
+                                ...updatedScenario,
+                                lessons: {
+                                    ...updatedScenario.lessons,
+                                    [selectedRole]: updatedLessonsForRole
+                                }
+                            };
+                        }
+                    }
+
+                    const updatedCourse = {
+                        ...parsedCourse,
+                        scenarios: parsedCourse.scenarios.map((s, idx) =>
+                            idx === safeScenarioIdx ? updatedScenario : s
+                        )
+                    };
+
+                    setParsedCourse(updatedCourse);
+                    setCourseJson(JSON.stringify(updatedCourse, null, 2));
                 }
             }
         } catch (err) {
@@ -389,7 +516,53 @@ const AdminDashboard = () => {
                         no mesmo formato do documento de exemplo (incluindo <code>scenarios</code>, <code>conversations</code> e <code>lessons</code>).
                     </p>
 
-                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                    {/* Seleção de profissão para gerenciamento de dias */}
+                    <div style={{ margin: '0.75rem 0 1.25rem 0', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '.9rem', fontWeight: 500 }}>Profissão:</span>
+                        <select
+                            value={selectedProfessionKey}
+                            onChange={(e) => {
+                                const key = e.target.value;
+                                setSelectedProfessionKey(key);
+                                setSelectedCourse(null);
+                                setCourseJson('');
+                                setParsedCourse(null);
+                                setCourseMessage('');
+                                setCourseError('');
+                                setAudioFile(null);
+                                setAudioMessage('');
+                                setAudioError('');
+                                setAudioPath('');
+                                if (key) {
+                                    fetchCourses(key);
+                                } else {
+                                    setCourses([]);
+                                }
+                            }}
+                            style={{
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--gray-border)',
+                                minWidth: '220px'
+                            }}
+                        >
+                            <option value="">Selecione uma profissão...</option>
+                            {professions.map(p => (
+                                <option key={p._id} value={p.key}>
+                                    {p.icon ? `${p.icon} ` : ''}{p.name} ({p.key})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {!selectedProfessionKey && (
+                        <p style={{ fontSize: '.85rem', color: '#6b7280', marginBottom: 0 }}>
+                            Selecione uma profissão acima para visualizar e editar os dias dessa trilha.
+                        </p>
+                    )}
+
+                    {selectedProfessionKey && (
+                        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
                 <div style={{ flex: '1 1 220px', minWidth: '220px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.5rem' }}>
                         <h4 style={{ margin: 0 }}>Dias existentes</h4>
@@ -462,6 +635,20 @@ const AdminDashboard = () => {
                     {selectedCourse && (
                         <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--gray-border)' }}>
                             <h5 style={{ margin: 0, marginBottom: '.5rem' }}>Upload de Áudio</h5>
+                            <div style={{ marginBottom: '.5rem', display: 'flex', flexWrap: 'wrap', gap: '.5rem', alignItems: 'center' }}>
+                                <span style={{ fontSize: '.8rem', fontWeight: 500 }}>Atualizar:</span>
+                                <select
+                                    value={audioTargetType}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setAudioTargetType(val === 'word' ? 'word' : 'conversation');
+                                    }}
+                                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--gray-border)' }}
+                                >
+                                    <option value="conversation">Conversação (e frases vinculadas)</option>
+                                    <option value="word">Vocabulário (words)</option>
+                                </select>
+                            </div>
                             {parsedCourse && Array.isArray(parsedCourse.scenarios) && parsedCourse.scenarios.length > 0 ? (
                                 <>
                                     <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
@@ -485,13 +672,15 @@ const AdminDashboard = () => {
                                                 const role = e.target.value === 'B' ? 'B' : 'A';
                                                 setSelectedRole(role);
                                                 setSelectedLineIdx(0);
+                                                setSelectedLessonIdx(0);
+                                                setSelectedWordIdx(0);
                                             }}
                                             style={{ flex: '0 0 90px', padding: '4px' }}
                                         >
                                             <option value="A">Pessoa A</option>
                                             <option value="B">Pessoa B</option>
                                         </select>
-                                        {(() => {
+                                        {audioTargetType !== 'word' && (() => {
                                             const scenario = parsedCourse.scenarios[selectedScenarioIdx] || {};
                                             const convList = scenario.conversations?.[selectedRole] || [];
                                             const safeValue = Math.min(selectedLineIdx, Math.max(convList.length - 1, 0));
@@ -513,6 +702,62 @@ const AdminDashboard = () => {
                                             );
                                         })()}
                                     </div>
+
+                                    {audioTargetType === 'word' && (() => {
+                                        const scenario = parsedCourse.scenarios[selectedScenarioIdx] || {};
+                                        const lessonsForRole = scenario.lessons?.[selectedRole] || [];
+                                        const targetType = audioTargetType === 'word' ? 'words' : 'phrases';
+                                        const filtered = lessonsForRole
+                                            .map((l, idx) => ({ l, idx }))
+                                            .filter(entry => entry.l.type === targetType);
+
+                                        if (filtered.length === 0) {
+                                            return (
+                                                <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
+                                                    Nenhuma lesson do tipo <code>{targetType}</code> encontrada para esse papel.
+                                                </p>
+                                            );
+                                        }
+
+                                        const safeLessonIdx = Math.min(selectedLessonIdx, filtered.length - 1);
+                                        const lessonEntry = filtered[safeLessonIdx];
+                                        const words = lessonEntry.l.words || [];
+                                        const safeWordIdx = Math.min(selectedWordIdx, Math.max(words.length - 1, 0));
+
+                                        return (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '.5rem' }}>
+                                                <select
+                                                    value={safeLessonIdx}
+                                                    onChange={(e) => {
+                                                        setSelectedLessonIdx(Number(e.target.value) || 0);
+                                                        setSelectedWordIdx(0);
+                                                    }}
+                                                    style={{ flex: '1 1 200px', padding: '4px' }}
+                                                >
+                                                    {filtered.map((entry, idx) => (
+                                                        <option key={entry.idx} value={idx}>
+                                                            {(entry.l.id || entry.idx + 1) + ' - ' + (entry.l.title || '')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+
+                                                <select
+                                                    value={safeWordIdx}
+                                                    onChange={(e) => setSelectedWordIdx(Number(e.target.value) || 0)}
+                                                    style={{ flex: '2 1 220px', padding: '4px' }}
+                                                >
+                                                    {words.length === 0 && (
+                                                        <option value={0}>Nenhuma entrada em words para essa lesson</option>
+                                                    )}
+                                                    {words.map((w, idx) => (
+                                                        <option key={idx} value={idx}>
+                                                            {(w.word || `Item ${idx + 1}`) + (w.translation ? ` - ${w.translation}` : '')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        );
+                                    })()}
                                 </>
                             ) : (
                                 <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
@@ -554,7 +799,8 @@ const AdminDashboard = () => {
                         </div>
                     )}
                 </div>
-                    </div>
+                        </div>
+                    )}
                 </>
             )}
 
