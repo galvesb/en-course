@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import './index.css';
@@ -8,10 +8,26 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 
+
+const cleanStringForComparison = (str) => {
+  if (!str) return '';
+  let cleaned = str.toLowerCase();
+  cleaned = cleaned.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"’“”]/g, "");
+  cleaned = cleaned.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return cleaned;
+};
+
 function MainApp() {
   const [courseStructure, setCourseStructure] = useState([]);
   const [lessonData, setLessonData] = useState({});
   const [stage, setStage] = useState('map');
+  const [simulacaoPapel, setSimulacaoPapel] = useState('A');
+  const [simulacaoStep, setSimulacaoStep] = useState(0);
+  const [simulacaoHistory, setSimulacaoHistory] = useState([]);
+  const [simulacaoInput, setSimulacaoInput] = useState('');
+  const [simulacaoHintVisible, setSimulacaoHintVisible] = useState(false);
+  const [simulacaoUltimaErrada, setSimulacaoUltimaErrada] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [currentRole, setCurrentRole] = useState(null);
@@ -64,15 +80,15 @@ function MainApp() {
         console.log('No token found, skipping progress fetch');
         return;
       }
-      
+
       console.log('Fetching user progress...');
       const res = await axios.get('http://localhost:5000/api/progress', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const { courseProgress } = res.data;
       console.log('Progress fetched:', courseProgress);
-      
+
       if (courseProgress && courseProgress.length > 0) {
         // Aplica o progresso salvo à estrutura de cursos
         await applyProgressToCourses(courseProgress);
@@ -90,7 +106,7 @@ function MainApp() {
 
   const applyProgressToCourses = async (savedProgress) => {
     console.log('Applying progress to courses:', savedProgress);
-    
+
     // Primeiro, carrega todos os lessonData necessários
     const lessonKeysToLoad = new Set();
     savedProgress.forEach(savedDay => {
@@ -103,7 +119,7 @@ function MainApp() {
         }
       });
     });
-    
+
     // Carrega todos os lessonData que ainda não foram carregados
     const loadPromises = Array.from(lessonKeysToLoad).map(key => {
       if (!lessonData[key]) {
@@ -111,20 +127,20 @@ function MainApp() {
       }
       return Promise.resolve(lessonData[key]);
     });
-    
+
     await Promise.all(loadPromises);
-    
+
     // Agora aplica o progresso ao lessonData
     setLessonData(prev => {
       const updated = { ...prev };
       savedProgress.forEach(savedDay => {
         const day = courseStructure.find(d => d.id === savedDay.id);
         if (!day) return;
-        
+
         savedDay.scenarios?.forEach(savedScenario => {
           const scenario = day.scenarios.find(s => s.id === savedScenario.id);
           if (!scenario || !scenario.lessonKey) return;
-          
+
           const key = scenario.lessonKey;
           if (updated[key] && savedScenario.lessons) {
             const updatedData = { ...updated[key] };
@@ -146,25 +162,25 @@ function MainApp() {
       });
       return updated;
     });
-    
+
     // Depois atualiza o courseStructure
     setCourseStructure(prev => {
       return prev.map(day => {
         const savedDay = savedProgress.find(sd => sd.id === day.id);
         if (!savedDay) return day;
-        
+
         return {
           ...day,
           scenarios: day.scenarios.map(scenario => {
             const savedScenario = savedDay.scenarios?.find(ss => ss.id === scenario.id);
             if (!savedScenario) return scenario;
-            
+
             // Atualiza o status do cenário baseado nas lições completas
-            const allLessonsCompleted = 
+            const allLessonsCompleted =
               savedScenario.lessons?.A?.length > 0 && savedScenario.lessons.A.every(l => l.completed) &&
               savedScenario.lessons?.B?.length > 0 && savedScenario.lessons.B.every(l => l.completed) &&
               savedScenario.lessons?.C?.length > 0 && savedScenario.lessons.C.every(l => l.completed);
-            
+
             return {
               ...scenario,
               completed: allLessonsCompleted || savedScenario.completed || false
@@ -182,9 +198,9 @@ function MainApp() {
         console.warn('Cannot save progress: no token or user');
         return;
       }
-      
+
       console.log('Saving progress...', { user: user.email, lessonDataKeys: Object.keys(lessonData) });
-      
+
       // Prepara o progresso no formato esperado usando lessonData como fonte de verdade
       const progressData = courseStructure.map(day => ({
         id: day.id,
@@ -192,13 +208,13 @@ function MainApp() {
         scenarios: day.scenarios.map(scenario => {
           const key = scenario.lessonKey;
           const lessonDataForScenario = lessonData[key];
-          
+
           const lessons = {
             A: [],
             B: [],
             C: []
           };
-          
+
           // Usa lessonData como fonte de verdade
           if (lessonDataForScenario) {
             lessons.A = (lessonDataForScenario.A || []).map(lesson => ({
@@ -214,13 +230,13 @@ function MainApp() {
               completed: lesson.completed || false
             }));
           }
-          
+
           // Determina se o cenário está completo
-          const allLessonsCompleted = 
+          const allLessonsCompleted =
             lessons.A.every(l => l.completed) &&
             lessons.B.every(l => l.completed) &&
             lessons.C.every(l => l.completed);
-          
+
           return {
             id: scenario.id,
             completed: allLessonsCompleted,
@@ -228,14 +244,14 @@ function MainApp() {
           };
         })
       }));
-      
+
       console.log('Progress data to save:', JSON.stringify(progressData, null, 2));
-      
-      const response = await axios.post('http://localhost:5000/api/progress', 
+
+      const response = await axios.post('http://localhost:5000/api/progress',
         { courseProgress: progressData },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       console.log('Progress saved successfully:', response.data);
     } catch (err) {
       console.error("Error saving progress:", err);
@@ -337,7 +353,7 @@ function MainApp() {
 
           <div className="day-node" onClick={() => {
             if (conversationIsActive || conversationLesson?.completed) {
-              alert("Conversation simulator not fully implemented in this demo.");
+              startSimulacaoChat();
             } else {
               alert('Complete as lições da Pessoa A e B primeiro!');
             }
@@ -412,28 +428,28 @@ function MainApp() {
         const day = courseStructure[currentDayIndex];
         const scenario = day.scenarios[currentScenarioIndex];
         const key = scenario.lessonKey;
-        
+
         // Prepara os dados atualizados ANTES de atualizar o estado
         const updatedLessonData = { ...lessonData };
         if (updatedLessonData[key] && updatedLessonData[key][currentRole]) {
           updatedLessonData[key] = {
             ...updatedLessonData[key],
-            [currentRole]: updatedLessonData[key][currentRole].map((lesson, idx) => 
+            [currentRole]: updatedLessonData[key][currentRole].map((lesson, idx) =>
               idx === currentLessonIndex ? { ...lesson, completed: true } : lesson
             )
           };
         }
-        
+
         // Atualiza o lessonData
         setLessonData(updatedLessonData);
-        
+
         // Atualiza o courseStructure
         setCourseStructure(prev => {
           const updated = [...prev];
           const updatedDay = { ...updated[currentDayIndex] };
           const updatedScenarios = [...updatedDay.scenarios];
           const updatedScenario = { ...updatedScenarios[currentScenarioIndex] };
-          
+
           if (updatedScenario.lessons && updatedScenario.lessons[currentRole]) {
             updatedScenario.lessons = {
               ...updatedScenario.lessons,
@@ -442,14 +458,14 @@ function MainApp() {
               )
             };
           }
-          
+
           updatedScenarios[currentScenarioIndex] = updatedScenario;
           updatedDay.scenarios = updatedScenarios;
           updated[currentDayIndex] = updatedDay;
-          
+
           return updated;
         });
-        
+
         // Salva o progresso IMEDIATAMENTE usando os dados preparados
         try {
           const token = localStorage.getItem('token');
@@ -459,7 +475,7 @@ function MainApp() {
             setStage('flashcard-selector');
             return;
           }
-          
+
           // Prepara o progresso usando os dados atualizados
           const progressData = courseStructure.map(day => ({
             id: day.id,
@@ -467,13 +483,13 @@ function MainApp() {
             scenarios: day.scenarios.map(scenario => {
               const scenarioKey = scenario.lessonKey;
               const lessonDataForScenario = updatedLessonData[scenarioKey];
-              
+
               const lessons = {
                 A: [],
                 B: [],
                 C: []
               };
-              
+
               if (lessonDataForScenario) {
                 lessons.A = (lessonDataForScenario.A || []).map(lesson => ({
                   id: lesson.id,
@@ -488,12 +504,12 @@ function MainApp() {
                   completed: lesson.completed || false
                 }));
               }
-              
-              const allLessonsCompleted = 
+
+              const allLessonsCompleted =
                 lessons.A.length > 0 && lessons.A.every(l => l.completed) &&
                 lessons.B.length > 0 && lessons.B.every(l => l.completed) &&
                 lessons.C.length > 0 && lessons.C.every(l => l.completed);
-              
+
               return {
                 id: scenario.id,
                 completed: allLessonsCompleted,
@@ -501,17 +517,17 @@ function MainApp() {
               };
             })
           }));
-          
+
           console.log('💾 Saving progress immediately after lesson completion...');
           console.log('Progress data:', JSON.stringify(progressData, null, 2));
-          
-          const response = await axios.post('http://localhost:5000/api/progress', 
+
+          const response = await axios.post('http://localhost:5000/api/progress',
             { courseProgress: progressData },
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          
+
           console.log('✅ Progress saved successfully!', response.data);
-          
+
           // Recarrega o progresso para garantir que está sincronizado
           setTimeout(() => {
             fetchUserProgress();
@@ -524,7 +540,7 @@ function MainApp() {
           }
           // Não bloqueia o fluxo, apenas mostra erro no console
         }
-        
+
         alert("Lição Completa!");
         setStage('flashcard-selector');
       }
@@ -588,6 +604,128 @@ function MainApp() {
     );
   };
 
+  // Handler para entrar na simulação completa
+  const startSimulacaoChat = () => {
+    setStage('role');
+  };
+
+  const handleSimulacaoComplete = async () => {
+    const day = courseStructure[currentDayIndex];
+    const scenario = day.scenarios[currentScenarioIndex];
+    const key = scenario.lessonKey;
+
+    // Update local state
+    const updatedLessonData = { ...lessonData };
+    if (updatedLessonData[key] && updatedLessonData[key].C) {
+      updatedLessonData[key].C[0].completed = true;
+    }
+    setLessonData(updatedLessonData);
+
+    setCourseStructure(prev => {
+      const updated = [...prev];
+      const updatedDay = { ...updated[currentDayIndex] };
+      const updatedScenarios = [...updatedDay.scenarios];
+      const updatedScenario = { ...updatedScenarios[currentScenarioIndex] };
+
+      if (updatedScenario.lessons && updatedScenario.lessons.C) {
+        updatedScenario.lessons.C[0].completed = true;
+      }
+
+      updatedScenarios[currentScenarioIndex] = updatedScenario;
+      updatedDay.scenarios = updatedScenarios;
+      updated[currentDayIndex] = updatedDay;
+      return updated;
+    });
+
+    // Save progress
+    try {
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        // Re-use logic from saveProgress or call it directly if possible, 
+        // but here we construct the data manually to be safe and quick
+        // Actually, since we updated state, we can just call saveProgress() if it uses current state?
+        // saveProgress uses courseStructure and lessonData state, but state updates are async.
+        // So better to construct the payload manually here as done in renderFlashcard.
+
+        // Construct payload similar to renderFlashcard logic
+        const progressData = courseStructure.map((d, dIdx) => {
+          if (dIdx !== currentDayIndex) {
+            // Return existing structure for other days
+            return {
+              id: d.id,
+              title: d.title,
+              scenarios: d.scenarios.map(s => ({
+                id: s.id,
+                completed: s.completed,
+                lessons: {
+                  A: (lessonData[s.lessonKey]?.A || []).map(l => ({ id: l.id, completed: l.completed })),
+                  B: (lessonData[s.lessonKey]?.B || []).map(l => ({ id: l.id, completed: l.completed })),
+                  C: (lessonData[s.lessonKey]?.C || []).map(l => ({ id: l.id, completed: l.completed }))
+                }
+              }))
+            };
+          }
+
+          return {
+            id: d.id,
+            title: d.title,
+            scenarios: d.scenarios.map((s, sIdx) => {
+              const sKey = s.lessonKey;
+              const lData = (sIdx === currentScenarioIndex) ? updatedLessonData[sKey] : lessonData[sKey];
+
+              const lessons = {
+                A: (lData?.A || []).map(l => ({ id: l.id, completed: l.completed })),
+                B: (lData?.B || []).map(l => ({ id: l.id, completed: l.completed })),
+                C: (lData?.C || []).map(l => ({ id: l.id, completed: l.completed }))
+              };
+
+              const allCompleted =
+                lessons.A.every(l => l.completed) &&
+                lessons.B.every(l => l.completed) &&
+                lessons.C.every(l => l.completed);
+
+              return {
+                id: s.id,
+                completed: allCompleted,
+                lessons
+              };
+            })
+          };
+        });
+
+        await axios.post('http://localhost:5000/api/progress',
+          { courseProgress: progressData },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log('Simulação completa salva!');
+      }
+    } catch (e) {
+      console.error("Erro ao salvar simulação", e);
+    }
+  };
+
+  const renderRoles = () => {
+    const day = courseStructure[currentDayIndex];
+    const scenario = day.scenarios[currentScenarioIndex];
+
+    return (
+      <div className="card" style={{ marginTop: '20px' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>{scenario.name} - Escolha seu Papel</h2>
+        <div className="flex gap-md" style={{ flexWrap: 'wrap' }}>
+          <button className="btn primary" style={{ flex: '1 1 200px', background: 'var(--duo-blue-dark)' }}
+            onClick={() => { setCurrentRole('A'); setStage('chat'); }}>
+            Pessoa A (Ex: Scrum Master)
+          </button>
+          <button className="btn primary" style={{ flex: '1 1 200px', background: 'var(--duo-green-dark)' }}
+            onClick={() => { setCurrentRole('B'); setStage('chat'); }}>
+            Pessoa B (Ex: Desenvolvedor)
+          </button>
+        </div>
+        <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
+      </div>
+    );
+  };
+
   return (
     <>
       <header className="nav-header">
@@ -639,10 +777,260 @@ function MainApp() {
             {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
             {stage === 'flashcard-selector' && renderFlashcardSelector()}
             {stage === 'flashcard' && renderFlashcard()}
+            {stage === 'role' && renderRoles()}
+            {stage === 'chat' && <SimulacaoChat
+              scenario={courseStructure[currentDayIndex].scenarios[currentScenarioIndex]}
+              conversationLesson={lessonData[courseStructure[currentDayIndex].scenarios[currentScenarioIndex].lessonKey]?.C?.[0]}
+              role={currentRole}
+              onBack={() => setStage('role')}
+              onComplete={handleSimulacaoComplete}
+            />}
           </>
         )}
       </div>
     </>
+  );
+}
+
+function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete }) {
+  const [step, setStep] = useState(0);
+  const [history, setHistory] = useState([]);
+  const [input, setInput] = useState('');
+  const [lastWrong, setLastWrong] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
+  const [finished, setFinished] = useState(false);
+
+  const audioRef = useRef(new Audio());
+  const chatScrollRef = useRef(null);
+  const audioQueueRef = useRef([]);
+  const isPlayingRef = useRef(false);
+
+  // Use a ref to track the current scenario ID to prevent unnecessary resets
+  const scenarioIdRef = useRef(scenario?.id);
+
+  // Inicializa a conversa
+  useEffect(() => {
+    if (!scenario || !scenario.conversations) return;
+
+    // Only reset if the scenario ID changes or role changes
+    if (scenarioIdRef.current === scenario.id && history.length > 0) {
+      return;
+    }
+    scenarioIdRef.current = scenario.id;
+
+    const conv = scenario.conversations;
+    setStep(0);
+    setHistory([]);
+    setInput('');
+    setLastWrong(false);
+    setFinished(false);
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
+
+    if (role === 'B') {
+      // Se sou B, A começa falando
+      const first = conv.A?.[0];
+      if (first) {
+        pushMessage({ speaker: 'A', text: first.pergunta, audio: first.audio });
+      }
+    }
+  }, [scenario?.id, role]); // Depend on scenario.id instead of scenario object
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [history]);
+
+  const processAudioQueue = async () => {
+    if (isPlayingRef.current || audioQueueRef.current.length === 0) return;
+
+    isPlayingRef.current = true;
+    const src = audioQueueRef.current.shift();
+
+    try {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = src;
+
+      await new Promise((resolve) => {
+        audioRef.current.onended = resolve;
+        audioRef.current.onerror = resolve;
+        audioRef.current.play().catch(resolve);
+      });
+    } catch (e) {
+      console.error("Audio playback error", e);
+    } finally {
+      isPlayingRef.current = false;
+      processAudioQueue();
+    }
+  };
+
+  const queueAudio = (src) => {
+    if (!src) return;
+    audioQueueRef.current.push(src);
+    processAudioQueue();
+  };
+
+  const playAudioImmediate = (src) => {
+    // For hints or manual clicks, we might want to interrupt or play immediately
+    // But for conversation flow, we use the queue.
+    // If the user clicks the speaker button, let's just play it.
+    if (!src) return;
+    try {
+      // Pause queue processing if needed? Or just play over?
+      // Let's just play over for manual clicks
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = src;
+      audioRef.current.play().catch(e => console.error(e));
+    } catch (e) { }
+  };
+
+  const pushMessage = (msg) => {
+    setHistory(prev => [...prev, msg]);
+    if (msg.audio) queueAudio(msg.audio);
+  };
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+
+    const conv = scenario.conversations;
+    const conversationScript = role === 'A' ? conv.A : conv.B;
+    const ul = conversationScript[step];
+
+    if (!ul) {
+      setFinished(true);
+      onComplete();
+      return;
+    }
+
+    const expectedText = (role === 'A' ? ul.pergunta : ul.resposta) || '';
+    const cleanedInput = cleanStringForComparison(input);
+    const cleanedExpected = cleanStringForComparison(expectedText);
+
+    if (cleanedInput === cleanedExpected) {
+      setLastWrong(false);
+      setInput('');
+
+      // Adiciona minha fala
+      pushMessage({ speaker: role, text: input, audio: ul.audio || null });
+
+      // Resposta do outro
+      const nextSpeaker = role === 'A' ? 'B' : 'A';
+      const nextStepIndex = role === 'A' ? step : step + 1;
+      const nextConversationScript = role === 'A' ? conv.B : conv.A;
+      const rl = nextConversationScript[nextStepIndex];
+
+      if (rl) {
+        // Small delay for visual pacing, but audio will queue
+        setTimeout(() => {
+          pushMessage({ speaker: nextSpeaker, text: rl.pergunta || rl.resposta, audio: rl.audio });
+        }, 500);
+      }
+
+      const nextStep = step + 1;
+      setStep(nextStep);
+
+      const isFinished = (role === 'A' && nextStep >= conv.A.length) || (role === 'B' && nextStep >= conv.B.length);
+      if (isFinished) {
+        setFinished(true);
+        // Call onComplete to save progress
+        onComplete();
+      }
+
+    } else {
+      setLastWrong(true);
+    }
+  };
+
+  const playFullScript = async () => {
+    const conv = scenario.conversations;
+    const maxLen = Math.max(conv.A.length, conv.B.length);
+
+    // Clear queue first?
+    audioQueueRef.current = [];
+    isPlayingRef.current = false;
+    audioRef.current.pause();
+
+    for (let i = 0; i < maxLen; i++) {
+      if (conv.A[i]?.audio) queueAudio(conv.A[i].audio);
+      if (conv.B[i]?.audio) queueAudio(conv.B[i].audio);
+    }
+  };
+
+  const revealAll = () => {
+    document.querySelectorAll('.hidden-text').forEach(el => el.classList.add('revealed'));
+  };
+
+  const hideAll = () => {
+    document.querySelectorAll('.hidden-text').forEach(el => el.classList.remove('revealed'));
+  };
+
+  if (!scenario || !scenario.conversations) return <div>Carregando...</div>;
+
+  const conv = scenario.conversations;
+  const currentScript = role === 'A' ? conv.A : conv.B;
+  const currentLine = currentScript[step];
+  const hintText = currentLine ? (role === 'A' ? currentLine.pergunta : currentLine.resposta) : '';
+  const hintAudio = currentLine ? currentLine.audio : '';
+
+  return (
+    <div className="card" style={{ marginTop: '20px' }}>
+      <h2>{scenario.name} - Simulação de Conversa</h2>
+
+      <div className="chat-scroll" ref={chatScrollRef}>
+        {history.map((msg, i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: msg.speaker === role ? 'flex-end' : 'flex-start' }}>
+            <div className={`chat-bubble ${msg.speaker === 'A' ? 'bubble-a' : 'bubble-b'}`}>
+              <p style={{ margin: 0 }}>
+                <span className="hidden-text" title="Clique para revelar" onClick={(e) => e.target.classList.toggle('revealed')}>
+                  {msg.text}
+                </span>
+              </p>
+              {msg.audio && <audio controls src={msg.audio} />}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {finished ? (
+        <div style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1rem' }}>Fim da conversa 🎉</div>
+      ) : (
+        <>
+          <div className="input-group" style={{ flexWrap: 'nowrap', marginTop: '.5rem' }}>
+            <input
+              type="text"
+              placeholder="Digite a resposta correta..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              className={lastWrong ? 'error-input' : ''}
+            />
+            <button className="hint-btn"
+              title="Mostrar sugestão"
+              onClick={() => setHintVisible(!hintVisible)}
+              onMouseEnter={() => setHintVisible(true)}
+              onMouseLeave={() => setHintVisible(false)}
+            >👁</button>
+            <button className="audio-btn" title="Ouvir próxima fala" onClick={() => playAudioImmediate(hintAudio)}>🔊</button>
+            <button className="btn primary" style={{ width: 'auto', flex: '0 0 auto' }} onClick={handleSend}>Enviar</button>
+
+            <div className="hint-bubble" style={{ display: hintVisible ? 'block' : 'none' }}>
+              {hintText}
+            </div>
+          </div>
+          {lastWrong && <p style={{ color: '#ef4444', margin: '-10px 0 10px 0', textAlign: 'center', fontWeight: 600 }}>❌ Resposta incorreta. Corrija e envie novamente!</p>}
+        </>
+      )}
+
+      <div className="toolbar">
+        <button className="btn secondary" onClick={onBack}>📚 Voltar ao Cenário</button>
+        <button className="btn secondary" onClick={playFullScript}>🎧 Tocar roteiro</button>
+        <button className="btn secondary" onClick={revealAll}>👁️ Revelar tudo</button>
+        <button className="btn secondary" onClick={hideAll}>🙈 Ocultar tudo</button>
+      </div>
+    </div>
   );
 }
 
