@@ -685,20 +685,50 @@ const AdminDashboard = () => {
                                             const convList = scenario.conversations?.[selectedRole] || [];
                                             const safeValue = Math.min(selectedLineIdx, Math.max(convList.length - 1, 0));
                                             return (
-                                                <select
-                                                    value={safeValue}
-                                                    onChange={(e) => setSelectedLineIdx(Number(e.target.value) || 0)}
-                                                    style={{ flex: '2 1 220px', padding: '4px' }}
-                                                >
-                                                    {convList.length === 0 && (
-                                                        <option value={0}>Sem falas cadastradas para esse papel</option>
+                                                <>
+                                                    <select
+                                                        value={safeValue}
+                                                        onChange={(e) => setSelectedLineIdx(Number(e.target.value) || 0)}
+                                                        style={{ flex: '2 1 220px', padding: '4px' }}
+                                                    >
+                                                        {convList.length === 0 && (
+                                                            <option value={0}>Sem falas cadastradas para esse papel</option>
+                                                        )}
+                                                        {convList.map((line, idx) => (
+                                                            <option key={idx} value={idx}>
+                                                                {(line.id || idx + 1) + ' - ' + (line.pergunta || line.resposta || 'Sem texto')}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {convList.length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            className="btn secondary"
+                                                            style={{ width: 'auto', padding: '4px 10px', fontSize: '.8rem' }}
+                                                            onClick={() => {
+                                                                const safeIdx = Math.min(selectedLineIdx, convList.length - 1);
+                                                                const line = convList[safeIdx];
+                                                                const phrase = (line?.pergunta || line?.resposta || '').trim();
+                                                                if (!phrase) {
+                                                                    alert('Não há texto em inglês definido para esta fala.');
+                                                                    return;
+                                                                }
+                                                                try {
+                                                                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                                        navigator.clipboard.writeText(phrase);
+                                                                        alert('Frase copiada para a área de transferência:\n\n' + phrase);
+                                                                    } else {
+                                                                        alert('Frase em inglês:\n\n' + phrase);
+                                                                    }
+                                                                } catch {
+                                                                    alert('Frase em inglês:\n\n' + phrase);
+                                                                }
+                                                            }}
+                                                        >
+                                                            Copiar frase (inglês)
+                                                        </button>
                                                     )}
-                                                    {convList.map((line, idx) => (
-                                                        <option key={idx} value={idx}>
-                                                            {(line.id || idx + 1) + ' - ' + (line.pergunta || line.resposta || 'Sem texto')}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                </>
                                             );
                                         })()}
                                     </div>
@@ -706,15 +736,14 @@ const AdminDashboard = () => {
                                     {audioTargetType === 'word' && (() => {
                                         const scenario = parsedCourse.scenarios[selectedScenarioIdx] || {};
                                         const lessonsForRole = scenario.lessons?.[selectedRole] || [];
-                                        const targetType = audioTargetType === 'word' ? 'words' : 'phrases';
                                         const filtered = lessonsForRole
                                             .map((l, idx) => ({ l, idx }))
-                                            .filter(entry => entry.l.type === targetType);
+                                            .filter(entry => entry.l.type === 'words');
 
                                         if (filtered.length === 0) {
                                             return (
                                                 <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '.5rem' }}>
-                                                    Nenhuma lesson do tipo <code>{targetType}</code> encontrada para esse papel.
+                                                    Nenhuma lesson do tipo <code>words</code> encontrada para esse papel.
                                                 </p>
                                             );
                                         }
@@ -724,8 +753,10 @@ const AdminDashboard = () => {
                                         const words = lessonEntry.l.words || [];
                                         const safeWordIdx = Math.min(selectedWordIdx, Math.max(words.length - 1, 0));
 
+                                        const selectedWord = words[safeWordIdx];
+
                                         return (
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '.5rem' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '.5rem', alignItems: 'center' }}>
                                                 <select
                                                     value={safeLessonIdx}
                                                     onChange={(e) => {
@@ -755,6 +786,33 @@ const AdminDashboard = () => {
                                                         </option>
                                                     ))}
                                                 </select>
+
+                                                {words.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn secondary"
+                                                        style={{ width: 'auto', padding: '4px 10px', fontSize: '.8rem' }}
+                                                        onClick={() => {
+                                                            const phrase = (selectedWord?.word || '').trim();
+                                                            if (!phrase) {
+                                                                alert('Não há palavra/frase em inglês definida para este item.');
+                                                                return;
+                                                            }
+                                                            try {
+                                                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                                                    navigator.clipboard.writeText(phrase);
+                                                                    alert('Texto copiado para a área de transferência:\n\n' + phrase);
+                                                                } else {
+                                                                    alert('Texto em inglês:\n\n' + phrase);
+                                                                }
+                                                            } catch {
+                                                                alert('Texto em inglês:\n\n' + phrase);
+                                                            }
+                                                        }}
+                                                    >
+                                                        Copiar texto (inglês)
+                                                    </button>
+                                                )}
                                             </div>
                                         );
                                     })()}
