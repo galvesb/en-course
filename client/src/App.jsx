@@ -530,6 +530,24 @@ function MainApp() {
       }
     };
 
+    // Adiciona esta função:
+    const markAsUnknown = () => {
+      // Se só existe 1 card, só reseta o flip
+      if (flashcardQueue.length === 1) {
+        setIsFlashcardFlipped(false);
+        return;
+      }
+      // Move o card atual para o final
+      setFlashcardQueue(prevQueue => {
+        const updatedQueue = [...prevQueue];
+        const [current] = updatedQueue.splice(currentCardIndexInQueue, 1);
+        updatedQueue.push(current);
+        return updatedQueue;
+      });
+      // NÃO avança currentCardIndex! Só reseta flip
+      setIsFlashcardFlipped(false);
+    };
+
     return (
       <div className="card" style={{ marginTop: '20px' }}>
         <h2 style={{ textAlign: 'center' }}>Flashcard</h2>
@@ -556,7 +574,7 @@ function MainApp() {
           {isFlashcardFlipped ? (
             <div className="flashcard-nav" style={{ flexDirection: 'column', width: '100%', maxWidth: '400px', gap: '15px' }}>
               <button className="btn primary" style={{ background: 'var(--duo-green-dark)' }} onClick={markAsKnown}>✅ SEI (Próximo)</button>
-              <button className="btn secondary" style={{ color: 'var(--duo-blue-dark)' }} onClick={() => setIsFlashcardFlipped(false)}>🔄 NÃO SEI (Repetir)</button>
+              <button className="btn secondary" style={{ color: 'var(--duo-blue-dark)' }} onClick={markAsUnknown}>🔄 NÃO SEI (Repetir)</button>
             </div>
           ) : (
             <div className="flashcard-nav" style={{ width: '100%', maxWidth: '400px' }}>
