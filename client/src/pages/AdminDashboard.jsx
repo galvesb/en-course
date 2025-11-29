@@ -716,7 +716,7 @@ const AdminDashboard = () => {
                                                                 try {
                                                                     if (navigator.clipboard && navigator.clipboard.writeText) {
                                                                         navigator.clipboard.writeText(phrase);
-                                                                        alert('Frase copiada para a área de transferência:\n\n' + phrase);
+                                                                        // alert('Frase copiada para a área de transferência:\n\n' + phrase);
                                                                     } else {
                                                                         alert('Frase em inglês:\n\n' + phrase);
                                                                     }
