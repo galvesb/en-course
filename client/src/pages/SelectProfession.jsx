@@ -16,7 +16,7 @@ const SelectProfession = () => {
       try {
         setLoading(true);
         setError('');
-        const res = await axios.get('http://localhost:5000/api/professions');
+        const res = await axios.get('/api/professions');
         setProfessions(res.data || []);
       } catch (err) {
         console.error('Error fetching professions', err);

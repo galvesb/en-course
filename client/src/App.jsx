@@ -67,7 +67,7 @@ function MainApp() {
         return;
       }
 
-      const res = await axios.get(`http://localhost:5000/api/courses?professionKey=${encodeURIComponent(key)}`);
+      const res = await axios.get(`/api/courses?professionKey=${encodeURIComponent(key)}`);
       setCourseStructure(res.data);
     } catch (err) {
       console.error("Error fetching courses:", err);
@@ -77,7 +77,7 @@ function MainApp() {
   const fetchLessonData = async (key) => {
     if (lessonData[key]) return lessonData[key];
     try {
-      const res = await axios.get(`http://localhost:5000/api/lessons/${key}`);
+      const res = await axios.get(`/api/lessons/${key}`);
       const data = res.data;
       setLessonData(prev => ({ ...prev, [key]: data }));
       return data;
@@ -96,7 +96,7 @@ function MainApp() {
       }
 
       console.log('Fetching user progress...');
-      const res = await axios.get('http://localhost:5000/api/progress', {
+      const res = await axios.get('/api/progress', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -266,7 +266,7 @@ function MainApp() {
 
       console.log('Progress data to save:', JSON.stringify(progressData, null, 2));
 
-      const response = await axios.post('http://localhost:5000/api/progress',
+      const response = await axios.post('/api/progress',
         { courseProgress: progressData },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -822,7 +822,8 @@ function MainApp() {
           };
         });
 
-        await axios.post('http://localhost:5000/api/progress',
+        await axios.post('/api/progress',
+        await axios.post('/api/progress',
           { courseProgress: progressData },
           { headers: { Authorization: `Bearer ${token}` } }
         );

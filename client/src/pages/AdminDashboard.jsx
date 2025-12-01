@@ -92,7 +92,7 @@ const AdminDashboard = () => {
 
     const fetchProfessions = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/professions');
+            const res = await axios.get('/api/professions');
             setProfessions(res.data || []);
         } catch (err) {
             console.error("Error fetching professions", err);
@@ -101,7 +101,7 @@ const AdminDashboard = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/auth/users', {
+            const res = await axios.get('/api/auth/users', {
                 headers: authHeaders()
             });
             setUsers(res.data);
@@ -113,7 +113,7 @@ const AdminDashboard = () => {
     const deleteUser = async (id) => {
         if (!window.confirm("Are you sure?")) return;
         try {
-            await axios.delete(`http://localhost:5000/api/auth/users/${id}`, {
+            await axios.delete(`/api/auth/users/${id}`, {
                 headers: authHeaders()
             });
             setUsers(users.filter(u => u._id !== id));
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
                 setCourses([]);
                 return;
             }
-            const res = await axios.get(`http://localhost:5000/api/courses?professionKey=${encodeURIComponent(key)}`);
+            const res = await axios.get(`/api/courses?professionKey=${encodeURIComponent(key)}`);
             setCourses(res.data);
         } catch (err) {
             console.error("Error fetching courses", err);
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
             if (selectedCourse && selectedCourse._id) {
                 // Update existente
                 await axios.put(
-                    `http://localhost:5000/api/courses/${selectedCourse._id}`,
+                    `/api/courses/${selectedCourse._id}`,
                     payload,
                     { headers: authHeaders() }
                 );
@@ -209,7 +209,7 @@ const AdminDashboard = () => {
             } else {
                 // Criar novo
                 await axios.post(
-                    'http://localhost:5000/api/courses',
+                    '/api/courses',
                     payload,
                     { headers: authHeaders() }
                 );
@@ -232,7 +232,7 @@ const AdminDashboard = () => {
         if (!window.confirm(`Tem certeza que deseja excluir o dia "${selectedCourse.title}"?`)) return;
 
         try {
-            await axios.delete(`http://localhost:5000/api/courses/${selectedCourse._id}`, {
+            await axios.delete(`/api/courses/${selectedCourse._id}`, {
                 headers: authHeaders()
             });
             setCourseMessage('Dia excluído com sucesso!');
@@ -269,7 +269,7 @@ const AdminDashboard = () => {
             formData.append('file', audioFile);
 
             const res = await axios.post(
-                'http://localhost:5000/api/upload-audio',
+                '/api/upload-audio',
                 formData,
                 {
                     headers: {

@@ -1,0 +1,58 @@
+name: Deploy to Magalu VM
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Install & build frontend
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      - name: Deploy over SSH (pm2 + nginx)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+            nvm use 18 >/dev/null
+
+            cd ${{ secrets.REMOTE_APP_DIR }}
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
+
+            npm install
+            cd client
+            npm install
+            npm run build
+            cd ..
+
+            pm2 describe fluency-api >/dev/null 2>&1 && pm2 restart fluency-api || pm2 start server/index.js --name fluency-api
+            sudo systemctl reload nginx
+
