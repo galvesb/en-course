@@ -782,7 +782,7 @@ const AdminDashboard = () => {
                                                     )}
                                                     {words.map((w, idx) => (
                                                         <option key={idx} value={idx}>
-                                                            {(w.word || `Item ${idx + 1}`) + (w.translation ? ` - ${w.translation}` : '')}
+                                                            {w.word || `Item ${idx + 1}`}
                                                         </option>
                                                     ))}
                                                 </select>
