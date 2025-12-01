@@ -1,8 +1,13 @@
+const path = require('path');
+require('dotenv').config({
+    path: path.resolve(__dirname, '..', '.env')
+});
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
 const Profession = require('./models/Profession');
@@ -26,13 +31,69 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+const MAGALU_BUCKET = process.env.MAGALU_OBJECT_BUCKET;
+const MAGALU_ENDPOINT = (process.env.MAGALU_OBJECT_ENDPOINT || 'https://br-se1.magaluobjects.com').trim();
+const MAGALU_REGION = process.env.MAGALU_OBJECT_REGION || 'br-se1';
+
+let magaluS3Client = null;
+if (process.env.MAGALU_OBJECT_KEY_ID && process.env.MAGALU_OBJECT_KEY_SECRET && MAGALU_BUCKET) {
+    magaluS3Client = new S3Client({
+        region: MAGALU_REGION,
+        endpoint: MAGALU_ENDPOINT,
+        credentials: {
+            accessKeyId: process.env.MAGALU_OBJECT_KEY_ID,
+            secretAccessKey: process.env.MAGALU_OBJECT_KEY_SECRET
+        },
+        forcePathStyle: true
+    });
+} else {
+    console.warn('⚠️  Magalu Object Storage credentials not fully configured. Audio uploads will fail until MAGALU_OBJECT_* env vars are set.');
+}
+
+const buildObjectPublicUrl = (bucket, key) => {
+    if (process.env.MAGALU_OBJECT_PUBLIC_BASE) {
+        const customBase = process.env.MAGALU_OBJECT_PUBLIC_BASE.replace(/\/$/, '');
+        return `${customBase}/${key}`;
+    }
+    const base = MAGALU_ENDPOINT.replace(/\/$/, '');
+    return `${base}/${bucket}/${key}`;
+};
+
+const sanitizeName = (name) => name.replace(/[^a-z0-9_\-]/gi, '_').toLowerCase();
+
+async function uploadFileToMagaluStorage(file) {
+    if (!magaluS3Client) {
+        throw new Error('Magalu Object Storage client is not configured');
+    }
+    const ext = path.extname(file.originalname) || '.bin';
+    const base = sanitizeName(path.basename(file.originalname, ext)) || 'audio';
+    const key = `audio/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${base}${ext}`;
+
+    const command = new PutObjectCommand({
+        Bucket: MAGALU_BUCKET,
+        Key: key,
+        Body: fs.createReadStream(file.path),
+        ContentType: file.mimetype || 'application/octet-stream',
+        ACL: 'public-read'
+    });
+
+    await magaluS3Client.send(command);
+
+    return {
+        key,
+        url: buildObjectPublicUrl(MAGALU_BUCKET, key)
+    };
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/fluency';
+
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/fluency')
+mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('MongoDB connected successfully');
     })
@@ -254,22 +315,27 @@ app.get('/api/professions', async (req, res) => {
 });
 
 // Audio upload for admin (returns path to use in JSON)
-app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('file'), (req, res) => {
+app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'Nenhum arquivo enviado' });
         }
 
-        const relativePath = `/uploads/${req.file.filename}`;
-        const protocol = req.protocol;
-        const host = req.get('host');
-        const url = `${protocol}://${host}${relativePath}`;
+        if (!magaluS3Client) {
+            return res.status(500).json({ message: 'Magalu Object Storage não configurado. Defina as variáveis de ambiente MAGALU_OBJECT_KEY_ID, MAGALU_OBJECT_KEY_SECRET, MAGALU_OBJECT_BUCKET.' });
+        }
+
+        const uploaded = await uploadFileToMagaluStorage(req.file);
+
+        // Remove o arquivo salvo localmente após subir para o storage
+        fs.promises.unlink(req.file.path).catch(() => {});
 
         res.json({
             message: 'Upload realizado com sucesso',
-            path: relativePath,
-            url,
-            filename: req.file.filename
+            path: uploaded.url,
+            url: uploaded.url,
+            filename: req.file.originalname,
+            storageKey: uploaded.key
         });
     } catch (err) {
         console.error('Error uploading audio:', err);
