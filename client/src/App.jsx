@@ -823,7 +823,6 @@ function MainApp() {
         });
 
         await axios.post('/api/progress',
-        await axios.post('/api/progress',
           { courseProgress: progressData },
           { headers: { Authorization: `Bearer ${token}` } }
         );
