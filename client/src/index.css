@@ -90,6 +90,8 @@ body.admin-body #root {
 }
 
 .app-body .card {
+  width: 100%;
+  max-width: none;
   border-radius: 26px;
   margin-top: clamp(12px, 3vw, 20px);
   padding: clamp(18px, 4vw, 28px);
