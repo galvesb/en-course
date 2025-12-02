@@ -465,14 +465,10 @@ h3 {
   transition: background 0.1s;
 }
 
-.card-front .audio-btn {
-  border-color: #1f2937;
-  color: #1f2937;
-}
-
+.card-front .audio-btn,
 .card-back .audio-btn {
-  border-color: #fff;
-  color: #fff;
+  border-color: rgba(248, 250, 252, 0.8);
+  color: #f8fafc;
 }
 
 .audio-btn:hover {
@@ -667,30 +663,35 @@ h3 {
 }
 
 /* Estilo para a Tela de Flash Card */
-.flashcard-container {
-  display: flex;
-  flex-direction: column;
+.flashcard-stage {
   align-items: center;
-  padding: 20px 0;
+  gap: 1rem;
+  text-align: center;
+}
+
+.flashcard-stage-header {
+  margin-bottom: 1rem;
+}
+
+.flashcard-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .flashcard {
-  width: 100%;
-  max-width: 400px;
-  height: 250px;
-  background: #fff;
-  border: 2px solid var(--duo-blue-dark);
-  border-radius: 15px;
+  width: min(520px, 90%);
+  height: 320px;
+  background: radial-gradient(circle at top, rgba(15, 118, 110, 0.35), rgba(6, 11, 20, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 28px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, .15);
+  box-shadow: 0 25px 40px rgba(2, 6, 23, 0.55);
   cursor: pointer;
-  perspective: 1000px;
-  margin-bottom: 20px;
+  perspective: 1200px;
+  margin-bottom: 10px;
 }
 
 .card-inner {
@@ -716,31 +717,44 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  border-radius: 13px;
+  padding: 32px 24px;
+  border-radius: 26px;
 }
 
 .card-front {
-  background: var(--duo-green-light);
-  color: #1f2937;
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.25), rgba(15, 23, 42, 0.65));
+  color: #f8fafc;
 }
 
 .card-back {
-  background: var(--duo-blue-light);
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.35), rgba(15, 23, 42, 0.75));
   color: #fff;
   transform: rotateY(180deg);
 }
 
 .flashcard-progress {
-  margin-bottom: 15px;
-  font-size: 1rem;
-  color: #4b5563;
+  margin: 0;
+  font-size: .9rem;
+  color: rgba(226, 232, 240, 0.75);
 }
 
-.flashcard-nav {
+.flashcard-word {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.flashcard-translation {
+  font-size: clamp(1.4rem, 3.6vw, 2rem);
+  font-weight: 600;
+}
+
+.flashcard-stage-actions {
+  width: min(520px, 90%);
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  flex-direction: column;
+  gap: 12px;
+  margin: 1rem auto 0;
 }
 
 
