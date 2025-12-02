@@ -282,53 +282,61 @@ function MainApp() {
   };
 
   const renderMap = () => (
-    <div id="map-container">
-      <div className="day-path">
-        {courseStructure.map((day, dIdx) => {
-          const allScenariosCompleted = day.scenarios.every(s => s.completed);
-          const statusClass = allScenariosCompleted ? 'completed' : 'active';
-          const bubbleColor = allScenariosCompleted ? 'var(--gray-border)' : 'var(--duo-green-dark)';
-          const borderColor = allScenariosCompleted ? '#9ca3af' : 'var(--duo-green-light)';
-          const textColor = allScenariosCompleted ? '#4b5563' : '#fff';
+    <div className="map-grid">
+      {courseStructure.map((day, dIdx) => {
+        const allScenariosCompleted = day.scenarios.every(s => s.completed);
 
-          return (
-            <React.Fragment key={day.id}>
-              <div className="day-node" onClick={() => {
-                setCurrentDayIndex(dIdx);
-                setStage('day-scenarios');
-              }}>
-                <div className={`main-bubble ${statusClass}`}
-                  style={{ background: bubbleColor, borderColor: borderColor, color: textColor }}>
-                  📚
-                </div>
-                <p style={{ fontWeight: 600 }}>{day.title}</p>
-              </div>
-              {dIdx < courseStructure.length - 1 && <div></div>}
-            </React.Fragment>
-          );
-        })}
-      </div>
+        return (
+          <button
+            type="button"
+            key={day.id}
+            className={`map-card ${allScenariosCompleted ? 'done' : ''}`}
+            onClick={() => {
+              setCurrentDayIndex(dIdx);
+              setStage('day-scenarios');
+            }}
+          >
+            <div className="map-card-icon">📚</div>
+            <div className="map-card-body">
+              <p className="map-card-title">{day.title}</p>
+              <p className="map-card-meta">{day.scenarios.length} cenários · {day.scenarios.filter(s => s.completed).length} completos</p>
+            </div>
+            <span className="map-card-status">{allScenariosCompleted ? '✓' : '▶'}</span>
+          </button>
+        );
+      })}
     </div>
   );
 
   const renderDayScenarios = () => {
     const day = courseStructure[currentDayIndex];
     return (
-      <div className="card" style={{ marginTop: '20px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>{day.title}</h2>
-        <div id="scenarios-list" className="day-path" style={{ padding: 0, margin: 0, width: '100%', position: 'relative' }}>
+      <div className="card scenario-card">
+        <h2 style={{ marginBottom: '.5rem' }}>{day.title}</h2>
+        <p className="card-subtitle">Escolha um cenário para continuar praticando</p>
+
+        <div className="scenario-list">
           {day.scenarios.map((scenario, sIdx) => (
-            <div key={scenario.id} className="day-node" onClick={() => {
-              setCurrentScenarioIndex(sIdx);
-              fetchLessonData(scenario.lessonKey);
-              setStage('role-choice-lessons');
-            }}>
-              <div className={`scenario-bubble ${scenario.completed ? 'completed' : 'active'}`}>{scenario.icon}</div>
-              <p style={{ fontWeight: 600, marginBottom: 0 }}>{scenario.name}</p>
-              <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{scenario.completed ? 'COMPLETO' : 'PENDENTE'}</p>
-            </div>
+            <button
+              type="button"
+              key={scenario.id}
+              className={`scenario-item ${scenario.completed ? 'done' : ''}`}
+              onClick={() => {
+                setCurrentScenarioIndex(sIdx);
+                fetchLessonData(scenario.lessonKey);
+                setStage('role-choice-lessons');
+              }}
+            >
+              <div className="scenario-icon">{scenario.icon}</div>
+              <div className="scenario-info">
+                <p className="scenario-name">{scenario.name}</p>
+                <p className="scenario-meta">{scenario.description || 'Conversa prática'}</p>
+              </div>
+              <span className="scenario-status">{scenario.completed ? 'Concluído' : 'Continuar'}</span>
+            </button>
           ))}
         </div>
+
         <button className="btn ghost" onClick={() => setStage('map')}>Voltar aos Dias</button>
       </div>
     );
@@ -876,20 +884,16 @@ function MainApp() {
     );
   };
 
+  const professionName = localStorage.getItem('selectedProfessionName') || 'Sua jornada';
+  const professionIcon = localStorage.getItem('selectedProfessionIcon') || '📚';
+  const totalDays = courseStructure.length;
+  const currentDay = courseStructure[currentDayIndex];
+  const scenariosCount = currentDay?.scenarios.length || 0;
+  const completedScenarios = currentDay ? currentDay.scenarios.filter(s => s.completed).length : 0;
+  const lessonStages = ['day-scenarios', 'role-choice-lessons', 'flashcard-selector', 'flashcard', 'role', 'chat'];
+
   return (
     <>
-      <header className="nav-header">
-        <h1 id="header-title" style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-          <span>{localStorage.getItem('selectedProfessionIcon') || '📚'}</span>
-          <span>Fluency2Work</span>
-        </h1>
-        <div className="nav-header-icons">
-          <div style={{ fontSize: '1.1rem' }}>❤️ 5</div>
-          <div style={{ fontSize: '1.1rem' }}>🔥 10</div>
-          <button className="hint-btn" style={{ color: 'white', fontSize: '1.8rem' }} onClick={() => setSettingsVisible(!settingsVisible)}>☰</button>
-        </div>
-      </header>
-
       <div id="settings-menu" className={`settings-menu ${settingsVisible ? 'visible' : ''}`} onClick={(e) => e.target.id === 'settings-menu' && setSettingsVisible(false)}>
         <div className="settings-menu-content">
           <h3>Configurações</h3>
@@ -925,29 +929,81 @@ function MainApp() {
         </div>
       </div>
 
-      <div id="app" style={{ width: '100%', maxWidth: '800px', padding: '0 clamp(12px, 3.5vw, 32px)' }}>
-        {courseStructure.length === 0 ? (
-          <div className="card">
-            <h2>Carregando...</h2>
-            <p>Aguarde o carregamento dos dados do curso.</p>
+      <div className="app-shell">
+        <div className="app-status-bar">
+          <span>12:30</span>
+          <div className="status-icons">
+            <span>📶</span>
+            <span>📡</span>
+            <span>🔋 82%</span>
           </div>
-        ) : (
-          <>
-            {stage === 'map' && renderMap()}
-            {stage === 'day-scenarios' && renderDayScenarios()}
-            {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
-            {stage === 'flashcard-selector' && renderFlashcardSelector()}
-            {stage === 'flashcard' && renderFlashcard()}
-            {stage === 'role' && renderRoles()}
-            {stage === 'chat' && <SimulacaoChat
-              scenario={courseStructure[currentDayIndex].scenarios[currentScenarioIndex]}
-              conversationLesson={lessonData[courseStructure[currentDayIndex].scenarios[currentScenarioIndex].lessonKey]?.C?.[0]}
-              role={currentRole}
-              onBack={() => setStage('role')}
-              onComplete={handleSimulacaoComplete}
-            />}
-          </>
-        )}
+        </div>
+
+        <header className="app-header">
+          <div>
+            <p className="app-eyebrow">Profissão atual</p>
+            <div className="app-title">
+              <span className="app-profession-icon">{professionIcon}</span>
+              <span>{professionName}</span>
+            </div>
+            <p className="app-progress">
+              {totalDays > 0 ? `Dia ${currentDayIndex + 1}/${totalDays}` : 'Carregando trilha'}
+              {scenariosCount > 0 && ` · ${completedScenarios}/${scenariosCount} cenários`}
+            </p>
+          </div>
+          <div className="app-header-badges"></div>
+        </header>
+
+        <div className="app-body">
+          {courseStructure.length === 0 ? (
+            <div className="card">
+              <h2>Carregando...</h2>
+              <p>Aguarde o carregamento dos dados do curso.</p>
+            </div>
+          ) : (
+            <>
+              {stage === 'map' && renderMap()}
+              {stage === 'day-scenarios' && renderDayScenarios()}
+              {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
+              {stage === 'flashcard-selector' && renderFlashcardSelector()}
+              {stage === 'flashcard' && renderFlashcard()}
+              {stage === 'role' && renderRoles()}
+              {stage === 'chat' && (
+                <SimulacaoChat
+                  scenario={courseStructure[currentDayIndex].scenarios[currentScenarioIndex]}
+                  conversationLesson={lessonData[courseStructure[currentDayIndex].scenarios[currentScenarioIndex].lessonKey]?.C?.[0]}
+                  role={currentRole}
+                  onBack={() => setStage('role')}
+                  onComplete={handleSimulacaoComplete}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <footer className="app-tab-bar">
+          <button
+            type="button"
+            className={stage === 'map' ? 'active' : ''}
+            onClick={() => setStage('map')}
+          >
+            <span>🗺️</span>
+            <small>Mapa</small>
+          </button>
+          <button
+            type="button"
+            className={lessonStages.includes(stage) ? 'active' : ''}
+            onClick={() => setStage('day-scenarios')}
+            disabled={!courseStructure.length}
+          >
+            <span>📚</span>
+            <small>Lições</small>
+          </button>
+          <button type="button" onClick={() => setSettingsVisible(true)}>
+            <span>⚙️</span>
+            <small>Menu</small>
+          </button>
+        </footer>
       </div>
     </>
   );
@@ -1081,7 +1137,8 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   };
 
   const pushMessage = (msg, playAudio = true) => {
-    setHistory(prev => [...prev, msg]);
+    const enriched = { timestamp: Date.now(), ...msg };
+    setHistory(prev => [...prev, enriched]);
     if (msg.audio && playAudio) queueAudio(msg.audio);
   };
 
@@ -1105,6 +1162,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     if (cleanedInput === cleanedExpected) {
       setLastWrong(false);
       setInput('');
+      setHintVisible(false);
 
       // RESET AUDIO STATE ON NEW INTERACTION
       // Incrementa geração para matar loop anterior
@@ -1174,61 +1232,107 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const currentLine = currentScript[step];
   const hintText = currentLine ? (role === 'A' ? currentLine.pergunta : currentLine.resposta) : '';
   const hintAudio = currentLine ? currentLine.audio : '';
+  const headerSubtitle = conversationLesson?.lastSeenText || 'disponível agora';
+
+  const quickActions = [
+    { icon: '📄', label: 'Document', action: onBack, accent: '#38bdf8', title: 'Voltar aos cenários' },
+    { icon: '📷', label: 'Camera', action: playFullScript, accent: '#f472b6', title: 'Ouvir roteiro completo' },
+    { icon: '🖼️', label: 'Gallery', action: revealAll, accent: '#facc15', title: 'Revelar todo o texto' },
+    { icon: '🎵', label: 'Audio', action: hideAll, accent: '#34d399', title: 'Ocultar novamente' },
+    { icon: '📍', label: 'Location', action: () => hintText && setHintVisible(true), accent: '#fb923c', title: 'Mostrar dica' },
+    {
+      icon: '👤', label: 'Contact', accent: '#c084fc', title: 'Marcar simulação como concluída',
+      action: () => {
+        if (!finished) {
+          setFinished(true);
+          onComplete(role);
+        }
+      }
+    }
+  ];
+
+  const formatTime = (timestamp) =>
+    new Date(timestamp || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const toggleHint = () => hintText && setHintVisible(v => !v);
 
   return (
-    <div className="card" style={{ marginTop: '20px' }}>
-      <h2>{scenario.name} - Simulação de Conversa</h2>
+    <div className="sim-chat-wrapper">
+      <div className="sim-chat-shell">
+        <div className="sim-chat-header">
+          <div className="sim-header-left">
+            <button className="sim-icon-btn" type="button" onClick={onBack}>‹</button>
+            <div>
+              <div className="sim-header-name">{scenario.name}</div>
+              <div className="sim-header-status">{headerSubtitle}</div>
+            </div>
+          </div>
+          <div className="sim-header-icons">
+            <button className="sim-icon-btn" type="button">🔍</button>
+            <button className="sim-icon-btn" type="button">⋮</button>
+          </div>
+        </div>
 
-      <div className="chat-scroll" ref={chatScrollRef}>
-        {history.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: msg.speaker === role ? 'flex-end' : 'flex-start' }}>
-            <div className={`chat-bubble ${msg.speaker === 'A' ? 'bubble-a' : 'bubble-b'}`}>
-              <p style={{ margin: 0 }}>
+        <div className="sim-chat-body" ref={chatScrollRef}>
+          {history.map((msg, i) => {
+            const isSelf = msg.speaker === role;
+            return (
+              <div key={i} className={`sim-bubble ${isSelf ? 'self' : 'other'}`}>
                 <span className="hidden-text" title="Clique para revelar" onClick={(e) => e.target.classList.toggle('revealed')}>
                   {msg.text}
                 </span>
-              </p>
-              {msg.audio && <audio controls src={msg.audio} />}
-            </div>
-          </div>
-        ))}
-      </div>
+                {msg.audio && (
+                  <button
+                    type="button"
+                    className="sim-bubble-audio"
+                    onClick={() => playAudioImmediate(msg.audio)}
+                  >
+                    ▶️ Reproduzir áudio
+                  </button>
+                )}
+                <span className="sim-bubble-meta">{formatTime(msg.timestamp)} ✓✓</span>
+              </div>
+            );
+          })}
+          {finished && (
+            <div className="sim-finished-banner">Fim da conversa 🎉</div>
+          )}
+        </div>
 
-      {finished ? (
-        <div style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1rem' }}>Fim da conversa 🎉</div>
-      ) : (
-        <>
-          <div className="input-group" style={{ flexWrap: 'nowrap', marginTop: '.5rem' }}>
-            <input
-              type="text"
-              placeholder="Digite a resposta correta..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-              className={lastWrong ? 'error-input' : ''}
-            />
-            <button className="hint-btn"
-              title="Mostrar sugestão"
-              onClick={() => setHintVisible(!hintVisible)}
-              onMouseEnter={() => setHintVisible(true)}
-              onMouseLeave={() => setHintVisible(false)}
-            >👁</button>
-            <button className="audio-btn" title="Ouvir próxima fala" onClick={() => playAudioImmediate(hintAudio)}>🔊</button>
-            <button className="btn primary" style={{ width: 'auto', flex: '0 0 auto' }} onClick={handleSend}>Enviar</button>
+        <div className="sim-action-row">
+          {quickActions.map(action => (
+            <button
+              key={action.label}
+              className="sim-action-btn"
+              style={{ '--accent': action.accent }}
+              type="button"
+              title={action.title}
+              onClick={action.action}
+            >
+              <span className="sim-action-icon">{action.icon}</span>
+              <span className="sim-action-label">{action.label}</span>
+            </button>
+          ))}
+        </div>
 
-            <div className="hint-bubble" style={{ display: hintVisible ? 'block' : 'none' }}>
-              {hintText}
-            </div>
-          </div>
-          {lastWrong && <p style={{ color: '#ef4444', margin: '-10px 0 10px 0', textAlign: 'center', fontWeight: 600 }}>❌ Resposta incorreta. Corrija e envie novamente!</p>}
-        </>
-      )}
+        <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
+          <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
+        </div>
 
-      <div className="toolbar">
-        <button className="btn secondary" onClick={onBack}>📚 Voltar ao Cenário</button>
-        <button className="btn secondary" onClick={playFullScript}>🎧 Tocar roteiro</button>
-        <button className="btn secondary" onClick={revealAll}>👁️ Revelar tudo</button>
-        <button className="btn secondary" onClick={hideAll}>🙈 Ocultar tudo</button>
+        <div className="sim-input-bar">
+          <button type="button" className="sim-input-icon" onClick={toggleHint}>😊</button>
+          <input
+            type="text"
+            placeholder="Digite sua resposta..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            className={lastWrong ? 'error-input' : ''}
+          />
+          <button type="button" className="sim-input-icon" title="Ouvir próxima fala" onClick={() => playAudioImmediate(hintAudio)}>🔊</button>
+          <button type="button" className="sim-send-btn" onClick={handleSend}>➤</button>
+        </div>
+        {lastWrong && <p className="sim-error">❌ Resposta incorreta. Corrija e tente novamente!</p>}
       </div>
     </div>
   );
