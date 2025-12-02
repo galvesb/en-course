@@ -33,8 +33,13 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        document.body.classList.add('admin-body');
         fetchUsers();
         fetchProfessions();
+
+        return () => {
+            document.body.classList.remove('admin-body');
+        };
     }, []);
 
     // Mantém uma versão em objeto do JSON para facilitar escolha de fala na hora do upload
@@ -427,7 +432,8 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="admin-page">
+        <div className="card admin-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2>Admin Dashboard</h2>
                 <button
@@ -865,6 +871,7 @@ const AdminDashboard = () => {
             <div style={{ marginTop: '2rem' }}>
                 <button className="btn ghost" onClick={() => navigate('/')}>Go to App</button>
             </div>
+        </div>
         </div>
     );
 };
