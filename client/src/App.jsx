@@ -937,31 +937,59 @@ function MainApp() {
     const isACompleted = completedRoles.includes('A');
     const isBCompleted = completedRoles.includes('B');
 
+    const roleOptions = [
+      {
+        key: 'A',
+        title: 'Pessoa A',
+        subtitle: 'Scrum Master / Facilitador',
+        icon: '🧑‍💼',
+        colorClass: 'role-A',
+        completed: isACompleted
+      },
+      {
+        key: 'B',
+        title: 'Pessoa B',
+        subtitle: 'Desenvolvedor · Participante',
+        icon: '🛠️',
+        colorClass: 'role-B',
+        completed: isBCompleted
+      }
+    ];
+
     return (
-      <div className="card" style={{ marginTop: '20px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>{scenario.name} - Escolha seu Papel</h2>
-        <div className="flex gap-md" style={{ flexWrap: 'wrap' }}>
-          <button className="btn primary"
-            style={{
-              flex: '1 1 200px',
-              background: isACompleted ? 'var(--gray-border)' : 'var(--duo-blue-dark)',
-              color: isACompleted ? '#4b5563' : '#fff',
-              border: isACompleted ? '1px solid #9ca3af' : '0'
-            }}
-            onClick={() => { setCurrentRole('A'); setStage('chat'); }}>
-            Pessoa A (Ex: Scrum Master) {isACompleted && '✓'}
-          </button>
-          <button className="btn primary"
-            style={{
-              flex: '1 1 200px',
-              background: isBCompleted ? 'var(--gray-border)' : 'var(--duo-green-dark)',
-              color: isBCompleted ? '#4b5563' : '#fff',
-              border: isBCompleted ? '1px solid #9ca3af' : '0'
-            }}
-            onClick={() => { setCurrentRole('B'); setStage('chat'); }}>
-            Pessoa B (Ex: Desenvolvedor) {isBCompleted && '✓'}
-          </button>
+      <div className="card scenario-card trail-card role-select-card">
+        <h2>{scenario.name}</h2>
+        <p className="trail-subtitle">Escolha o papel para praticar o roteiro completo desta conversa.</p>
+
+        <div className="day-path role-trail role-select-trail">
+          {roleOptions.map((role, idx) => {
+            const statusText = role.completed ? 'Já concluído' : 'Pronto para praticar';
+            const ctaText = role.completed ? 'Repetir conversa' : 'Entrar';
+            const bubbleState = role.completed ? 'completed' : 'active';
+
+            return (
+              <React.Fragment key={role.key}>
+                <div
+                  className="day-node role-select-node"
+                  onClick={() => {
+                    setCurrentRole(role.key);
+                    setStage('chat');
+                  }}
+                >
+                  <div className={`sub-bubble ${role.colorClass} ${bubbleState}`}>
+                    {role.icon}
+                  </div>
+                  <p className="scenario-name">{role.title}</p>
+                  <p className="scenario-meta-trail">{role.subtitle}</p>
+                  <p className="scenario-meta-trail role-status-text">{statusText}</p>
+                  <span className="trail-action role-status">{ctaText}</span>
+                </div>
+                {idx !== roleOptions.length - 1 && <div />}
+              </React.Fragment>
+            );
+          })}
         </div>
+
         <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
       </div>
     );
