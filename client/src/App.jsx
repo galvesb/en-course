@@ -737,8 +737,6 @@ function MainApp() {
       <div className="flashcard-wrapper">
       <div className="card scenario-card flashcard-stage">
         <div className="flashcard-stage-header">
-          <p className="card-subtitle">{scenario?.name || 'Flashcards'}</p>
-          <h2>{roleName} · Memorização</h2>
           <p className="flashcard-progress">
             Card {currentCardIndexInQueue + 1}/{flashcardQueue.length}
           </p>
@@ -780,20 +778,6 @@ function MainApp() {
           </div>
         </div>
 
-        <div className="flashcard-stage-actions">
-          {isFlashcardFlipped ? (
-            <>
-              <button className="btn primary" onClick={markAsKnown}>✅ Sei (próximo)</button>
-              <button className="btn secondary" onClick={markAsUnknown}>🔄 Não sei (repetir)</button>
-            </>
-          ) : (
-            <button className="btn primary" onClick={() => setIsFlashcardFlipped(true)}>
-              Revelar resposta
-            </button>
-          )}
-        </div>
-
-        <button className="btn ghost" onClick={() => setStage('flashcard-selector')}>Voltar às Lições</button>
       </div>
       </div>
     );
