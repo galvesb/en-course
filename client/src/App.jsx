@@ -1038,7 +1038,7 @@ function MainApp() {
               <p>Aguarde o carregamento dos dados do curso.</p>
             </div>
           ) : (
-            <div className={stageContainerClass}>
+            <div className={`${stageContainerClass} ${stage === 'chat' ? 'chat-stage' : ''}`}>
               {stage === 'map' && renderMap()}
               {stage === 'day-scenarios' && renderDayScenarios()}
               {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
