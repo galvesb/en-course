@@ -193,6 +193,55 @@ body.admin-body #root {
   text-decoration: underline;
 }
 
+.profession-card {
+  width: min(600px, 100%);
+}
+
+.profession-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.profession-card-item {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 18px;
+  padding: 1.25rem 1rem;
+  background: rgba(15, 23, 42, 0.75);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.profession-card-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.profession-icon {
+  font-size: 2.2rem;
+}
+
+.profession-card-item strong {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.profession-card-item small {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.auth-info {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+
 .app-body .card {
   width: 100%;
   max-width: none;

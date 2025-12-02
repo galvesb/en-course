@@ -46,51 +46,36 @@ const SelectProfession = () => {
   }
 
   return (
-    <div className="card" style={{ marginTop: '40px' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '1rem' }}>Selecione sua profissão</h2>
-      <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '.9rem', marginBottom: '1.5rem' }}>
-        Escolha a profissão (em inglês) para ver os dias e cenários de aula específicos daquela área.
-      </p>
+    <div className="auth-wrapper">
+      <div className="auth-card profession-card">
+        <div className="auth-header">
+          <p className="auth-badge">Fluency2Work</p>
+          <h1>Escolha sua trilha</h1>
+          <p>Selecione a profissão para carregar os dias e cenários correspondentes.</p>
+        </div>
 
-      {loading && (
-        <p style={{ textAlign: 'center' }}>Carregando profissões...</p>
-      )}
+        {loading && <p className="auth-info">Carregando profissões...</p>}
+        {error && <p className="auth-error">{error}</p>}
+        {!loading && !error && professions.length === 0 && (
+          <p className="auth-info">
+            Nenhuma profissão cadastrada ainda. Peça a um administrador para configurar em /api/professions.
+          </p>
+        )}
 
-      {error && (
-        <p style={{ textAlign: 'center', color: '#ef4444' }}>{error}</p>
-      )}
-
-      {!loading && !error && professions.length === 0 && (
-        <p style={{ textAlign: 'center', color: '#6b7280' }}>
-          Nenhuma profissão cadastrada ainda. Peça a um administrador para configurar em /api/professions.
-        </p>
-      )}
-
-      <div className="day-path" style={{ justifyContent: 'center' }}>
-        {professions.map((p) => (
-          <div
-            key={p._id}
-            className="day-node"
-            style={{ cursor: 'pointer' }}
-            onClick={() => handleSelect(p)}
-          >
-            <div
-              className="main-bubble active"
-              style={{
-                background: 'var(--duo-green-dark)',
-                borderColor: 'var(--duo-green-light)',
-                color: '#fff',
-                fontSize: '2rem'
-              }}
+        <div className="profession-grid">
+          {professions.map((p) => (
+            <button
+              key={p._id}
+              type="button"
+              className="profession-card-item"
+              onClick={() => handleSelect(p)}
             >
-              {p.icon || '🧑‍💼'}
-            </div>
-            <p style={{ fontWeight: 600 }}>{p.name}</p>
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '.85rem' }}>
-              key: {p.key}
-            </p>
-          </div>
-        ))}
+              <span className="profession-icon">{p.icon || '🧑‍💼'}</span>
+              <strong>{p.name}</strong>
+              <small>{p.key}</small>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
