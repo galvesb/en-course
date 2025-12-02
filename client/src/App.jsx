@@ -348,7 +348,13 @@ function MainApp() {
     const key = scenario.lessonKey;
     const data = lessonData[key];
 
-    if (!data) return <div className="card">Loading lessons...</div>;
+    if (!data) {
+      return (
+        <div className="card scenario-card role-lessons-card">
+          <h2 style={{ textAlign: 'center' }}>Carregando lições...</h2>
+        </div>
+      );
+    }
 
     const lessonsA = data.A || [];
     const lessonsB = data.B || [];
@@ -357,46 +363,101 @@ function MainApp() {
     const allRoleALessonsCompleted = lessonsA.every(l => l.completed);
     const allRoleBLessonsCompleted = lessonsB.every(l => l.completed);
     const conversationIsActive = allRoleALessonsCompleted && allRoleBLessonsCompleted;
+    const conversationLocked = !(conversationIsActive || conversationLesson?.completed);
+
+    const missingRole = conversationLesson?.completedRoles?.length > 0
+      ? ['A', 'B'].find(r => !conversationLesson.completedRoles.includes(r))
+      : null;
+
+    const describeLessons = (lessons) => {
+      const count = lessons.length;
+      const word = count === 1 ? 'lição' : 'lições';
+      return `${count} ${word}`;
+    };
+
+    const conversationMeta = conversationLesson?.completed
+      ? 'Simulação finalizada'
+      : missingRole
+        ? `Falta: Pessoa ${missingRole}`
+        : conversationIsActive
+          ? 'Tudo pronto para simular'
+          : 'Conclua as lições de A e B';
+
+    const conversationCta = conversationLesson?.completed
+      ? 'Repetir'
+      : conversationIsActive
+        ? 'Iniciar'
+        : 'Bloqueado';
 
     return (
-      <div className="card" style={{ marginTop: '20px' }}>
-        <h2 style={{ textAlign: 'center' }}>{scenario.name}</h2>
-        <h3 style={{ textAlign: 'center', marginTop: '-1rem', color: '#6b7280' }}>Escolha seu Papel e Treinamento</h3>
-        <div id="lessons-list" className="day-path" style={{ padding: 0, margin: 0, width: '100%', position: 'relative' }}>
-
-          <div className="day-node" onClick={() => { setCurrentRole('A'); setStage('flashcard-selector'); }} style={{ cursor: 'pointer' }}>
-            <div className={`sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}`}
-              style={{ width: '80px', height: '80px', fontSize: '2rem' }}>👤</div>
-            <p style={{ fontWeight: 600 }}>Pessoa A</p>
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{allRoleALessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
-          </div>
-
-          <div className="day-node" onClick={() => { setCurrentRole('B'); setStage('flashcard-selector'); }} style={{ cursor: 'pointer' }}>
-            <div className={`sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}`}
-              style={{ width: '80px', height: '80px', fontSize: '2rem' }}>👤</div>
-            <p style={{ fontWeight: 600 }}>Pessoa B</p>
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>{allRoleBLessonsCompleted ? 'COMPLETO' : 'PENDENTE'}</p>
-          </div>
-
-          <div className="day-node" onClick={() => {
-            if (conversationIsActive || conversationLesson?.completed) {
-              startSimulacaoChat();
-            } else {
-              alert('Complete as lições da Pessoa A e B primeiro!');
-            }
-          }}>
-            <div className={`sub-bubble ${conversationLesson?.completed ? 'completed' : (conversationIsActive ? 'active' : '')}`}
-              style={{ width: '80px', height: '80px', fontSize: '2rem' }}>🗣️</div>
-            <p style={{ fontWeight: 600 }}>Simulação Completa</p>
-            <p style={{ margin: 0, color: '#6b7280', fontSize: '.9rem' }}>
-              {conversationLesson?.completed
-                ? 'COMPLETO'
-                : (conversationLesson?.completedRoles?.length > 0
-                  ? `Falta: ${['A', 'B'].find(r => !conversationLesson.completedRoles.includes(r)) === 'A' ? 'Pessoa A' : 'Pessoa B'}`
-                  : 'PRONTO PARA INICIAR')}
-            </p>
-          </div>
+      <div className="card scenario-card role-lessons-card">
+        <div className="role-lessons-header">
+          <p className="card-subtitle">{day.title}</p>
+          <h2>{scenario.name}</h2>
+          <p className="role-lessons-description">
+            Complete cada trilha abaixo para liberar a simulação final.
+          </p>
         </div>
+
+        <div className="scenario-list role-option-list">
+          <button
+            type="button"
+            className={`scenario-item role-option ${allRoleALessonsCompleted ? 'done' : ''}`}
+            onClick={() => {
+              setCurrentRole('A');
+              setStage('flashcard-selector');
+            }}
+          >
+            <div className="scenario-icon role-a">👤</div>
+            <div className="scenario-info">
+              <p className="scenario-name">Pessoa A</p>
+              <p className="scenario-meta">
+                {describeLessons(lessonsA)} · {allRoleALessonsCompleted ? 'Completo' : 'Pendente'}
+              </p>
+            </div>
+            <span className="scenario-status">{allRoleALessonsCompleted ? 'Revisar' : 'Treinar'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`scenario-item role-option ${allRoleBLessonsCompleted ? 'done' : ''}`}
+            onClick={() => {
+              setCurrentRole('B');
+              setStage('flashcard-selector');
+            }}
+          >
+            <div className="scenario-icon role-b">👤</div>
+            <div className="scenario-info">
+              <p className="scenario-name">Pessoa B</p>
+              <p className="scenario-meta">
+                {describeLessons(lessonsB)} · {allRoleBLessonsCompleted ? 'Completo' : 'Pendente'}
+              </p>
+            </div>
+            <span className="scenario-status">{allRoleBLessonsCompleted ? 'Revisar' : 'Treinar'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`scenario-item role-option ${
+              conversationLesson?.completed ? 'done' : conversationLocked ? 'locked' : 'ready'
+            }`}
+            onClick={() => {
+              if (conversationLocked) {
+                alert('Complete as lições da Pessoa A e B primeiro!');
+                return;
+              }
+              startSimulacaoChat();
+            }}
+          >
+            <div className="scenario-icon role-chat">🗣️</div>
+            <div className="scenario-info">
+              <p className="scenario-name">Simulação completa</p>
+              <p className="scenario-meta">{conversationMeta}</p>
+            </div>
+            <span className="scenario-status">{conversationCta}</span>
+          </button>
+        </div>
+
         <button className="btn ghost" onClick={() => setStage('day-scenarios')}>Voltar aos Cenários</button>
       </div>
     );
@@ -892,6 +953,8 @@ function MainApp() {
   const completedScenarios = currentDay ? currentDay.scenarios.filter(s => s.completed).length : 0;
   const lessonStages = ['day-scenarios', 'role-choice-lessons', 'flashcard-selector', 'flashcard', 'role', 'chat'];
 
+  const stageContainerClass = stage === 'role-choice-lessons' ? 'app-stage-static' : 'app-stage-scroll';
+
   return (
     <>
       <div id="settings-menu" className={`settings-menu ${settingsVisible ? 'visible' : ''}`} onClick={(e) => e.target.id === 'settings-menu' && setSettingsVisible(false)}>
@@ -952,7 +1015,7 @@ function MainApp() {
               <p>Aguarde o carregamento dos dados do curso.</p>
             </div>
           ) : (
-            <div className="app-stage-scroll">
+            <div className={stageContainerClass}>
               {stage === 'map' && renderMap()}
               {stage === 'day-scenarios' && renderDayScenarios()}
               {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
