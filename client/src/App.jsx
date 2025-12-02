@@ -1112,11 +1112,11 @@ function MainApp() {
               <button
                 type="button"
                 className={lessonStages.includes(stage) ? 'active' : ''}
-                onClick={() => setStage('day-scenarios')}
+                onClick={() => navigate('/profession')}
                 disabled={!courseStructure.length}
               >
-                <span>📚</span>
-                <small>Lições</small>
+                <span>🔁</span>
+                <small>Profissões</small>
               </button>
               <button type="button" onClick={() => setSettingsVisible(true)}>
                 <span>⚙️</span>
