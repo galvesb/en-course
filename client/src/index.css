@@ -1197,7 +1197,7 @@ audio {
   flex: 1;
   min-height: 0;
   padding: clamp(18px, 3vw, 36px) clamp(18px, 4vw, 48px);
-  padding-bottom: calc(clamp(18px, 3vw, 36px) + clamp(90px, 15vh, 160px));
+  padding-bottom: calc(clamp(18px, 3vw, 36px) + clamp(220px, 30vh, 320px));
   overflow-y: auto;
 }
 
@@ -1207,7 +1207,14 @@ audio {
   padding: clamp(16px, 3vw, 24px);
   gap: clamp(12px, 2vw, 24px);
   box-sizing: border-box;
-  padding-bottom: clamp(32px, 5vh, 60px);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: clamp(70px, 11vh, 110px);
+  background: rgba(11, 17, 23, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 14;
+  padding-bottom: clamp(12px, 2vh, 24px);
 }
 
 .sim-input-bar {

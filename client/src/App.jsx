@@ -1392,7 +1392,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
           )}
         </div>
 
-        <div className="sim-action-row">
+        {/* <div className="sim-action-row">
           {quickActions.map(action => (
             <button
               key={action.label}
@@ -1406,7 +1406,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
               <span className="sim-action-label">{action.label}</span>
             </button>
           ))}
-        </div>
+        </div> */}
 
         <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
           <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
