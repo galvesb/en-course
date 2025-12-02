@@ -21,31 +21,44 @@ const Login = () => {
     };
 
     return (
-        <div className="card" style={{ maxWidth: '400px', margin: '50px auto' }}>
-            <h2 style={{ textAlign: 'center' }}>Login</h2>
-            {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className="input-group" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+        <div className="auth-wrapper">
+            <div className="auth-card">
+                <div className="auth-header">
+                    <p className="auth-badge">Fluency2Work</p>
                 </div>
-                <button type="submit" className="btn primary">Login</button>
-            </form>
-            <p style={{ textAlign: 'center', marginTop: '1rem' }}>
-                Don't have an account? <Link to="/register">Register</Link>
-            </p>
+
+                {error && <p className="auth-error">{error}</p>}
+
+                <form className="auth-form" onSubmit={handleSubmit}>
+                    <label>
+                        <span>E-mail</span>
+                        <input
+                            type="email"
+                            placeholder="voce@empresa.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label>
+                        <span>Senha</span>
+                        <input
+                            type="password"
+                            placeholder="********"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <button type="submit" className="btn primary auth-submit">
+                        Entrar
+                    </button>
+                </form>
+
+                <p className="auth-footer">
+                    Não tem conta? <Link to="/register">Criar cadastro</Link>
+                </p>
+            </div>
         </div>
     );
 };
