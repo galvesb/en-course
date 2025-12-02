@@ -1397,10 +1397,26 @@ audio {
 }
 
 .sim-error {
-  color: #f87171;
-  margin: 4px 0 12px;
-  text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%) scale(.92);
+  background: rgba(127, 29, 29, 0.95);
+  color: #fee2e2;
+  padding: 18px 28px;
+  border-radius: 20px;
   font-weight: 600;
+  text-align: center;
+  box-shadow: 0 35px 60px rgba(2, 6, 23, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 260;
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.sim-error.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 /* Dark themed map + scenario cards */

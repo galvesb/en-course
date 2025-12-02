@@ -1336,6 +1336,12 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     };
   }, []);
 
+  useEffect(() => {
+    if (!lastWrong) return;
+    const errorTimeout = setTimeout(() => setLastWrong(false), 1000);
+    return () => clearTimeout(errorTimeout);
+  }, [lastWrong]);
+
   const showHintToast = () => {
     if (!hintText) return;
     setHintVisible(true);
@@ -1344,7 +1350,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     }
     hintTimeoutRef.current = setTimeout(() => {
       setHintVisible(false);
-    }, 3500);
+    }, 1000);
   };
 
   const quickActions = [
@@ -1426,10 +1432,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
           ))}
         </div> */}
 
-        <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
-          <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
-        </div>
-
         <div className="sim-input-bar">
           <button type="button" className="sim-input-icon" onClick={showHintToast}>💡</button>
           <input
@@ -1443,7 +1445,13 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
           <button type="button" className="sim-input-icon" title="Ouvir próxima fala" onClick={() => playAudioImmediate(hintAudio)}>🔊</button>
           <button type="button" className="sim-send-btn" onClick={handleSend}>➤</button>
         </div>
-        {lastWrong && <p className="sim-error">❌ Resposta incorreta. Corrija e tente novamente!</p>}
+        <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
+          <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
+        </div>
+
+        <div className={`sim-error ${lastWrong ? 'show' : ''}`}>
+          ❌ Resposta incorreta. Corrija e tente novamente!
+        </div>
       </div>
     </div>
   );
