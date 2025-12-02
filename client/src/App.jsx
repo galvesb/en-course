@@ -1117,7 +1117,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
   const queueGenerationRef = useRef(0);
-  const hintTimeoutRef = useRef(null);
 
   // Use a ref to track the current scenario ID to prevent unnecessary resets
   const scenarioIdRef = useRef(scenario?.id);
@@ -1331,32 +1330,16 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const hintAudio = currentLine ? currentLine.audio : '';
   const headerSubtitle = conversationLesson?.lastSeenText || 'disponível agora';
 
-  useEffect(() => {
-    return () => {
-      if (hintTimeoutRef.current) {
-        clearTimeout(hintTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!lastWrong) return;
-    const errorTimeout = setTimeout(() => {
-      setLastWrong(false);
-      setMistakeInfo(null);
-    }, 1000);
-    return () => clearTimeout(errorTimeout);
-  }, [lastWrong]);
-
-  const showHintToast = () => {
+  const toggleHintToast = () => {
     if (!hintText) return;
-    setHintVisible(true);
-    if (hintTimeoutRef.current) {
-      clearTimeout(hintTimeoutRef.current);
-    }
-    hintTimeoutRef.current = setTimeout(() => {
-      setHintVisible(false);
-    }, 1000);
+    setHintVisible(prev => !prev);
+  };
+
+  const closeHintToast = () => setHintVisible(false);
+
+  const closeErrorToast = () => {
+    setLastWrong(false);
+    setMistakeInfo(null);
   };
 
   const quickActions = [
@@ -1364,7 +1347,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     { icon: '📷', label: 'Camera', action: playFullScript, accent: '#f472b6', title: 'Ouvir roteiro completo' },
     { icon: '🖼️', label: 'Gallery', action: revealAll, accent: '#facc15', title: 'Revelar todo o texto' },
     { icon: '🎵', label: 'Audio', action: hideAll, accent: '#34d399', title: 'Ocultar novamente' },
-    { icon: '📍', label: 'Location', action: showHintToast, accent: '#fb923c', title: 'Mostrar dica' },
+    { icon: '📍', label: 'Location', action: toggleHintToast, accent: '#fb923c', title: 'Mostrar dica' },
     {
       icon: '👤', label: 'Contact', accent: '#c084fc', title: 'Marcar simulação como concluída',
       action: () => {
@@ -1468,7 +1451,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
         </div> */}
 
         <div className="sim-input-bar">
-          <button type="button" className="sim-input-icon" onClick={showHintToast}>💡</button>
+          <button type="button" className="sim-input-icon" onClick={toggleHintToast}>💡</button>
           <input
             type="text"
             placeholder="Digite sua resposta..."
@@ -1481,10 +1464,12 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
           <button type="button" className="sim-send-btn" onClick={handleSend}>➤</button>
         </div>
         <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
+          <button type="button" className="toast-close" onClick={closeHintToast}>×</button>
           <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
         </div>
 
         <div className={`sim-error ${lastWrong ? 'show' : ''}`}>
+          <button type="button" className="toast-close" onClick={closeErrorToast}>×</button>
           <p>❌ Resposta incorreta.</p>
           {mistakeInfo && (
             <>

@@ -1385,6 +1385,7 @@ audio {
 .sim-hint-popover.show {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
 }
 
 .sim-finished-banner {
@@ -1417,6 +1418,21 @@ audio {
 .sim-error.show {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
+
+.sim-hint-popover .toast-close,
+.sim-error .toast-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
 }
 
 .diff-word {
