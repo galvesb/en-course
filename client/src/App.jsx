@@ -930,15 +930,6 @@ function MainApp() {
       </div>
 
       <div className="app-shell">
-        <div className="app-status-bar">
-          <span>12:30</span>
-          <div className="status-icons">
-            <span>📶</span>
-            <span>📡</span>
-            <span>🔋 82%</span>
-          </div>
-        </div>
-
         <header className="app-header">
           <div>
             <p className="app-eyebrow">Profissão atual</p>
@@ -961,7 +952,7 @@ function MainApp() {
               <p>Aguarde o carregamento dos dados do curso.</p>
             </div>
           ) : (
-            <>
+            <div className="app-stage-scroll">
               {stage === 'map' && renderMap()}
               {stage === 'day-scenarios' && renderDayScenarios()}
               {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
@@ -977,7 +968,7 @@ function MainApp() {
                   onComplete={handleSimulacaoComplete}
                 />
               )}
-            </>
+            </div>
           )}
         </div>
 

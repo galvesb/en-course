@@ -100,33 +100,26 @@ h3 {
   color: #e2e8f0;
   display: flex;
   flex-direction: column;
-  min-height: min(780px, calc(100vh - 32px));
+  height: min(820px, calc(100vh - 32px));
+  min-height: min(560px, calc(100vh - 32px));
+  position: relative;
   overflow: hidden;
 }
 
-.app-status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 22px 4px;
-  font-size: .8rem;
-  color: rgba(255, 255, 255, 0.65);
-}
-
-.status-icons {
-  display: flex;
-  gap: 8px;
-}
-
 .app-header {
-  margin: 0 16px 12px;
+  margin: 0;
   background: linear-gradient(135deg, #0B7B70, #0d8a92);
-  border-radius: 28px;
   padding: 18px 20px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  z-index: 10;
 }
 
 .app-eyebrow {
@@ -171,14 +164,27 @@ h3 {
 .app-body {
   flex: 1;
   padding: 0 16px 16px;
-  overflow-y: auto;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.app-body::-webkit-scrollbar {
+.app-stage-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 6px;
+  min-height: 0;
+}
+
+.app-stage-scroll::-webkit-scrollbar {
   width: 4px;
 }
 
-.app-body::-webkit-scrollbar-thumb {
+.app-stage-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
 }
@@ -188,6 +194,12 @@ h3 {
   gap: 8px;
   padding: 12px 16px 16px;
   background: #03101a;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  z-index: 10;
 }
 
 .app-tab-bar button {
