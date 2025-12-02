@@ -1363,7 +1363,11 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     new Date(timestamp || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   const analyzeMistake = (userText, expectedText) => {
-    const normalizeWord = (word = '') => word.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizeWord = (word = '') => word
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"“”'’]/g, '')
+      .toLowerCase();
     const userWords = userText.trim() ? userText.trim().split(/\s+/) : [];
     const expectedWords = expectedText.trim() ? expectedText.trim().split(/\s+/) : [];
     const maxLen = Math.max(userWords.length, expectedWords.length);
