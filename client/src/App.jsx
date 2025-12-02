@@ -1313,14 +1313,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     }
   };
 
-  const revealAll = () => {
-    document.querySelectorAll('.hidden-text').forEach(el => el.classList.add('revealed'));
-  };
-
-  const hideAll = () => {
-    document.querySelectorAll('.hidden-text').forEach(el => el.classList.remove('revealed'));
-  };
-
   if (!scenario || !scenario.conversations) return <div>Carregando...</div>;
 
   const conv = scenario.conversations;
@@ -1345,8 +1337,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const quickActions = [
     { icon: '📄', label: 'Document', action: onBack, accent: '#38bdf8', title: 'Voltar aos cenários' },
     { icon: '📷', label: 'Camera', action: playFullScript, accent: '#f472b6', title: 'Ouvir roteiro completo' },
-    { icon: '🖼️', label: 'Gallery', action: revealAll, accent: '#facc15', title: 'Revelar todo o texto' },
-    { icon: '🎵', label: 'Audio', action: hideAll, accent: '#34d399', title: 'Ocultar novamente' },
     { icon: '📍', label: 'Location', action: toggleHintToast, accent: '#fb923c', title: 'Mostrar dica' },
     {
       icon: '👤', label: 'Contact', accent: '#c084fc', title: 'Marcar simulação como concluída',
@@ -1417,7 +1407,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
             const isSelf = msg.speaker === role;
             return (
               <div key={i} className={`sim-bubble ${isSelf ? 'self' : 'other'}`}>
-                <span className="hidden-text" title="Clique para revelar" onClick={(e) => e.target.classList.toggle('revealed')}>
+                <span className="sim-bubble-text">
                   {msg.text}
                 </span>
                 {msg.audio && (

@@ -1031,16 +1031,9 @@ h3 {
   background: var(--duo-green-dark);
 }
 
-.hidden-text {
-  filter: blur(8px);
-  cursor: pointer;
-  transition: filter 160ms ease;
-  user-select: none;
-}
-
-.hidden-text.revealed {
-  filter: none;
-  user-select: text;
+.sim-bubble-text {
+  display: block;
+  color: inherit;
 }
 
 audio {
