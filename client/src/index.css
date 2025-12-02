@@ -1181,7 +1181,7 @@ audio {
 }
 
 .sim-chat-body {
-  background: #ece5dd;
+  /* background: #ece5dd; */
   min-height: 300px;
   max-height: 60vh;
   overflow-y: auto;
