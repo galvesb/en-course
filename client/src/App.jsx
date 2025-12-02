@@ -282,58 +282,72 @@ function MainApp() {
   };
 
   const renderMap = () => (
-    <div className="map-grid">
-      {courseStructure.map((day, dIdx) => {
-        const allScenariosCompleted = day.scenarios.every(s => s.completed);
+    <div className="card scenario-card trail-card">
+      <h2>Mapa da jornada</h2>
+      <p className="trail-subtitle">
+        Selecione o dia desejado e avance pelos cenários da sua trilha.
+      </p>
+      <div className="day-path map-trail">
+        {courseStructure.map((day, dIdx) => {
+          const completedScenarios = day.scenarios.filter(s => s.completed).length;
+          const allScenariosCompleted = completedScenarios === day.scenarios.length && day.scenarios.length > 0;
+          const isActiveDay = dIdx === currentDayIndex;
 
-        return (
-          <button
-            type="button"
-            key={day.id}
-            className={`map-card ${allScenariosCompleted ? 'done' : ''}`}
-            onClick={() => {
-              setCurrentDayIndex(dIdx);
-              setStage('day-scenarios');
-            }}
-          >
-            <div className="map-card-icon">📚</div>
-            <div className="map-card-body">
-              <p className="map-card-title">{day.title}</p>
-              <p className="map-card-meta">{day.scenarios.length} cenários · {day.scenarios.filter(s => s.completed).length} completos</p>
-            </div>
-            <span className="map-card-status">{allScenariosCompleted ? '✓' : '▶'}</span>
-          </button>
-        );
-      })}
+          return (
+            <React.Fragment key={day.id}>
+              <div
+                className="day-node"
+                onClick={() => {
+                  setCurrentDayIndex(dIdx);
+                  setStage('day-scenarios');
+                }}
+              >
+                <div className={`main-bubble ${allScenariosCompleted ? 'completed' : (isActiveDay ? 'active' : '')}`}>
+                  {day.id}
+                </div>
+                <p className="scenario-name">{day.title}</p>
+                <p className="scenario-meta-trail">
+                  {completedScenarios}/{day.scenarios.length} cenários completos
+                </p>
+              </div>
+              {dIdx !== courseStructure.length - 1 && <div />}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 
   const renderDayScenarios = () => {
     const day = courseStructure[currentDayIndex];
-    return (
-      <div className="card scenario-card">
-        <h2 style={{ marginBottom: '.5rem' }}>{day.title}</h2>
-        <p className="card-subtitle">Escolha um cenário para continuar praticando</p>
+    if (!day) return null;
 
-        <div className="scenario-list">
+    return (
+      <div className="card scenario-card trail-card">
+        <h2>{day.title}</h2>
+        <p className="trail-subtitle">Selecione o cenário para continuar a trilha.</p>
+
+        <div className="day-path scenario-trail">
           {day.scenarios.map((scenario, sIdx) => (
-            <button
-              type="button"
-              key={scenario.id}
-              className={`scenario-item ${scenario.completed ? 'done' : ''}`}
-              onClick={() => {
-                setCurrentScenarioIndex(sIdx);
-                fetchLessonData(scenario.lessonKey);
-                setStage('role-choice-lessons');
-              }}
-            >
-              <div className="scenario-icon">{scenario.icon}</div>
-              <div className="scenario-info">
+            <React.Fragment key={scenario.id}>
+              <div
+                className="day-node"
+                onClick={() => {
+                  setCurrentScenarioIndex(sIdx);
+                  fetchLessonData(scenario.lessonKey);
+                  setStage('role-choice-lessons');
+                }}
+              >
+                <div className={`scenario-bubble ${scenario.completed ? 'completed' : ''}`}>
+                  {scenario.icon || '🎯'}
+                </div>
                 <p className="scenario-name">{scenario.name}</p>
-                <p className="scenario-meta">{scenario.description || 'Conversa prática'}</p>
+                <p className="scenario-meta-trail">
+                  {scenario.completed ? 'Concluído' : (scenario.description || 'Disponível para praticar')}
+                </p>
               </div>
-              <span className="scenario-status">{scenario.completed ? 'Concluído' : 'Continuar'}</span>
-            </button>
+              {sIdx !== day.scenarios.length - 1 && <div />}
+            </React.Fragment>
           ))}
         </div>
 
@@ -390,57 +404,45 @@ function MainApp() {
         : 'Bloqueado';
 
     return (
-      <div className="card scenario-card role-lessons-card">
-        <div className="role-lessons-header">
-          <p className="card-subtitle">{day.title}</p>
-          <h2>{scenario.name}</h2>
-          <p className="role-lessons-description">
-            Complete cada trilha abaixo para liberar a simulação final.
-          </p>
-        </div>
+      <div className="card scenario-card trail-card">
+        <h2>{scenario.name}</h2>
+        <p className="trail-subtitle">Complete cada trilha abaixo para liberar a simulação final.</p>
 
-        <div className="scenario-list role-option-list">
-          <button
-            type="button"
-            className={`scenario-item role-option ${allRoleALessonsCompleted ? 'done' : ''}`}
+        <div className="day-path role-trail">
+          <div
+            className="day-node"
             onClick={() => {
               setCurrentRole('A');
               setStage('flashcard-selector');
             }}
           >
-            <div className="scenario-icon role-a">👤</div>
-            <div className="scenario-info">
-              <p className="scenario-name">Pessoa A</p>
-              <p className="scenario-meta">
-                {describeLessons(lessonsA)} · {allRoleALessonsCompleted ? 'Completo' : 'Pendente'}
-              </p>
-            </div>
-            <span className="scenario-status">{allRoleALessonsCompleted ? 'Revisar' : 'Treinar'}</span>
-          </button>
+            <div className={`sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}`}>👤</div>
+            <p className="scenario-name">Pessoa A</p>
+            <p className="scenario-meta-trail">
+              {describeLessons(lessonsA)} · {allRoleALessonsCompleted ? 'Completo' : 'Pendente'}
+            </p>
+          </div>
 
-          <button
-            type="button"
-            className={`scenario-item role-option ${allRoleBLessonsCompleted ? 'done' : ''}`}
+          <div />
+
+          <div
+            className="day-node"
             onClick={() => {
               setCurrentRole('B');
               setStage('flashcard-selector');
             }}
           >
-            <div className="scenario-icon role-b">👤</div>
-            <div className="scenario-info">
-              <p className="scenario-name">Pessoa B</p>
-              <p className="scenario-meta">
-                {describeLessons(lessonsB)} · {allRoleBLessonsCompleted ? 'Completo' : 'Pendente'}
-              </p>
-            </div>
-            <span className="scenario-status">{allRoleBLessonsCompleted ? 'Revisar' : 'Treinar'}</span>
-          </button>
+            <div className={`sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}`}>👤</div>
+            <p className="scenario-name">Pessoa B</p>
+            <p className="scenario-meta-trail">
+              {describeLessons(lessonsB)} · {allRoleBLessonsCompleted ? 'Completo' : 'Pendente'}
+            </p>
+          </div>
 
-          <button
-            type="button"
-            className={`scenario-item role-option ${
-              conversationLesson?.completed ? 'done' : conversationLocked ? 'locked' : 'ready'
-            }`}
+          <div />
+
+          <div
+            className={`day-node ${conversationLocked ? 'locked' : ''}`}
             onClick={() => {
               if (conversationLocked) {
                 alert('Complete as lições da Pessoa A e B primeiro!');
@@ -449,13 +451,13 @@ function MainApp() {
               startSimulacaoChat();
             }}
           >
-            <div className="scenario-icon role-chat">🗣️</div>
-            <div className="scenario-info">
-              <p className="scenario-name">Simulação completa</p>
-              <p className="scenario-meta">{conversationMeta}</p>
+            <div className={`sub-bubble role-chat ${conversationLesson?.completed ? 'completed' : (conversationIsActive ? 'active' : '')}`}>
+              🗣️
             </div>
-            <span className="scenario-status">{conversationCta}</span>
-          </button>
+            <p className="scenario-name">Simulação completa</p>
+            <p className="scenario-meta-trail">{conversationMeta}</p>
+            <span className="scenario-status trail-action">{conversationCta}</span>
+          </div>
         </div>
 
         <button className="btn ghost" onClick={() => setStage('day-scenarios')}>Voltar aos Cenários</button>

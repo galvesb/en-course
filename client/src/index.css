@@ -110,6 +110,50 @@ body.admin-body #root {
   font-size: .9rem;
 }
 
+.trail-card {
+  align-items: center;
+  text-align: center;
+}
+
+.trail-card h2 {
+  margin-top: 0;
+  margin-bottom: .25rem;
+}
+
+.trail-subtitle {
+  margin: 0 0 1rem 0;
+  color: rgba(226, 232, 240, 0.75);
+  font-size: .95rem;
+}
+
+.trail-card .day-path {
+  width: 100%;
+  max-width: 520px;
+}
+
+.scenario-meta-trail {
+  margin: .15rem 0 0;
+  font-size: .85rem;
+  color: rgba(226, 232, 240, 0.65);
+}
+
+.day-node.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trail-card .trail-action {
+  margin-top: .35rem;
+  display: inline-block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: #67e8f9;
+}
+
+.map-trail .scenario-meta-trail {
+  color: rgba(226, 232, 240, 0.75);
+}
+
 .role-lessons-card {
   margin-top: 16px;
   background: rgba(3, 10, 18, 0.92);
@@ -541,6 +585,10 @@ h3 {
   color: #4b5563 !important;
 }
 
+.main-bubble.active {
+  animation: pulse-border 1.5s infinite;
+}
+
 /* Bolhas de Cenário e Sub-Lição */
 .scenario-bubble,
 .sub-bubble {
@@ -575,6 +623,11 @@ h3 {
 .sub-bubble.role-B {
   background: var(--duo-green-dark);
   border-color: var(--duo-green-light);
+}
+
+.sub-bubble.role-chat {
+  background: #8b5cf6;
+  border-color: #c084fc;
 }
 
 .sub-bubble.completed,
