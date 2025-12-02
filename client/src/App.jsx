@@ -475,34 +475,46 @@ function MainApp() {
     const roleClass = currentRole === 'A' ? 'role-A' : 'role-B';
 
     return (
-      <div className="card" style={{ marginTop: '20px' }}>
-        <h2 style={{ textAlign: 'center' }}>{scenario.name}</h2>
-        <h3 style={{ textAlign: 'center', marginTop: '-1rem', color: currentRole === 'A' ? 'var(--duo-blue-dark)' : 'var(--duo-green-dark)' }}>{roleName} - Seleção de Lição</h3>
-        <div id="lessons-list" className="day-path" style={{ padding: 0, margin: 0, width: '100%', position: 'relative' }}>
+      <div className="card scenario-card trail-card">
+        <h2>{scenario.name}</h2>
+        <p className="trail-subtitle" style={{ color: currentRole === 'A' ? 'var(--duo-blue-light)' : 'var(--duo-green-light)' }}>
+          {roleName} — selecione a próxima lição da trilha.
+        </p>
+        <div id="lessons-list" className="day-path lesson-trail">
           {roleLessons.map((lesson, lIdx) => {
             const icon = lesson.type === 'words' ? '📖' : '💬';
             const nextLessonIndex = roleLessons.findIndex(l => !l.completed);
-            const isActive = lIdx === nextLessonIndex;
-            const statusClass = lesson.completed ? 'completed' : (isActive ? 'active' : '');
-            // Quando completed, não adiciona roleClass para ficar cinza
-            const bubbleClass = lesson.completed ? 'completed' : `${statusClass} ${roleClass}`;
+            const isActive = lIdx === nextLessonIndex || nextLessonIndex === -1;
+            const bubbleClass = lesson.completed
+              ? 'completed'
+              : (isActive ? `active ${roleClass}` : roleClass);
 
             return (
-              <div key={lesson.id} className="day-node" onClick={() => {
-                if (isActive || lesson.completed) {
-                  setCurrentLessonIndex(lIdx);
-                  setFlashcardQueue(lesson.words || []);
-                  setCurrentCardIndexInQueue(0);
-                  setIsFlashcardFlipped(false);
-                  setStage('flashcard');
-                } else {
-                  alert('Complete a lição anterior primeiro!');
-                }
-              }}>
-                <div className={`sub-bubble ${bubbleClass}`} style={{ width: '60px', height: '60px', borderWidth: '4px' }}>{icon}</div>
-                <p style={{ fontWeight: 500, color: lesson.completed ? '#6b7280' : '#1f2937' }}>{lesson.title}</p>
-                {lesson.completed && <p style={{ margin: 0, color: '#6b7280', fontSize: '.8rem' }}>✓ Completo</p>}
-              </div>
+              <React.Fragment key={lesson.id}>
+                <div
+                  className="day-node"
+                  onClick={() => {
+                    if (isActive || lesson.completed) {
+                      setCurrentLessonIndex(lIdx);
+                      setFlashcardQueue(lesson.words || []);
+                      setCurrentCardIndexInQueue(0);
+                      setIsFlashcardFlipped(false);
+                      setStage('flashcard');
+                    } else {
+                      alert('Complete a lição anterior primeiro!');
+                    }
+                  }}
+                >
+                  <div className={`sub-bubble ${bubbleClass}`} style={{ width: '64px', height: '64px', borderWidth: '4px' }}>
+                    {icon}
+                  </div>
+                  <p className="scenario-name">{lesson.title}</p>
+                  <p className="scenario-meta-trail">
+                    {lesson.completed ? '✓ Completo' : (isActive ? 'Pronto para iniciar' : 'Bloqueado')}
+                  </p>
+                </div>
+                {lIdx !== roleLessons.length - 1 && <div />}
+              </React.Fragment>
             );
           })}
         </div>

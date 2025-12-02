@@ -131,6 +131,16 @@ body.admin-body #root {
   max-width: 520px;
 }
 
+.lesson-trail .sub-bubble.role-A {
+  background: var(--duo-blue-dark);
+  border-color: var(--duo-blue-light);
+}
+
+.lesson-trail .sub-bubble.role-B {
+  background: var(--duo-green-dark);
+  border-color: var(--duo-green-light);
+}
+
 .scenario-meta-trail {
   margin: .15rem 0 0;
   font-size: .85rem;
