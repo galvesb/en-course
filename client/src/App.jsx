@@ -1397,8 +1397,14 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
             </div>
           </div>
           <div className="sim-header-icons">
-            <button className="sim-icon-btn" type="button">🔍</button>
-            <button className="sim-icon-btn" type="button">⋮</button>
+            <button
+              className="sim-icon-btn"
+              type="button"
+              title="Ouvir todo o roteiro"
+              onClick={playFullScript}
+            >
+              📢
+            </button>
           </div>
         </div>
 
