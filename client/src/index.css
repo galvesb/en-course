@@ -1181,7 +1181,7 @@ audio {
 }
 
 .sim-chat-body {
-  /* background: #ece5dd; */
+  background: #030a12;
   min-height: 300px;
   max-height: 60vh;
   overflow-y: auto;
@@ -1365,17 +1365,26 @@ audio {
 }
 
 .sim-hint-popover {
-  background: rgba(8, 47, 73, 0.9);
-  margin: 0 16px 8px;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: .85rem;
-  color: #bae6fd;
-  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -40%) scale(.92);
+  background: rgba(15, 23, 42, 0.93);
+  border-radius: 20px;
+  padding: 18px 26px;
+  font-size: 1rem;
+  color: #f8fafc;
+  text-align: center;
+  box-shadow: 0 35px 60px rgba(2, 6, 23, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  z-index: 250;
 }
 
 .sim-hint-popover.show {
-  display: block;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .sim-finished-banner {

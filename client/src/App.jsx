@@ -1116,6 +1116,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
   const queueGenerationRef = useRef(0);
+  const hintTimeoutRef = useRef(null);
 
   // Use a ref to track the current scenario ID to prevent unnecessary resets
   const scenarioIdRef = useRef(scenario?.id);
@@ -1327,12 +1328,31 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const hintAudio = currentLine ? currentLine.audio : '';
   const headerSubtitle = conversationLesson?.lastSeenText || 'disponível agora';
 
+  useEffect(() => {
+    return () => {
+      if (hintTimeoutRef.current) {
+        clearTimeout(hintTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const showHintToast = () => {
+    if (!hintText) return;
+    setHintVisible(true);
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+    }
+    hintTimeoutRef.current = setTimeout(() => {
+      setHintVisible(false);
+    }, 3500);
+  };
+
   const quickActions = [
     { icon: '📄', label: 'Document', action: onBack, accent: '#38bdf8', title: 'Voltar aos cenários' },
     { icon: '📷', label: 'Camera', action: playFullScript, accent: '#f472b6', title: 'Ouvir roteiro completo' },
     { icon: '🖼️', label: 'Gallery', action: revealAll, accent: '#facc15', title: 'Revelar todo o texto' },
     { icon: '🎵', label: 'Audio', action: hideAll, accent: '#34d399', title: 'Ocultar novamente' },
-    { icon: '📍', label: 'Location', action: () => hintText && setHintVisible(true), accent: '#fb923c', title: 'Mostrar dica' },
+    { icon: '📍', label: 'Location', action: showHintToast, accent: '#fb923c', title: 'Mostrar dica' },
     {
       icon: '👤', label: 'Contact', accent: '#c084fc', title: 'Marcar simulação como concluída',
       action: () => {
@@ -1346,8 +1366,6 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
   const formatTime = (timestamp) =>
     new Date(timestamp || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-  const toggleHint = () => hintText && setHintVisible(v => !v);
 
   return (
     <div className="sim-chat-wrapper">
@@ -1413,7 +1431,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
         </div>
 
         <div className="sim-input-bar">
-          <button type="button" className="sim-input-icon" onClick={toggleHint}>😊</button>
+          <button type="button" className="sim-input-icon" onClick={showHintToast}>💡</button>
           <input
             type="text"
             placeholder="Digite sua resposta..."
