@@ -1096,7 +1096,7 @@ audio {
   margin-top: 0;
   width: 100%;
   height: 100%;
-  padding: clamp(12px, 4vw, 28px);
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -1113,8 +1113,11 @@ audio {
 }
 
 .chat-mode .sim-chat-shell {
-  width: min(900px, 100%);
+  width: 100%;
   height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
 }
 
 .sim-chat-header {
@@ -1174,6 +1177,14 @@ audio {
 .chat-mode .sim-chat-body {
   max-height: none;
   flex: 1;
+}
+
+.chat-mode .sim-action-row {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.chat-mode .sim-input-bar {
+  padding: 20px clamp(20px, 4vw, 48px);
 }
 
 .sim-bubble {
