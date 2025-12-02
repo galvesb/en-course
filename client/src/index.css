@@ -26,6 +26,20 @@
   box-sizing: border-box;
 }
 
+input,
+textarea,
+select {
+  font-size: 1rem;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -1333,6 +1347,9 @@ audio {
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.08);
   color: #f8fafc;
+  font-size: 1rem;
+  line-height: 1.4;
+  min-height: 46px;
 }
 
 .sim-input-bar input:focus {
