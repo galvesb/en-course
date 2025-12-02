@@ -1015,7 +1015,7 @@ function MainApp() {
         </div>
       </div>
 
-      <div className={`app-shell ${stage === 'flashcard' ? 'flashcard-mode' : ''}`}>
+      <div className={`app-shell ${stage === 'flashcard' ? 'flashcard-mode' : ''} ${stage === 'chat' ? 'chat-mode' : ''}`}>
         <header className="app-header">
           <div>
             <p className="app-eyebrow">Profissão atual</p>
@@ -1031,7 +1031,7 @@ function MainApp() {
           <div className="app-header-badges"></div>
         </header>
 
-        <div className={`app-body ${stage === 'flashcard' ? 'flashcard-body' : ''}`}>
+        <div className={`app-body ${stage === 'flashcard' ? 'flashcard-body' : ''} ${stage === 'chat' ? 'chat-body' : ''}`}>
           {courseStructure.length === 0 ? (
             <div className="card">
               <h2>Carregando...</h2>

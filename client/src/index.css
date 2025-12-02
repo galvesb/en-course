@@ -498,6 +498,26 @@ h3 {
   align-items: stretch;
 }
 
+.chat-mode {
+  min-height: 100vh;
+}
+
+.chat-mode .app-header,
+.chat-mode .app-tab-bar {
+  display: none;
+}
+
+.chat-body {
+  padding: 0;
+  flex: 1;
+}
+
+.chat-body .app-stage-scroll {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
 .app-stage-scroll {
   flex: 1;
   overflow-y: auto;
@@ -1072,6 +1092,14 @@ audio {
   margin-top: 20px;
 }
 
+.chat-mode .sim-chat-wrapper {
+  margin-top: 0;
+  width: 100%;
+  height: 100%;
+  padding: clamp(12px, 4vw, 28px);
+  box-sizing: border-box;
+}
+
 .sim-chat-shell {
   width: min(420px, 100%);
   background: #0d1115;
@@ -1082,6 +1110,11 @@ audio {
   color: #f8fafc;
   display: flex;
   flex-direction: column;
+}
+
+.chat-mode .sim-chat-shell {
+  width: min(900px, 100%);
+  height: 100%;
 }
 
 .sim-chat-header {
@@ -1136,6 +1169,11 @@ audio {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.chat-mode .sim-chat-body {
+  max-height: none;
+  flex: 1;
 }
 
 .sim-bubble {
