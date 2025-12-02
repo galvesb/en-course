@@ -259,6 +259,15 @@ h3 {
   position: relative;
 }
 
+.flashcard-mode {
+  min-height: 100vh;
+}
+
+.flashcard-mode .app-body,
+.flashcard-mode .app-stage-static {
+  justify-content: center;
+}
+
 .app-header {
   margin: 0;
   background: linear-gradient(135deg, #0B7B70, #0d8a92);
@@ -320,6 +329,20 @@ h3 {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.flashcard-body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flashcard-body .app-stage-static {
+  flex: 1;
+  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .app-stage-scroll {
@@ -663,13 +686,30 @@ h3 {
 }
 
 /* Estilo para a Tela de Flash Card */
-.flashcard-stage {
+.flashcard-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
   align-items: center;
+  padding: 24px 0 40px;
+  overflow: auto;
+}
+
+.flashcard-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 1rem;
   text-align: center;
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 12px 0 24px;
 }
 
 .flashcard-stage-header {
+  width: 100%;
   margin-bottom: 1rem;
 }
 
@@ -677,6 +717,9 @@ h3 {
   width: 100%;
   display: flex;
   justify-content: center;
+  flex: 1;
+  align-items: center;
+  overflow: visible;
 }
 
 .flashcard {

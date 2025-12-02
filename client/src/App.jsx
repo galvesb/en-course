@@ -37,6 +37,7 @@ function MainApp() {
   const [currentCardIndexInQueue, setCurrentCardIndexInQueue] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -726,7 +727,14 @@ function MainApp() {
       setIsFlashcardFlipped(false);
     };
 
+    flashcardActionsRef.current = {
+      know: markAsKnown,
+      dontKnow: markAsUnknown,
+      back: () => setStage('flashcard-selector')
+    };
+
     return (
+      <div className="flashcard-wrapper">
       <div className="card scenario-card flashcard-stage">
         <div className="flashcard-stage-header">
           <p className="card-subtitle">{scenario?.name || 'Flashcards'}</p>
@@ -786,6 +794,7 @@ function MainApp() {
         </div>
 
         <button className="btn ghost" onClick={() => setStage('flashcard-selector')}>Voltar às Lições</button>
+      </div>
       </div>
     );
   };
@@ -982,7 +991,8 @@ function MainApp() {
   const completedScenarios = currentDay ? currentDay.scenarios.filter(s => s.completed).length : 0;
   const lessonStages = ['day-scenarios', 'role-choice-lessons', 'flashcard-selector', 'flashcard', 'role', 'chat'];
 
-  const stageContainerClass = stage === 'role-choice-lessons' ? 'app-stage-static' : 'app-stage-scroll';
+  const staticStages = ['role-choice-lessons', 'flashcard'];
+  const stageContainerClass = staticStages.includes(stage) ? 'app-stage-static' : 'app-stage-scroll';
 
   return (
     <>
@@ -1021,7 +1031,7 @@ function MainApp() {
         </div>
       </div>
 
-      <div className="app-shell">
+      <div className={`app-shell ${stage === 'flashcard' ? 'flashcard-mode' : ''}`}>
         <header className="app-header">
           <div>
             <p className="app-eyebrow">Profissão atual</p>
@@ -1037,7 +1047,7 @@ function MainApp() {
           <div className="app-header-badges"></div>
         </header>
 
-        <div className="app-body">
+        <div className={`app-body ${stage === 'flashcard' ? 'flashcard-body' : ''}`}>
           {courseStructure.length === 0 ? (
             <div className="card">
               <h2>Carregando...</h2>
@@ -1065,27 +1075,43 @@ function MainApp() {
         </div>
 
         <footer className="app-tab-bar">
-          <button
-            type="button"
-            className={stage === 'map' ? 'active' : ''}
-            onClick={() => setStage('map')}
-          >
-            <span>🗺️</span>
-            <small>Mapa</small>
-          </button>
-          <button
-            type="button"
-            className={lessonStages.includes(stage) ? 'active' : ''}
-            onClick={() => setStage('day-scenarios')}
-            disabled={!courseStructure.length}
-          >
-            <span>📚</span>
-            <small>Lições</small>
-          </button>
-          <button type="button" onClick={() => setSettingsVisible(true)}>
-            <span>⚙️</span>
-            <small>Menu</small>
-          </button>
+          {stage === 'flashcard' ? (
+            <>
+              <button type="button" onClick={() => flashcardActionsRef.current.know?.()}>
+                SEI
+              </button>
+              <button type="button" onClick={() => flashcardActionsRef.current.dontKnow?.()}>
+                NÃO SEI
+              </button>
+              <button type="button" onClick={() => flashcardActionsRef.current.back?.()}>
+                VOLTAR
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={stage === 'map' ? 'active' : ''}
+                onClick={() => setStage('map')}
+              >
+                <span>🗺️</span>
+                <small>Mapa</small>
+              </button>
+              <button
+                type="button"
+                className={lessonStages.includes(stage) ? 'active' : ''}
+                onClick={() => setStage('day-scenarios')}
+                disabled={!courseStructure.length}
+              >
+                <span>📚</span>
+                <small>Lições</small>
+              </button>
+              <button type="button" onClick={() => setSettingsVisible(true)}>
+                <span>⚙️</span>
+                <small>Menu</small>
+              </button>
+            </>
+          )}
         </footer>
       </div>
     </>
