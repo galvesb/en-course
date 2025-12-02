@@ -1107,6 +1107,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const [history, setHistory] = useState([]);
   const [input, setInput] = useState('');
   const [lastWrong, setLastWrong] = useState(false);
+  const [mistakeInfo, setMistakeInfo] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [finished, setFinished] = useState(false);
 
@@ -1255,6 +1256,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
     if (cleanedInput === cleanedExpected) {
       setLastWrong(false);
+      setMistakeInfo(null);
       setInput('');
       setHintVisible(false);
 
@@ -1291,6 +1293,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       }
 
     } else {
+      setMistakeInfo(analyzeMistake(input, expectedText));
       setLastWrong(true);
     }
   };
@@ -1338,7 +1341,10 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
   useEffect(() => {
     if (!lastWrong) return;
-    const errorTimeout = setTimeout(() => setLastWrong(false), 1000);
+    const errorTimeout = setTimeout(() => {
+      setLastWrong(false);
+      setMistakeInfo(null);
+    }, 1000);
     return () => clearTimeout(errorTimeout);
   }, [lastWrong]);
 
@@ -1372,6 +1378,35 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
   const formatTime = (timestamp) =>
     new Date(timestamp || Date.now()).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const analyzeMistake = (userText, expectedText) => {
+    const normalizeWord = (word = '') => word.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const userWords = userText.trim() ? userText.trim().split(/\s+/) : [];
+    const expectedWords = expectedText.trim() ? expectedText.trim().split(/\s+/) : [];
+    const maxLen = Math.max(userWords.length, expectedWords.length);
+    const wrongWords = [];
+    const missingWords = [];
+    const extraWords = [];
+
+    for (let i = 0; i < maxLen; i++) {
+      const userWord = userWords[i];
+      const expectedWord = expectedWords[i];
+
+      if (typeof userWord === 'undefined' && typeof expectedWord === 'string') {
+        missingWords.push(expectedWord);
+        continue;
+      }
+      if (typeof expectedWord === 'undefined' && typeof userWord === 'string') {
+        extraWords.push(userWord);
+        continue;
+      }
+      if (normalizeWord(userWord) !== normalizeWord(expectedWord)) {
+        wrongWords.push({ userWord, expectedWord });
+      }
+    }
+
+    return { wrongWords, missingWords, extraWords };
+  };
 
   return (
     <div className="sim-chat-wrapper">
@@ -1450,7 +1485,45 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
         </div>
 
         <div className={`sim-error ${lastWrong ? 'show' : ''}`}>
-          ❌ Resposta incorreta. Corrija e tente novamente!
+          <p>❌ Resposta incorreta.</p>
+          {mistakeInfo && (
+            <>
+              {mistakeInfo.wrongWords.length > 0 && (
+                <div className="mistake-block">
+                  <p>Palavras incorretas:</p>
+                  <ul>
+                    {mistakeInfo.wrongWords.map((pair, idx) => (
+                      <li key={`wrong-${idx}`} className="diff-pair">
+                        <span className="diff-word wrong">{pair.userWord || '(vazio)'}</span>
+                        <span className="diff-arrow">→</span>
+                        <span className="diff-word correct">{pair.expectedWord || '(correto)'}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {mistakeInfo.missingWords.length > 0 && (
+                <div className="mistake-block">
+                  <p>Você não digitou:</p>
+                  <div className="diff-list">
+                    {mistakeInfo.missingWords.map((word, idx) => (
+                      <span key={`missing-${idx}`} className="diff-word correct">{word}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {mistakeInfo.extraWords.length > 0 && (
+                <div className="mistake-block">
+                  <p>Palavras extras:</p>
+                  <div className="diff-list">
+                    {mistakeInfo.extraWords.map((word, idx) => (
+                      <span key={`extra-${idx}`} className="diff-word wrong">{word}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
