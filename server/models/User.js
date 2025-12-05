@@ -6,7 +6,8 @@ const UserSchema = new mongoose.Schema({
     cpf: { type: String, required: true, unique: false },
     address: { type: String, required: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' }
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    hasSubscription: { type: Boolean, default: false }
 }, {
     timestamps: true
 });

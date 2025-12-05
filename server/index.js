@@ -11,6 +11,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
 const Profession = require('./models/Profession');
+const User = require('./models/User');
 const authRoutes = require('./routes/authRoutes');
 const { authMiddleware, adminMiddleware } = require('./middleware/authMiddleware');
 
@@ -289,16 +290,31 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
 
 console.log('✅ Progress routes mounted at /api/progress');
 
-// Public course routes
-app.get('/api/courses', async (req, res) => {
+// Course routes (requires authentication to apply subscription rules)
+app.get('/api/courses', authMiddleware, async (req, res) => {
     try {
         const filter = {};
         if (req.query.professionKey) {
             filter.professionKey = req.query.professionKey;
         }
 
-        const courses = await Course.find(filter).sort({ id: 1 });
-        res.json(courses);
+        const courseDocs = await Course.find(filter).sort({ id: 1 });
+        const user = await User.findById(req.user.userId).select('hasSubscription');
+        const hasSubscription = !!user?.hasSubscription;
+
+        const fallbackFreeDayId = courseDocs.length > 0
+            ? Math.min(...courseDocs.map(course => course.id || 1))
+            : null;
+
+        const payload = courseDocs.map(course => {
+            const obj = course.toObject();
+            const allowFree = obj.allowFreeAccess === true ||
+                (obj.allowFreeAccess === undefined && obj.id === fallbackFreeDayId);
+            obj.locked = hasSubscription ? false : !allowFree;
+            return obj;
+        });
+
+        res.json(payload);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

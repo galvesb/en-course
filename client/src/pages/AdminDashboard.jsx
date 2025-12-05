@@ -115,6 +115,20 @@ const AdminDashboard = () => {
         }
     };
 
+    const toggleSubscription = async (id, current) => {
+        try {
+            const res = await axios.patch(`/api/auth/users/${id}/subscription`, {
+                hasSubscription: !current
+            }, {
+                headers: authHeaders()
+            });
+            setUsers(prev => prev.map(u => u._id === id ? res.data : u));
+        } catch (err) {
+            console.error("Error updating subscription", err);
+            alert('Não foi possível atualizar a assinatura deste usuário.');
+        }
+    };
+
     const deleteUser = async (id) => {
         if (!window.confirm("Are you sure?")) return;
         try {
@@ -145,6 +159,9 @@ const AdminDashboard = () => {
         setSelectedCourse(course);
         // Remove campos internos do Mongo para edição
         const { _id, __v, ...rest } = course;
+        if (rest.allowFreeAccess === undefined) {
+            rest.allowFreeAccess = false;
+        }
         setCourseJson(JSON.stringify(rest, null, 2));
         setParsedCourse(rest);
         setSelectedScenarioIdx(0);
@@ -154,11 +171,30 @@ const AdminDashboard = () => {
         setCourseError('');
     };
 
+    const updateCourseField = (field, value) => {
+        try {
+            if (!courseJson.trim()) return;
+            const obj = JSON.parse(courseJson);
+            obj[field] = value;
+            const updatedJson = JSON.stringify(obj, null, 2);
+            setCourseJson(updatedJson);
+            setParsedCourse(obj);
+        } catch (err) {
+            console.error('Invalid JSON when updating course field', err);
+            alert('JSON inválido. Corrija antes de alterar esta opção.');
+        }
+    };
+
+    const toggleFreeAccess = (checked) => {
+        updateCourseField('allowFreeAccess', checked);
+    };
+
     const handleNewCourse = () => {
         setSelectedCourse(null);
         const template = {
             id: courses.length > 0 ? (Math.max(...courses.map(c => c.id || 0)) + 1) : 1,
             title: `Dia ${courses.length + 1}`,
+            allowFreeAccess: courses.length === 0,
             professionKey: selectedProfessionKey || null,
             scenarios: []
         };
@@ -197,6 +233,9 @@ const AdminDashboard = () => {
             if (!payload.title) {
                 setCourseError('Campo "title" é obrigatório.');
                 return;
+            }
+            if (typeof payload.allowFreeAccess !== 'boolean') {
+                payload.allowFreeAccess = false;
             }
             if (!Array.isArray(payload.scenarios)) {
                 setCourseError('Campo "scenarios" deve ser um array.');
@@ -485,6 +524,7 @@ const AdminDashboard = () => {
                                     <th style={{ padding: '10px', textAlign: 'left' }}>Email</th>
                                     <th style={{ padding: '10px', textAlign: 'left' }}>CPF</th>
                                     <th style={{ padding: '10px', textAlign: 'left' }}>Role</th>
+                                    <th style={{ padding: '10px', textAlign: 'left' }}>Plano</th>
                                     <th style={{ padding: '10px', textAlign: 'left' }}>Actions</th>
                                 </tr>
                             </thead>
@@ -495,6 +535,28 @@ const AdminDashboard = () => {
                                         <td style={{ padding: '10px' }}>{u.email}</td>
                                         <td style={{ padding: '10px' }}>{u.cpf}</td>
                                         <td style={{ padding: '10px' }}>{u.role}</td>
+                                        <td style={{ padding: '10px' }}>
+                                            <span
+                                                style={{
+                                                    display: 'inline-block',
+                                                    padding: '2px 10px',
+                                                    borderRadius: '999px',
+                                                    fontSize: '.8rem',
+                                                    background: u.hasSubscription ? 'rgba(34,197,94,.15)' : 'rgba(248,113,113,.15)',
+                                                    color: u.hasSubscription ? '#16a34a' : '#dc2626',
+                                                    marginRight: '8px'
+                                                }}
+                                            >
+                                                {u.hasSubscription ? 'Assinante' : 'Free'}
+                                            </span>
+                                            <button
+                                                className="btn secondary"
+                                                style={{ width: 'auto', padding: '4px 10px', marginTop: 0 }}
+                                                onClick={() => toggleSubscription(u._id, u.hasSubscription)}
+                                            >
+                                                {u.hasSubscription ? 'Remover acesso' : 'Liberar tudo'}
+                                            </button>
+                                        </td>
                                         <td style={{ padding: '10px' }}>
                                             {u.role !== 'admin' && (
                                                 <button
@@ -620,6 +682,16 @@ const AdminDashboard = () => {
                             resize: 'vertical'
                         }}
                     />
+                    {parsedCourse && (
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '.75rem', fontSize: '.9rem' }}>
+                            <input
+                                type="checkbox"
+                                checked={!!parsedCourse.allowFreeAccess}
+                                onChange={(e) => toggleFreeAccess(e.target.checked)}
+                            />
+                            Disponível para usuários do plano Free
+                        </label>
+                    )}
                     <div style={{ marginTop: '.75rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                         <button className="btn primary" style={{ width: 'auto' }} onClick={handleSaveCourse}>
                             Salvar Dia

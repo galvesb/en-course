@@ -65,7 +65,8 @@ router.post('/register', async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                hasSubscription: user.hasSubscription
             }
         });
     } catch (err) {
@@ -120,7 +121,8 @@ router.post('/login', async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                hasSubscription: user.hasSubscription
             }
         });
     } catch (err) {
@@ -148,6 +150,27 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req, res) =>
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
+    }
+});
+
+// Toggle subscription status (Admin only)
+router.patch('/users/:id/subscription', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { hasSubscription } = req.body;
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { hasSubscription: !!hasSubscription },
+            { new: true }
+        ).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error('Error updating subscription:', err);
+        res.status(500).json({ message: 'Error updating subscription', error: err.message });
     }
 });
 

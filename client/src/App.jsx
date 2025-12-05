@@ -71,7 +71,12 @@ function MainApp() {
       const res = await axios.get(`/api/courses?professionKey=${encodeURIComponent(key)}`);
       setCourseStructure(res.data);
     } catch (err) {
-      console.error("Error fetching courses:", err);
+      if (err.response?.status === 401) {
+        logout();
+        navigate('/login');
+      } else {
+        console.error("Error fetching courses:", err);
+      }
     }
   };
 
@@ -287,12 +292,44 @@ function MainApp() {
     }
   };
 
+  const subscriptionActive = !!user?.hasSubscription;
+
+  const handleDaySelection = (dayIndex) => {
+    const day = courseStructure[dayIndex];
+    if (!day) return;
+    if (day.locked && !subscriptionActive) {
+      alert('Este dia está disponível apenas para assinantes.');
+      return;
+    }
+    setCurrentDayIndex(dayIndex);
+    setStage('day-scenarios');
+  };
+
+  const renderLockedCard = (title = 'Conteúdo bloqueado') => (
+    <div className="card scenario-card trail-card locked-card">
+      <h2>{title}</h2>
+      <p className="trail-subtitle">Este conteúdo está disponível apenas para assinantes.</p>
+      <ul className="locked-list">
+        <li>Dia 1 liberado no plano gratuito</li>
+        <li>Assinantes acessam todos os dias e cenários</li>
+      </ul>
+      <button className="btn secondary" onClick={() => setStage('map')}>
+        Voltar ao mapa
+      </button>
+    </div>
+  );
+
   const renderMap = () => (
     <div className="card scenario-card trail-card">
       <h2>Mapa da jornada</h2>
       <p className="trail-subtitle">
         Selecione o dia desejado e avance pelos cenários da sua trilha.
       </p>
+      {!subscriptionActive && (
+        <div className="subscription-banner">
+          <strong>Plano Free:</strong> apenas o Dia 1 está liberado. Assine para desbloquear todas as aulas.
+        </div>
+      )}
       <div className="day-path map-trail">
         {courseStructure.map((day, dIdx) => {
           const completedScenarios = day.scenarios.filter(s => s.completed).length;
@@ -302,18 +339,17 @@ function MainApp() {
           return (
             <React.Fragment key={day.id}>
               <div
-                className="day-node"
-                onClick={() => {
-                  setCurrentDayIndex(dIdx);
-                  setStage('day-scenarios');
-                }}
+                className={`day-node ${day.locked ? 'locked' : ''}`}
+                onClick={() => handleDaySelection(dIdx)}
               >
                 <div className={`main-bubble ${allScenariosCompleted ? 'completed' : (isActiveDay ? 'active' : '')}`}>
                   {day.id}
                 </div>
                 <p className="scenario-name">{day.title}</p>
                 <p className="scenario-meta-trail">
-                  {completedScenarios}/{day.scenarios.length} cenários completos
+                  {day.locked && !subscriptionActive
+                    ? 'Indisponível para o plano Free'
+                    : `${completedScenarios}/${day.scenarios.length} cenários completos`}
                 </p>
               </div>
               {dIdx !== courseStructure.length - 1 && <div />}
@@ -327,6 +363,10 @@ function MainApp() {
   const renderDayScenarios = () => {
     const day = courseStructure[currentDayIndex];
     if (!day) return null;
+
+    if (day.locked && !subscriptionActive) {
+      return renderLockedCard(day.title);
+    }
 
     return (
       <div className="card scenario-card trail-card">
@@ -364,6 +404,10 @@ function MainApp() {
 
   const renderRoleChoiceLessons = () => {
     const day = courseStructure[currentDayIndex];
+    if (!day) return null;
+    if (day.locked && !subscriptionActive) {
+      return renderLockedCard(day.title);
+    }
     const scenario = day.scenarios[currentScenarioIndex];
     const key = scenario.lessonKey;
     const data = lessonData[key];
@@ -473,6 +517,10 @@ function MainApp() {
 
   const renderFlashcardSelector = () => {
     const day = courseStructure[currentDayIndex];
+    if (!day) return null;
+    if (day.locked && !subscriptionActive) {
+      return renderLockedCard(day.title);
+    }
     const scenario = day.scenarios[currentScenarioIndex];
     const key = scenario.lessonKey;
     const data = lessonData[key];
@@ -542,6 +590,10 @@ function MainApp() {
 
     const card = flashcardQueue[currentCardIndexInQueue];
     const day = courseStructure[currentDayIndex];
+    if (!day) return null;
+    if (day.locked && !subscriptionActive) {
+      return renderLockedCard(day.title);
+    }
     const scenario = day?.scenarios?.[currentScenarioIndex];
     const roleName = currentRole === 'A' ? 'Pessoa A' : 'Pessoa B';
 
@@ -721,6 +773,11 @@ function MainApp() {
 
   // Handler para entrar na simulação completa
   const startSimulacaoChat = () => {
+    const day = courseStructure[currentDayIndex];
+    if (day?.locked && !subscriptionActive) {
+      alert('Assine para liberar a simulação completa deste dia.');
+      return;
+    }
     setStage('role');
   };
 
@@ -806,6 +863,10 @@ function MainApp() {
 
   const renderRoles = () => {
     const day = courseStructure[currentDayIndex];
+    if (!day) return null;
+    if (day.locked && !subscriptionActive) {
+      return renderLockedCard(day.title);
+    }
     const scenario = day.scenarios[currentScenarioIndex];
 
     // Get lesson data to check completion status
