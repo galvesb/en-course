@@ -1086,6 +1086,44 @@ h3 {
   margin: 1rem auto 0;
 }
 
+.flashcard-btn {
+  border: none;
+  border-radius: 16px;
+  padding: 22px 28px;
+  height: 60px;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+}
+
+.flashcard-btn:active {
+  transform: translateY(1px);
+}
+
+.flashcard-btn.know {
+  background: linear-gradient(120deg, #22c55e, #16a34a);
+  color: #f8fafc;
+}
+
+.flashcard-btn.dont-know {
+  background: linear-gradient(120deg, #ef4444, #dc2626);
+  color: #f8fafc;
+}
+
+.flashcard-btn.back {
+  background: rgba(226, 232, 240, 0.2);
+  border: 1px solid rgba(226, 232, 240, 0.35);
+  color: #f8fafc;
+}
+
 
 /* Chat Simulator */
 .chat-scroll {

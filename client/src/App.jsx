@@ -1030,13 +1030,13 @@ function MainApp() {
         <footer className="app-tab-bar">
           {stage === 'flashcard' ? (
             <>
-              <button type="button" onClick={() => flashcardActionsRef.current.know?.()}>
+              <button type="button" className="flashcard-btn know" onClick={() => flashcardActionsRef.current.know?.()}>
                 SEI
               </button>
-              <button type="button" onClick={() => flashcardActionsRef.current.dontKnow?.()}>
+              <button type="button" className="flashcard-btn dont-know" onClick={() => flashcardActionsRef.current.dontKnow?.()}>
                 NÃO SEI
               </button>
-              <button type="button" onClick={() => flashcardActionsRef.current.back?.()}>
+              <button type="button" className="flashcard-btn back" onClick={() => flashcardActionsRef.current.back?.()}>
                 VOLTAR
               </button>
             </>
