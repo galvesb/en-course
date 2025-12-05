@@ -1373,7 +1373,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
         </div>
         <div className={`sim-hint-popover ${hintVisible ? 'show' : ''}`}>
           <button type="button" className="toast-close" onClick={closeHintToast}>×</button>
-          <strong>Dica:</strong> {hintText || 'Nenhuma dica disponível para esta fala.'}
+          {hintText || 'Nenhuma dica disponível para esta fala.'}
         </div>
 
         <div className={`sim-error ${lastWrong ? 'show' : ''}`}>

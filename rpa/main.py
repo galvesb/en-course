@@ -7,15 +7,50 @@ import os
 # ====================================================================
 
 # --- Configurações Site 1 (Sua Aplicação) ---
-URL_LOGIN_SITE1 = "http://localhost:5173/login"
-URL_PROFESSION_ESPERADA = "http://localhost:5173/profession" 
-URL_ADMIN_ESPERADA = "http://localhost:5173/admin"
+URL_LOGIN_SITE1 = os.environ.get("SITE1_LOGIN_URL", "http://localhost:5173/login")
+URL_PROFESSION_ESPERADA = os.environ.get("SITE1_PROFESSION_URL", "http://localhost:5173/profession")
+URL_HOME_ESPERADO = os.environ.get("SITE1_HOME_URL", "http://localhost:5173/")
+URL_ADMIN_ESPERADA = os.environ.get("SITE1_ADMIN_URL", "http://localhost:5173/admin")
+PROFISSAO_PADRAO = os.environ.get("SITE1_PROFESSION_NAME", "Software Developer")
 EMAIL = "admin@admin.com"
 SENHA = "123456"
 
 # --- Configurações Site 2 (ElevenLabs) ---
 URL_ELEVENLABS_HOME = "https://elevenlabs.io/app/home" 
 URL_ELEVENLABS_TTS = "https://elevenlabs.io/app/speech-synthesis/text-to-speech" 
+ELEVENLABS_EMAIL = os.environ.get("ELEVENLABS_EMAIL", "guilherme.gommezz@gmail.com")
+ELEVENLABS_PASSWORD = os.environ.get("ELEVENLABS_PASSWORD", "Patiro@01")
+def garantir_login_elevenlabs(page, context, storage_file):
+    """
+    Garante que estamos autenticados no ElevenLabs. Se o formulário de login aparecer,
+    preenche automaticamente com as credenciais fornecidas e salva o storage state.
+    """
+    login_email_selector = 'input[name="email"], input[type="email"]'
+    login_password_selector = 'input[name="password"], input[type="password"]'
+    login_button_selector = 'button:has-text("Sign in"), button:has-text("Log in"), button[type="submit"]'
+
+    precisa_login = page.locator(login_email_selector).count() > 0
+    if not precisa_login:
+        return
+
+    if not ELEVENLABS_EMAIL or not ELEVENLABS_PASSWORD:
+        raise RuntimeError("Credenciais do ElevenLabs não configuradas. Defina ELEVENLABS_EMAIL/ELEVENLABS_PASSWORD.")
+
+    print("🔐 Fazendo login automático no ElevenLabs...")
+    page.locator(login_email_selector).first.fill(ELEVENLABS_EMAIL)
+    page.locator(login_password_selector).first.fill(ELEVENLABS_PASSWORD)
+
+    login_button = page.locator(login_button_selector).first
+    expect(login_button).to_be_enabled(timeout=15000)
+    login_button.click()
+    page.wait_for_timeout(2000)
+
+    # Após login, salva o estado para reutilizar nas próximas execuções
+    try:
+        context.storage_state(path=storage_file)
+        print(f"✅ Login realizado e estado salvo em {storage_file}")
+    except Exception as e:
+        print(f"⚠️ Não foi possível salvar o storage state: {e}")
 
 SELECTOR_TEXT_INPUT = 'textarea[data-testid="tts-editor"]' 
 SELECTOR_GENERATE_BUTTON = 'button[data-testid="tts-generate"]'
@@ -56,12 +91,21 @@ def automatizar_site_1_interativo(page):
     
     page.locator('input[type="email"]').fill(EMAIL)
     page.locator('input[type="password"]').fill(SENHA)
-    page.locator('.btn.primary:has-text("Login")').click()
+    login_button = page.locator('button.auth-submit')
+    expect(login_button).to_be_enabled(timeout=10000)
+    login_button.click()
     page.wait_for_url(URL_PROFESSION_ESPERADA)
     print("✅ Login do Site 1 concluído.")
     
+    # Seleciona automaticamente a profissão padrão
+    print(f"🔎 Selecionando profissão padrão: {PROFISSAO_PADRAO}")
+    profession_locator = page.locator(f'.profession-card-item:has-text("{PROFISSAO_PADRAO}")')
+    expect(profession_locator).to_be_visible(timeout=15000)
+    profession_locator.first.click()
+    page.wait_for_url(URL_HOME_ESPERADO)
+    print("✅ Profissão selecionada.")
+    
     # Navegação inicial para o Admin e abertura do painel
-    page.locator('.day-node:has-text("Software Developer")').click()
     page.goto(URL_ADMIN_ESPERADA)
     page.locator(SELECTOR_COURSE_DAYS_BUTTON).click()
     print("✅ 3. Navegação inicial para 'Course / Days Management' concluída.")
@@ -180,13 +224,7 @@ def processar_frase_e_upload(page_admin, context, selecoes_admin, frase_data, in
     print(f"🎧 11. Navegando para o ElevenLabs: {URL_ELEVENLABS_HOME}")
     page_elevenlabs.goto(URL_ELEVENLABS_HOME)
     
-    if not os.path.exists(storage_file):
-        print("\n" + "#"*70)
-        print("🚨 AÇÃO NECESSÁRIA: LOGIN MANUAL NO ELEVENLABS 🚨")
-        input("Pressione Enter para continuar a automação após o login...")
-        page_elevenlabs.wait_for_timeout(1000)
-        context.storage_state(path=storage_file) 
-        print(f"✅ Estado de login do ElevenLabs salvo em: {storage_file}")
+    garantir_login_elevenlabs(page_elevenlabs, context, storage_file)
     
     # Inicia o bloco TRY para capturar erros durante a geração/download do áudio
     try:
@@ -347,6 +385,9 @@ def main():
             print("\n\n" + "🌟"*20)
             print("TODAS AS FRASES FORAM PROCESSADAS E ENVIADAS AUTOMATICAMENTE (OU PULADAS SE HOUVE ERRO)!")
             print("🌟"*20)
+            print("\nResumo das seleções utilizadas na automação:")
+            for chave, valor in selecoes.items():
+                print(f" - {chave}: {valor}")
 
         except Exception as e:
             # Este bloco só será atingido se houver um erro antes do loop (ex: login, seleção inicial)

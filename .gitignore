@@ -14,3 +14,5 @@ Thumbs.db
 
 help.node_modules
 *.mp3
+
+rpa/elevenlabs_auth.json
