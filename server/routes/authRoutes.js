@@ -174,4 +174,18 @@ router.patch('/users/:id/subscription', authMiddleware, adminMiddleware, async (
     }
 });
 
+// Current user profile
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(user);
+    } catch (err) {
+        console.error('Error fetching current user:', err);
+        res.status(500).json({ message: 'Error fetching current user', error: err.message });
+    }
+});
+
 module.exports = router;

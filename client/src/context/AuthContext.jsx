@@ -9,14 +9,30 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const syncUserProfile = async (token) => {
+        try {
+            const res = await axios.get('/api/auth/me', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            localStorage.setItem('user', JSON.stringify(res.data));
+            setUser(res.data);
+        } catch (err) {
+            console.error('Error syncing user profile', err);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            delete axios.defaults.headers.common['Authorization'];
+            setUser(null);
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
+        if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            syncUserProfile(token).finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     const login = async (email, password) => {
@@ -25,9 +41,8 @@ export const AuthProvider = ({ children }) => {
             const { token, user } = res.data;
 
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            setUser(user);
+            await syncUserProfile(token);
             return { success: true };
         } catch (err) {
             return { success: false, message: err.response?.data?.message || 'Login failed' };
@@ -46,9 +61,8 @@ export const AuthProvider = ({ children }) => {
             const { token, user } = res.data;
 
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            setUser(user);
+            await syncUserProfile(token);
             return { success: true };
         } catch (err) {
             console.error('Registration error:', err);
