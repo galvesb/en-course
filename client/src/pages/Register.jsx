@@ -16,7 +16,7 @@ const Register = () => {
         e.preventDefault();
         const res = await register(name, email, cpf, address, password);
         if (res.success) {
-            navigate('/');
+            navigate('/profession');
         } else {
             setError(res.message);
         }
@@ -42,54 +42,76 @@ const Register = () => {
     };
 
     return (
-        <div className="card" style={{ maxWidth: '500px', margin: '50px auto' }}>
-            <h2 style={{ textAlign: 'center' }}>Cadastro</h2>
-            {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div className="input-group" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                    <input
-                        type="text"
-                        placeholder="Nome Completo"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="CPF (000.000.000-00)"
-                        value={cpf}
-                        onChange={handleCPFChange}
-                        maxLength="14"
-                        required
-                    />
-                    <input
-                        type="text"
-                        placeholder="Endereço Completo"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Senha"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        minLength="6"
-                        required
-                    />
+        <div className="auth-wrapper">
+            <div className="auth-card">
+                <div className="auth-header">
+                    <p className="auth-badge">Fluency2Work</p>
                 </div>
-                <button type="submit" className="btn primary">Cadastrar</button>
-            </form>
-            <p style={{ textAlign: 'center', marginTop: '1rem' }}>
-                Já tem uma conta? <Link to="/login">Fazer Login</Link>
-            </p>
+
+                {error && <p className="auth-error">{error}</p>}
+
+                <form className="auth-form" onSubmit={handleSubmit}>
+                    <label>
+                        <span>Nome Completo</span>
+                        <input
+                            type="text"
+                            placeholder="Seu nome completo"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label>
+                        <span>E-mail</span>
+                        <input
+                            type="email"
+                            placeholder="voce@empresa.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label>
+                        <span>CPF</span>
+                        <input
+                            type="text"
+                            placeholder="000.000.000-00"
+                            value={cpf}
+                            onChange={handleCPFChange}
+                            maxLength="14"
+                            required
+                        />
+                    </label>
+                    <label>
+                        <span>Endereço Completo</span>
+                        <input
+                            type="text"
+                            placeholder="Rua, número, bairro, cidade, estado"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            required
+                        />
+                    </label>
+                    <label>
+                        <span>Senha</span>
+                        <input
+                            type="password"
+                            placeholder="********"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            minLength="6"
+                            required
+                        />
+                    </label>
+                    <button type="submit" className="btn primary auth-submit">
+                        Cadastrar
+                    </button>
+                </form>
+
+                <p className="auth-footer">
+                    Já tem uma conta? <Link to="/login">Fazer Login</Link>
+                </p>
+            </div>
         </div>
     );
 };
