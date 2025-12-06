@@ -308,7 +308,7 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
 
 console.log('✅ Progress routes mounted at /api/progress');
 
-// Stripe subscription check endpoint
+// Stripe subscription check endpoint - SEMPRE consulta a Stripe para garantir status atualizado
 app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
     if (!stripe) {
         return res.status(500).json({ message: 'Stripe não configurado. Defina STRIPE_SECRET_KEY.' });
@@ -323,71 +323,80 @@ app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
         let customerId = user.stripeCustomerId;
         let hasActiveSubscription = false;
 
-        // 1. Buscar customer por email usando search API
-        if (!customerId) {
-            try {
-                const searchResult = await stripe.customers.search({
-                    query: `email:'${user.email}'`,
-                    limit: 1
-                });
+        // 1. SEMPRE buscar customer por email usando search API (mesmo se já tiver customerId salvo)
+        // Isso garante que sempre consultamos a Stripe para obter dados atualizados
+        try {
+            const searchResult = await stripe.customers.search({
+                query: `email:'${user.email}'`,
+                limit: 1
+            });
 
-                if (searchResult.data && searchResult.data.length > 0) {
-                    customerId = searchResult.data[0].id;
+            if (searchResult.data && searchResult.data.length > 0) {
+                const foundCustomerId = searchResult.data[0].id;
+                // Atualiza o customerId se mudou ou se não tinha antes
+                if (customerId !== foundCustomerId) {
+                    customerId = foundCustomerId;
                     user.stripeCustomerId = customerId;
-                    await user.save();
                 }
-            } catch (searchErr) {
-                console.error('Erro ao buscar customer por email:', searchErr.message);
-                
-                // Verifica se o erro é relacionado à chave API incorreta
-                if (searchErr.message && searchErr.message.includes('publishable API key')) {
-                    console.error('❌ ERRO: Você está usando uma chave pública (publishable key) em vez de uma chave secreta (secret key).');
-                    console.error('❌ A chave secreta deve começar com "sk_test_" ou "sk_live_".');
-                    console.error('❌ Verifique a variável STRIPE_SECRET_KEY no arquivo .env');
-                    return res.status(500).json({ 
-                        message: 'Configuração do Stripe incorreta: está sendo usada uma chave pública em vez de uma chave secreta. Verifique a variável STRIPE_SECRET_KEY no arquivo .env' 
-                    });
-                }
-                
-                // Continua mesmo se não encontrar customer (erro não crítico)
+            }
+        } catch (searchErr) {
+            console.error('Erro ao buscar customer por email:', searchErr.message);
+            
+            // Verifica se o erro é relacionado à chave API incorreta
+            if (searchErr.message && searchErr.message.includes('publishable API key')) {
+                console.error('❌ ERRO: Você está usando uma chave pública (publishable key) em vez de uma chave secreta (secret key).');
+                console.error('❌ A chave secreta deve começar com "sk_test_" ou "sk_live_".');
+                console.error('❌ Verifique a variável STRIPE_SECRET_KEY no arquivo .env');
+                return res.status(500).json({ 
+                    message: 'Configuração do Stripe incorreta: está sendo usada uma chave pública em vez de uma chave secreta. Verifique a variável STRIPE_SECRET_KEY no arquivo .env' 
+                });
+            }
+            
+            // Se não encontrou por email, tenta usar o customerId salvo (se existir)
+            if (!customerId) {
+                console.warn('Não foi possível encontrar customer por email e não há customerId salvo.');
             }
         }
 
-        // 2. Se temos um customerId, verificar subscriptions e payment intents
+        // 2. Se temos um customerId, SEMPRE verificar subscriptions na Stripe
         if (customerId) {
             try {
-                // Verificar subscriptions ativas
+                // SEMPRE buscar todas as subscriptions do customer na Stripe
                 const subscriptions = await stripe.subscriptions.list({
                     customer: customerId,
-                    status: 'all',
-                    limit: 10
+                    status: 'all', // Busca todos os status (active, canceled, past_due, etc)
+                    limit: 100 // Aumenta o limite para garantir que pegamos todas
                 });
 
                 // Verificar se há alguma subscription ativa
+                // IMPORTANTE: Verifica APENAS subscriptions, NÃO usa payment intents
+                // Status ativos: 'active', 'trialing', 'past_due'
+                // Status inativos: 'canceled', 'incomplete', 'incomplete_expired', 'unpaid', 'paused'
+                hasActiveSubscription = false; // Inicia como false
+                
+                console.log(`Consultando ${subscriptions.data.length} subscription(s) para customer ${customerId}`);
+                
                 for (const sub of subscriptions.data) {
-                    const status = sub.status?.toLowerCase();
+                    const status = (sub.status || '').toLowerCase();
+                    console.log(`Subscription encontrada: ${sub.id} com status: ${status}`);
+                    
+                    // Apenas considera ativo se o status for um dos ativos
                     if (['active', 'trialing', 'past_due'].includes(status)) {
                         hasActiveSubscription = true;
-                        break;
+                        console.log(`✅ Subscription ATIVA encontrada: ${sub.id} com status ${status}`);
+                        break; // Se encontrou uma ativa, não precisa continuar
+                    } else {
+                        console.log(`❌ Subscription INATIVA: ${sub.id} com status ${status}`);
                     }
                 }
 
-                // Se não encontrou subscription ativa, verificar payment intents recentes
-                if (!hasActiveSubscription) {
-                    const paymentIntents = await stripe.paymentIntents.list({
-                        customer: customerId,
-                        limit: 10
-                    });
-
-                    // Verificar se há algum payment intent com status succeeded nos últimos 30 dias
-                    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
-                    for (const pi of paymentIntents.data) {
-                        if (pi.status === 'succeeded' && pi.created >= thirtyDaysAgo) {
-                            hasActiveSubscription = true;
-                            break;
-                        }
-                    }
+                // Log do resultado final
+                if (hasActiveSubscription) {
+                    console.log(`✅ RESULTADO FINAL: Usuário ${user.email} tem assinatura ATIVA`);
+                } else {
+                    console.log(`❌ RESULTADO FINAL: Usuário ${user.email} NÃO tem assinatura ativa (todas estão canceladas/inativas)`);
                 }
+
             } catch (stripeErr) {
                 console.error('Erro ao consultar Stripe:', stripeErr.message);
                 
@@ -400,19 +409,33 @@ app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
                         message: 'Configuração do Stripe incorreta: está sendo usada uma chave pública em vez de uma chave secreta. Verifique a variável STRIPE_SECRET_KEY no arquivo .env' 
                     });
                 }
+                // Em caso de erro, mantém hasActiveSubscription como false
             }
+        } else {
+            // Se não tem customerId, não tem assinatura
+            hasActiveSubscription = false;
+            console.log(`❌ Usuário ${user.email} não tem customerId no Stripe`);
         }
 
-        // 3. Atualizar status no banco
-        if (user.hasSubscription !== hasActiveSubscription) {
-            user.hasSubscription = hasActiveSubscription;
-            await user.save();
+        // 3. SEMPRE atualizar status no banco (mesmo que seja para false)
+        const statusChanged = user.hasSubscription !== hasActiveSubscription;
+        user.hasSubscription = hasActiveSubscription;
+        
+        if (customerId && customerId !== user.stripeCustomerId) {
+            user.stripeCustomerId = customerId;
+        }
+        
+        await user.save();
+
+        if (statusChanged) {
+            console.log(`📝 Status de assinatura atualizado para ${user.email}: ${hasActiveSubscription ? 'ATIVA' : 'INATIVA'}`);
         }
 
         res.json({
             hasSubscription: hasActiveSubscription,
             customerId: customerId || null,
-            message: 'Subscription status verificado e atualizado'
+            message: 'Subscription status verificado e atualizado na Stripe',
+            statusChanged: statusChanged
         });
     } catch (err) {
         console.error('Erro ao verificar assinatura Stripe:', err);

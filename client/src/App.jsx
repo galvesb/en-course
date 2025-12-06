@@ -373,7 +373,7 @@ useEffect(() => {
           <strong>Assinar Plano Free:</strong> apenas o Dia 1 está liberado.{' '}
           <a
             className="subscription-inline-link"
-            href="https://buy.stripe.com/test_9B64grbyB1i05nN9ok24000"
+            href={`https://buy.stripe.com/test_9B64grbyB1i05nN9ok24000${user?.email ? `?prefilled_email=${encodeURIComponent(user.email)}` : ''}`}
             target="_blank"
             rel="noopener noreferrer"
           >
