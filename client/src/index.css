@@ -1025,7 +1025,7 @@ h3 {
   display: flex;
   justify-content: center;
   flex: 1;
-  margin-bottom: -4rem;
+  margin-bottom: -2rem;
   align-items: center;
   overflow: visible;
 }
