@@ -1233,6 +1233,46 @@ useEffect(() => {
               Admin Dashboard
             </button>
           )}
+          {user?.hasSubscription && (
+            <button 
+              className="btn danger" 
+              style={{ marginTop: '1rem' }}
+              onClick={async () => {
+                if (window.confirm('Tem certeza que deseja cancelar sua assinatura? O cancelamento é imediato e você perderá o acesso aos conteúdos premium.')) {
+                  try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.post(
+                      '/api/stripe/cancel-subscription',
+                      {},
+                      {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }
+                    );
+                    
+                    if (res.data?.hasSubscription === false) {
+                      alert('Assinatura cancelada com sucesso!');
+                      if (refreshUser) {
+                        await refreshUser();
+                      }
+                      // Recarrega os cursos para atualizar o estado de bloqueio
+                      const professionKey = localStorage.getItem('selectedProfessionKey');
+                      if (professionKey) {
+                        fetchCourses(professionKey);
+                      }
+                      setSettingsVisible(false);
+                    } else {
+                      alert('Erro ao cancelar assinatura. Tente novamente.');
+                    }
+                  } catch (err) {
+                    console.error('Erro ao cancelar assinatura:', err);
+                    alert(err.response?.data?.message || 'Erro ao cancelar assinatura. Tente novamente.');
+                  }
+                }
+              }}
+            >
+              Cancelar Assinatura
+            </button>
+          )}
           <button className="btn secondary" style={{ marginTop: '1rem' }} onClick={() => {
             setSettingsVisible(false);
             localStorage.removeItem('selectedProfessionKey');

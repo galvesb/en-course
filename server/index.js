@@ -523,6 +523,113 @@ app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
     }
 });
 
+// Stripe cancel subscription endpoint - cancela assinatura imediatamente
+app.post('/api/stripe/cancel-subscription', authMiddleware, async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ message: 'Stripe não configurado. Defina STRIPE_SECRET_KEY.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+
+        let customerId = user.stripeCustomerId;
+
+        // Se não tem customerId, tenta buscar por email
+        if (!customerId) {
+            try {
+                const searchResult = await stripe.customers.search({
+                    query: `email:'${user.email}'`,
+                    limit: 1
+                });
+
+                if (searchResult.data && searchResult.data.length > 0) {
+                    customerId = searchResult.data[0].id;
+                    user.stripeCustomerId = customerId;
+                    await user.save();
+                } else {
+                    // Se não tem customer e não tem assinatura ativa, já está cancelado
+                    if (!user.hasSubscription) {
+                        return res.json({ 
+                            message: 'Usuário não possui assinatura ativa',
+                            hasSubscription: false 
+                        });
+                    }
+                    // Se tem hasSubscription mas não tem customer, só atualiza o banco
+                    user.hasSubscription = false;
+                    await user.save();
+                    return res.json({ 
+                        message: 'Assinatura cancelada (sem customer no Stripe)',
+                        hasSubscription: false 
+                    });
+                }
+            } catch (searchErr) {
+                console.error('Erro ao buscar customer:', searchErr);
+                return res.status(500).json({ message: 'Erro ao buscar customer no Stripe', error: searchErr.message });
+            }
+        }
+
+        // Busca todas as subscriptions ativas do customer
+        try {
+            const subscriptions = await stripe.subscriptions.list({
+                customer: customerId,
+                status: 'all',
+                limit: 100
+            });
+
+            let canceledCount = 0;
+            const activeSubscriptions = subscriptions.data.filter(sub => 
+                ['active', 'trialing', 'past_due'].includes(sub.status?.toLowerCase())
+            );
+
+            if (activeSubscriptions.length === 0) {
+                // Não tem assinaturas ativas, só atualiza o banco
+                user.hasSubscription = false;
+                await user.save();
+                return res.json({ 
+                    message: 'Nenhuma assinatura ativa encontrada',
+                    hasSubscription: false 
+                });
+            }
+
+            // Cancela todas as assinaturas ativas
+            for (const subscription of activeSubscriptions) {
+                try {
+                    await stripe.subscriptions.cancel(subscription.id);
+                    canceledCount++;
+                    console.log(`✅ Subscription ${subscription.id} cancelada`);
+                } catch (cancelErr) {
+                    console.error(`❌ Erro ao cancelar subscription ${subscription.id}:`, cancelErr);
+                    // Continua cancelando as outras mesmo se uma falhar
+                }
+            }
+
+            // Atualiza o status no banco
+            user.hasSubscription = false;
+            await user.save();
+
+            console.log(`✅ ${canceledCount} subscription(s) cancelada(s) para usuário ${user.email}`);
+
+            res.json({ 
+                message: `Assinatura cancelada com sucesso. ${canceledCount} subscription(s) cancelada(s).`,
+                hasSubscription: false,
+                canceledCount
+            });
+        } catch (stripeErr) {
+            console.error('Erro ao cancelar subscription no Stripe:', stripeErr);
+            return res.status(500).json({ 
+                message: 'Erro ao cancelar assinatura na Stripe', 
+                error: stripeErr.message 
+            });
+        }
+    } catch (err) {
+        console.error('Erro ao cancelar assinatura:', err);
+        res.status(500).json({ message: 'Erro ao cancelar assinatura', error: err.message });
+    }
+});
+
 // Course routes (requires authentication to apply subscription rules)
 app.get('/api/courses', authMiddleware, async (req, res) => {
     try {
