@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import SelectProfession from './pages/SelectProfession';
 import Subscribe from './pages/Subscribe';
 import CancelSubscription from './pages/CancelSubscription';
+import Landing from './pages/Landing';
 
 
 const cleanStringForComparison = (str) => {
@@ -1809,6 +1810,7 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/landing" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profession" element={
