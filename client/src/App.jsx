@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import SelectProfession from './pages/SelectProfession';
+import Subscribe from './pages/Subscribe';
 
 
 const cleanStringForComparison = (str) => {
@@ -41,6 +42,8 @@ function MainApp() {
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
   const flashcardAudioRef = useRef(null);
   const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas na mesma sessão
+  const temporaryAccessTimerRef = useRef(null); // Timer de 5 minutos para liberação temporária
+  const temporaryAccessStartTimeRef = useRef(null); // Timestamp de quando começou a liberação temporária
 
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -53,7 +56,57 @@ function MainApp() {
       return;
     }
     fetchCourses(professionKey);
+
+    // Cleanup: limpa timer de acesso temporário ao desmontar
+    return () => {
+      if (temporaryAccessTimerRef.current) {
+        clearTimeout(temporaryAccessTimerRef.current);
+        temporaryAccessTimerRef.current = null;
+      }
+      temporaryAccessStartTimeRef.current = null;
+    };
   }, []);
+
+  // Verifica parâmetros de URL ao carregar (retorno do pagamento)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      console.log('✅ Pagamento bem-sucedido! Verificando assinatura...');
+      // Remove o parâmetro da URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Verifica assinatura imediatamente
+      if (user?.email) {
+        stripeCheckDoneRef.current = false;
+        const checkSubscription = async () => {
+          try {
+            const res = await axios.get('/api/stripe/check-subscription');
+            if (res.data?.hasSubscription && refreshUser) {
+              await refreshUser();
+              // Remove acesso temporário se confirmado
+              setTemporarySubscriptionAccess(false);
+              if (temporaryAccessTimerRef.current) {
+                clearTimeout(temporaryAccessTimerRef.current);
+                temporaryAccessTimerRef.current = null;
+              }
+              temporaryAccessStartTimeRef.current = null;
+              
+              // Recarrega cursos
+              const professionKey = localStorage.getItem('selectedProfessionKey');
+              if (professionKey) {
+                fetchCourses(professionKey);
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao verificar assinatura após pagamento:', err);
+          }
+        };
+        checkSubscription();
+      }
+    }
+  }, [user?.email, refreshUser]);
 
   // Verifica assinatura Stripe quando o usuário acessa a rota raiz (/)
   useEffect(() => {
@@ -78,23 +131,16 @@ function MainApp() {
             if (professionKey) {
               fetchCourses(professionKey);
             }
-            // Remove acesso temporário se o pagamento foi confirmado
+            // Remove acesso temporário e limpa o timer se o pagamento foi confirmado
             setTemporarySubscriptionAccess(false);
-          } else if (!res.data.hasSubscription) {
-            // Se não pagou e tem acesso temporário, remove acesso temporário
-            setTemporarySubscriptionAccess(prev => {
-              if (prev) {
-                console.log('❌ Pagamento não confirmado. Removendo acesso temporário.');
-                // Recarrega cursos para bloquear conteúdo novamente
-                const professionKey = localStorage.getItem('selectedProfessionKey');
-                if (professionKey) {
-                  setTimeout(() => fetchCourses(professionKey), 100);
-                }
-                return false;
-              }
-              return prev;
-            });
+            if (temporaryAccessTimerRef.current) {
+              clearTimeout(temporaryAccessTimerRef.current);
+              temporaryAccessTimerRef.current = null;
+            }
+            temporaryAccessStartTimeRef.current = null;
           }
+          // NOTA: Não remove acesso temporário aqui se não tiver assinatura
+          // O acesso temporário só será removido após 5 minutos ou se confirmar pagamento
         }
       } catch (err) {
         console.error('Erro ao verificar assinatura Stripe:', err);
@@ -125,6 +171,73 @@ function MainApp() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.email]); // Executa quando o email muda ou quando o componente monta
+
+  // Polling durante acesso temporário: verifica assinatura a cada 10 segundos enquanto tem acesso temporário
+  useEffect(() => {
+    if (!temporarySubscriptionAccess || !user?.email) {
+      return;
+    }
+
+    // Verifica se ainda está dentro dos 5 minutos
+    const checkIfStillInTimeWindow = () => {
+      if (!temporaryAccessStartTimeRef.current) return false;
+      const elapsed = Date.now() - temporaryAccessStartTimeRef.current;
+      return elapsed < 5 * 60 * 1000; // 5 minutos
+    };
+
+    const pollSubscription = async () => {
+      // Só verifica se ainda está dentro da janela de 5 minutos
+      if (!checkIfStillInTimeWindow()) {
+        return;
+      }
+
+      try {
+        const res = await axios.get('/api/stripe/check-subscription');
+        if (res.data?.hasSubscription && refreshUser) {
+          const previousStatus = user?.hasSubscription;
+          await refreshUser();
+          
+          // Se confirmou o pagamento, remove acesso temporário e limpa timer
+          if (!previousStatus && res.data.hasSubscription) {
+            console.log('✅ Pagamento confirmado durante polling! Mantendo acesso permanente.');
+            setTemporarySubscriptionAccess(false);
+            if (temporaryAccessTimerRef.current) {
+              clearTimeout(temporaryAccessTimerRef.current);
+              temporaryAccessTimerRef.current = null;
+            }
+            temporaryAccessStartTimeRef.current = null;
+            
+            // Recarrega cursos para garantir que está tudo atualizado
+            const professionKey = localStorage.getItem('selectedProfessionKey');
+            if (professionKey) {
+              fetchCourses(professionKey);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao verificar assinatura durante polling:', err);
+      }
+    };
+
+    // Verifica imediatamente
+    pollSubscription();
+
+    // Configura polling a cada 10 segundos
+    const pollingInterval = setInterval(() => {
+      if (checkIfStillInTimeWindow()) {
+        pollSubscription();
+      } else {
+        // Se passou dos 5 minutos, para o polling (o timer vai lidar com a remoção)
+        clearInterval(pollingInterval);
+      }
+    }, 10000); // 10 segundos
+
+    // Cleanup
+    return () => {
+      clearInterval(pollingInterval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [temporarySubscriptionAccess, user?.email]); // Executa quando tem acesso temporário
 
 useEffect(() => {
   if (stage === 'flashcard') {
@@ -411,29 +524,73 @@ useEffect(() => {
       </p>
       {!subscriptionActive && (
         <div className="subscription-banner">
-          <strong>Assinar Plano Free:</strong> apenas o Dia 1 está liberado.{' '}
-          <a
+          <strong>Plano Free:</strong> apenas o Dia 1 está liberado.{' '}
+          <Link
             className="subscription-inline-link"
-            href={`https://buy.stripe.com/test_9B64grbyB1i05nN9ok24000${user?.email ? `?prefilled_email=${encodeURIComponent(user.email)}` : ''}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            to="/subscribe"
             onClick={() => {
-              // Ao clicar no link, libera temporariamente o conteúdo
-              console.log('🔓 Liberando conteúdo temporariamente enquanto processa pagamento...');
+              // Ao clicar no link, libera temporariamente o conteúdo por 5 minutos
+              console.log('🔓 Liberando conteúdo temporariamente por 5 minutos...');
+              
+              // Marca o início da liberação temporária
+              temporaryAccessStartTimeRef.current = Date.now();
               setTemporarySubscriptionAccess(true);
               
-              // Recarrega os cursos para liberar o conteúdo imediatamente
-              const professionKey = localStorage.getItem('selectedProfessionKey');
-              if (professionKey) {
-                fetchCourses(professionKey);
+              // Atualiza os cursos localmente para desbloquear tudo instantaneamente
+              setCourseStructure(prevCourses => 
+                prevCourses.map(course => ({
+                  ...course,
+                  locked: false // Desbloqueia todos os cursos
+                }))
+              );
+              
+              // Limpa timer anterior se existir
+              if (temporaryAccessTimerRef.current) {
+                clearTimeout(temporaryAccessTimerRef.current);
               }
+              
+              // Configura timer de 5 minutos para remover acesso temporário
+              temporaryAccessTimerRef.current = setTimeout(() => {
+                console.log('⏰ 5 minutos expirados. Verificando assinatura final...');
+                
+                // Verifica uma última vez se tem assinatura
+                const checkFinalSubscription = async () => {
+                  try {
+                    const res = await axios.get('/api/stripe/check-subscription');
+                    if (res.data?.hasSubscription && refreshUser) {
+                      await refreshUser();
+                      // Se tem assinatura, mantém acesso
+                      console.log('✅ Assinatura confirmada! Mantendo acesso.');
+                      return;
+                    }
+                  } catch (err) {
+                    console.error('Erro ao verificar assinatura final:', err);
+                  }
+                  
+                  // Se não tem assinatura, remove acesso temporário
+                  if (!user?.hasSubscription) {
+                    console.log('❌ Sem assinatura confirmada. Removendo acesso temporário.');
+                    setTemporarySubscriptionAccess(false);
+                    
+                    // Recarrega cursos para bloquear novamente
+                    const professionKey = localStorage.getItem('selectedProfessionKey');
+                    if (professionKey) {
+                      fetchCourses(professionKey);
+                    }
+                  }
+                };
+                
+                checkFinalSubscription();
+                temporaryAccessTimerRef.current = null;
+                temporaryAccessStartTimeRef.current = null;
+              }, 5 * 60 * 1000); // 5 minutos
               
               // Resetar flag para permitir verificação quando voltar
               stripeCheckDoneRef.current = false;
             }}
           >
             Assine para desbloquear todas as aulas.
-          </a>
+          </Link>
         </div>
       )}
       <div className="day-path map-trail">
@@ -1644,6 +1801,11 @@ function App() {
           <Route path="/profession" element={
             <ProtectedRoute>
               <SelectProfession />
+            </ProtectedRoute>
+          } />
+          <Route path="/subscribe" element={
+            <ProtectedRoute>
+              <Subscribe />
             </ProtectedRoute>
           } />
           <Route path="/admin" element={

@@ -308,6 +308,86 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
 
 console.log('✅ Progress routes mounted at /api/progress');
 
+// Stripe Checkout Session endpoint - cria sessão de pagamento
+app.post('/api/stripe/create-checkout-session', authMiddleware, async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ message: 'Stripe não configurado. Defina STRIPE_SECRET_KEY.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+
+        // Busca ou cria customer na Stripe
+        let customerId = user.stripeCustomerId;
+        if (!customerId) {
+            try {
+                const searchResult = await stripe.customers.search({
+                    query: `email:'${user.email}'`,
+                    limit: 1
+                });
+
+                if (searchResult.data && searchResult.data.length > 0) {
+                    customerId = searchResult.data[0].id;
+                    user.stripeCustomerId = customerId;
+                    await user.save();
+                } else {
+                    // Cria novo customer
+                    const customer = await stripe.customers.create({
+                        email: user.email,
+                        name: user.name,
+                        metadata: {
+                            userId: user._id.toString()
+                        }
+                    });
+                    customerId = customer.id;
+                    user.stripeCustomerId = customerId;
+                    await user.save();
+                }
+            } catch (err) {
+                console.error('Erro ao buscar/criar customer:', err);
+                return res.status(500).json({ message: 'Erro ao processar pagamento', error: err.message });
+            }
+        }
+
+        // Cria a sessão de checkout
+        const session = await stripe.checkout.sessions.create({
+            customer: customerId,
+            payment_method_types: ['card'],
+            mode: 'subscription',
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'brl',
+                        product_data: {
+                            name: 'Plano Mensal - Fluency2Work',
+                            description: 'Acesso completo a todos os dias e cenários'
+                        },
+                        unit_amount: 2000, // R$ 20,00 em centavos
+                        recurring: {
+                            interval: 'month'
+                        }
+                    },
+                    quantity: 1
+                }
+            ],
+            success_url: `${req.headers.origin || 'http://localhost:5173'}/?payment=success`,
+            cancel_url: `${req.headers.origin || 'http://localhost:5173'}/subscribe?payment=cancelled`,
+            metadata: {
+                userId: user._id.toString(),
+                userEmail: user.email
+            }
+        });
+
+        res.json({ url: session.url, sessionId: session.id });
+    } catch (err) {
+        console.error('Erro ao criar checkout session:', err);
+        res.status(500).json({ message: 'Erro ao criar sessão de pagamento', error: err.message });
+    }
+});
+
 // Stripe subscription check endpoint - SEMPRE consulta a Stripe para garantir status atualizado
 app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
     if (!stripe) {
