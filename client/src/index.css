@@ -52,7 +52,16 @@ body {
 body.flashcard-screen,
 body.flashcard-screen #root {
   min-height: 100vh;
+  height: 100vh;
   overflow: hidden;
+}
+
+@supports (height: 100svh) {
+  body.flashcard-screen,
+  body.flashcard-screen #root {
+    min-height: 100svh;
+    height: 100svh;
+  }
 }
 
 body {
@@ -274,7 +283,6 @@ body.admin-body #root {
 .scenario-card {
   background: rgba(3, 10, 18, 0.9);
   color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .scenario-card .card-subtitle {
@@ -521,9 +529,14 @@ h3 {
 
 .flashcard-mode {
   min-height: 100vh;
+  height: 100%;
 }
 
-.flashcard-mode .app-body,
+.flashcard-mode .app-body {
+  justify-content: center;
+  padding-bottom: calc(96px + var(--safe-bottom));
+}
+
 .flashcard-mode .app-stage-static {
   justify-content: center;
 }
@@ -667,6 +680,7 @@ h3 {
   display: flex;
   gap: 8px;
   padding: 16px clamp(16px, 4vw, 64px);
+  padding-bottom: calc(16px + var(--safe-bottom));
   background: #03101a;
   position: sticky;
   bottom: 0;
@@ -985,6 +999,7 @@ h3 {
   align-items: center;
   padding: 24px 0 40px;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .flashcard-stage {
@@ -1001,7 +1016,7 @@ h3 {
 
 .flashcard-stage-header {
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 0.1rem;
   text-align: center;
 }
 
@@ -1010,6 +1025,7 @@ h3 {
   display: flex;
   justify-content: center;
   flex: 1;
+  margin-bottom: -4rem;
   align-items: center;
   overflow: visible;
 }
