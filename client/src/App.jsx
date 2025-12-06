@@ -37,9 +37,10 @@ function MainApp() {
   const [currentCardIndexInQueue, setCurrentCardIndexInQueue] = useState(0);
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [temporarySubscriptionAccess, setTemporarySubscriptionAccess] = useState(false); // Liberação temporária ao clicar em pagar
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
   const flashcardAudioRef = useRef(null);
-  const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas
+  const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas na mesma sessão
 
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -54,37 +55,76 @@ function MainApp() {
     fetchCourses(professionKey);
   }, []);
 
-  // Verifica assinatura Stripe quando o usuário acessa a rota raiz (/) - apenas uma vez
+  // Verifica assinatura Stripe quando o usuário acessa a rota raiz (/)
   useEffect(() => {
-    // Se já foi executado nesta sessão, não executa novamente
-    if (stripeCheckDoneRef.current) {
-      return;
-    }
-
     if (!user || !user.email) {
       return;
     }
 
-    // Marca como executado antes de fazer a chamada
-    stripeCheckDoneRef.current = true;
-
+    // Sempre verifica quando a página carrega (permite verificação ao voltar da Stripe)
     const checkStripeSubscription = async () => {
       try {
         const res = await axios.get('/api/stripe/check-subscription');
         if (res.data?.hasSubscription !== undefined && refreshUser) {
+          const previousStatus = user?.hasSubscription;
+          
           // Atualiza o perfil do usuário após verificar a Stripe
           await refreshUser();
+          
+          // Se confirmou o pagamento (status mudou de false para true), recarrega cursos
+          if (!previousStatus && res.data.hasSubscription) {
+            console.log('✅ Pagamento confirmado! Recarregando cursos...');
+            const professionKey = localStorage.getItem('selectedProfessionKey');
+            if (professionKey) {
+              fetchCourses(professionKey);
+            }
+            // Remove acesso temporário se o pagamento foi confirmado
+            setTemporarySubscriptionAccess(false);
+          } else if (!res.data.hasSubscription) {
+            // Se não pagou e tem acesso temporário, remove acesso temporário
+            setTemporarySubscriptionAccess(prev => {
+              if (prev) {
+                console.log('❌ Pagamento não confirmado. Removendo acesso temporário.');
+                // Recarrega cursos para bloquear conteúdo novamente
+                const professionKey = localStorage.getItem('selectedProfessionKey');
+                if (professionKey) {
+                  setTimeout(() => fetchCourses(professionKey), 100);
+                }
+                return false;
+              }
+              return prev;
+            });
+          }
         }
       } catch (err) {
         console.error('Erro ao verificar assinatura Stripe:', err);
-        // Não bloqueia o usuário se houver erro
-        // Reseta a flag em caso de erro para permitir nova tentativa depois
-        stripeCheckDoneRef.current = false;
+        // Em caso de erro, mantém acesso temporário se existir
       }
     };
 
+    // Verifica imediatamente ao montar
     checkStripeSubscription();
-  }, [user?.email]); // Executa apenas quando o email do usuário muda pela primeira vez
+
+    // Verifica quando a janela recebe foco (usuário volta da Stripe)
+    const handleFocus = () => {
+      // Verifica se tem acesso temporário usando a função de setState
+      setTemporarySubscriptionAccess(current => {
+        if (current) {
+          console.log('🔄 Usuário voltou da Stripe. Verificando pagamento...');
+          checkStripeSubscription();
+        }
+        return current; // Mantém o estado atual
+      });
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]); // Executa quando o email muda ou quando o componente monta
 
 useEffect(() => {
   if (stage === 'flashcard') {
@@ -335,7 +375,8 @@ useEffect(() => {
     }
   };
 
-  const subscriptionActive = !!user?.hasSubscription;
+  // Considera assinatura ativa se: tem assinatura confirmada OU tem acesso temporário (clicou para pagar)
+  const subscriptionActive = !!user?.hasSubscription || temporarySubscriptionAccess;
 
   const handleDaySelection = (dayIndex) => {
     const day = courseStructure[dayIndex];
@@ -376,6 +417,20 @@ useEffect(() => {
             href={`https://buy.stripe.com/test_9B64grbyB1i05nN9ok24000${user?.email ? `?prefilled_email=${encodeURIComponent(user.email)}` : ''}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              // Ao clicar no link, libera temporariamente o conteúdo
+              console.log('🔓 Liberando conteúdo temporariamente enquanto processa pagamento...');
+              setTemporarySubscriptionAccess(true);
+              
+              // Recarrega os cursos para liberar o conteúdo imediatamente
+              const professionKey = localStorage.getItem('selectedProfessionKey');
+              if (professionKey) {
+                fetchCourses(professionKey);
+              }
+              
+              // Resetar flag para permitir verificação quando voltar
+              stripeCheckDoneRef.current = false;
+            }}
           >
             Assine para desbloquear todas as aulas.
           </a>
