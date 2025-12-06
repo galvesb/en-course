@@ -398,10 +398,21 @@ useEffect(() => {
             if (!savedScenario) return scenario;
 
             // Atualiza o status do cenário baseado nas lições completas
+            // Agora considera: lições regulares de A e B + simulações de A e B
+            const allRegularLessonsACompleted = savedScenario.lessons?.A?.length > 0 && savedScenario.lessons.A.every(l => l.completed);
+            const allRegularLessonsBCompleted = savedScenario.lessons?.B?.length > 0 && savedScenario.lessons.B.every(l => l.completed);
+            
+            // Verifica se as simulações de A e B foram completadas (via completedRoles no C)
+            const conversationLesson = savedScenario.lessons?.C?.[0];
+            const completedRoles = conversationLesson?.completedRoles || [];
+            const simulationACompleted = completedRoles.includes('A');
+            const simulationBCompleted = completedRoles.includes('B');
+            
             const allLessonsCompleted =
-              savedScenario.lessons?.A?.length > 0 && savedScenario.lessons.A.every(l => l.completed) &&
-              savedScenario.lessons?.B?.length > 0 && savedScenario.lessons.B.every(l => l.completed) &&
-              savedScenario.lessons?.C?.length > 0 && savedScenario.lessons.C.every(l => l.completed);
+              allRegularLessonsACompleted &&
+              allRegularLessonsBCompleted &&
+              simulationACompleted &&
+              simulationBCompleted;
 
             return {
               ...scenario,
@@ -445,10 +456,19 @@ useEffect(() => {
           }));
         }
 
+        // Verifica completude: lições regulares de A e B + simulações de A e B
+        const allRegularLessonsACompleted = lessons.A.every(l => l.completed);
+        const allRegularLessonsBCompleted = lessons.B.every(l => l.completed);
+        const conversationLesson = lessons.C?.[0];
+        const completedRoles = conversationLesson?.completedRoles || [];
+        const simulationACompleted = completedRoles.includes('A');
+        const simulationBCompleted = completedRoles.includes('B');
+        
         const allLessonsCompleted =
-          lessons.A.every(l => l.completed) &&
-          lessons.B.every(l => l.completed) &&
-          lessons.C.every(l => l.completed);
+          allRegularLessonsACompleted &&
+          allRegularLessonsBCompleted &&
+          simulationACompleted &&
+          simulationBCompleted;
 
         return {
           id: scenario.id,
@@ -689,39 +709,32 @@ useEffect(() => {
     const lessonsB = data.B || [];
     const conversationLesson = data.C ? data.C[0] : null;
 
-    const allRoleALessonsCompleted = lessonsA.every(l => l.completed);
-    const allRoleBLessonsCompleted = lessonsB.every(l => l.completed);
-    const conversationIsActive = allRoleALessonsCompleted && allRoleBLessonsCompleted;
-    const conversationLocked = !(conversationIsActive || conversationLesson?.completed);
-
-    const missingRole = conversationLesson?.completedRoles?.length > 0
-      ? ['A', 'B'].find(r => !conversationLesson.completedRoles.includes(r))
-      : null;
-
-    const describeLessons = (lessons) => {
-      const count = lessons.length;
-      const word = count === 1 ? 'lição' : 'lições';
-      return `${count} ${word}`;
+    // Verifica se a simulação do role foi completada
+    const getRoleSimulationCompleted = (role) => {
+      if (!conversationLesson || !conversationLesson.completedRoles) return false;
+      return conversationLesson.completedRoles.includes(role);
     };
 
-    const conversationMeta = conversationLesson?.completed
-      ? 'Simulação finalizada'
-      : missingRole
-        ? `Falta: Pessoa ${missingRole}`
-        : conversationIsActive
-          ? 'Tudo pronto para simular'
-          : 'Conclua as lições de A e B';
+    const simulationACompleted = getRoleSimulationCompleted('A');
+    const simulationBCompleted = getRoleSimulationCompleted('B');
 
-    const conversationCta = conversationLesson?.completed
-      ? 'Repetir'
-      : conversationIsActive
-        ? 'Iniciar'
-        : 'Bloqueado';
+    const allRoleALessonsCompleted = lessonsA.every(l => l.completed);
+    const allRoleBLessonsCompleted = lessonsB.every(l => l.completed);
+
+    const describeLessons = (lessons, hasSimulation, simulationCompleted) => {
+      const regularCount = lessons.length;
+      const simCount = hasSimulation ? 1 : 0;
+      const total = regularCount + simCount;
+      const word = total === 1 ? 'lição' : 'lições';
+      const completedRegular = lessons.every(l => l.completed);
+      const allCompleted = completedRegular && (hasSimulation ? simulationCompleted : true);
+      return `${total} ${word} · ${allCompleted ? 'Completo' : 'Pendente'}`;
+    };
 
     return (
       <div className="card scenario-card trail-card">
         <h2>{scenario.name}</h2>
-        <p className="trail-subtitle">Complete cada trilha abaixo para liberar a simulação final.</p>
+        <p className="trail-subtitle">Complete cada trilha abaixo incluindo a simulação.</p>
 
         <div className="day-path role-trail">
           <div
@@ -731,10 +744,10 @@ useEffect(() => {
               setStage('flashcard-selector');
             }}
           >
-            <div className={`sub-bubble role-A ${allRoleALessonsCompleted ? 'completed' : 'active'}`}>👤</div>
+            <div className={`sub-bubble role-A ${allRoleALessonsCompleted && simulationACompleted ? 'completed' : 'active'}`}>👤</div>
             <p className="scenario-name">Pessoa A</p>
             <p className="scenario-meta-trail">
-              {describeLessons(lessonsA)} · {allRoleALessonsCompleted ? 'Completo' : 'Pendente'}
+              {describeLessons(lessonsA, true, simulationACompleted)}
             </p>
           </div>
 
@@ -747,31 +760,11 @@ useEffect(() => {
               setStage('flashcard-selector');
             }}
           >
-            <div className={`sub-bubble role-B ${allRoleBLessonsCompleted ? 'completed' : 'active'}`}>👤</div>
+            <div className={`sub-bubble role-B ${allRoleBLessonsCompleted && simulationBCompleted ? 'completed' : 'active'}`}>👤</div>
             <p className="scenario-name">Pessoa B</p>
             <p className="scenario-meta-trail">
-              {describeLessons(lessonsB)} · {allRoleBLessonsCompleted ? 'Completo' : 'Pendente'}
+              {describeLessons(lessonsB, true, simulationBCompleted)}
             </p>
-          </div>
-
-          <div />
-
-          <div
-            className={`day-node ${conversationLocked ? 'locked' : ''}`}
-            onClick={() => {
-              if (conversationLocked) {
-                alert('Complete as lições da Pessoa A e B primeiro!');
-                return;
-              }
-              startSimulacaoChat();
-            }}
-          >
-            <div className={`sub-bubble role-chat ${conversationLesson?.completed ? 'completed' : (conversationIsActive ? 'active' : '')}`}>
-              🗣️
-            </div>
-            <p className="scenario-name">Simulação completa</p>
-            <p className="scenario-meta-trail">{conversationMeta}</p>
-            <span className="scenario-status trail-action">{conversationCta}</span>
           </div>
         </div>
 
@@ -789,9 +782,17 @@ useEffect(() => {
     const scenario = day.scenarios[currentScenarioIndex];
     const key = scenario.lessonKey;
     const data = lessonData[key];
-    const roleLessons = data[currentRole];
+    const roleLessons = data[currentRole] || [];
     const roleName = currentRole === 'A' ? 'Pessoa A' : 'Pessoa B';
     const roleClass = currentRole === 'A' ? 'role-A' : 'role-B';
+    
+    // Verifica se a simulação do role foi completada
+    const conversationLesson = data.C ? data.C[0] : null;
+    const roleSimulationCompleted = conversationLesson?.completedRoles?.includes(currentRole) || false;
+    
+    // Verifica quais lições regulares estão completas
+    const allRegularLessonsCompleted = roleLessons.every(l => l.completed);
+    const simulationIsActive = allRegularLessonsCompleted;
 
     return (
       <div className="card scenario-card trail-card">
@@ -832,10 +833,31 @@ useEffect(() => {
                     {lesson.completed ? '✓ Completo' : (isActive ? 'Pronto para iniciar' : 'Bloqueado')}
                   </p>
                 </div>
-                {lIdx !== roleLessons.length - 1 && <div />}
+                <div />
               </React.Fragment>
             );
           })}
+          
+          {/* Simulação do Role */}
+          <div
+            className={`day-node ${!simulationIsActive ? 'locked' : ''}`}
+            onClick={() => {
+              if (!simulationIsActive) {
+                alert('Complete todas as lições anteriores primeiro!');
+                return;
+              }
+              startSimulacaoChat(currentRole);
+            }}
+          >
+            <div className={`sub-bubble ${roleClass} ${roleSimulationCompleted ? 'completed' : (simulationIsActive ? 'active' : '')}`} 
+                 style={{ width: '64px', height: '64px', borderWidth: '4px' }}>
+              🗣️
+            </div>
+            <p className="scenario-name">Simulação {roleName}</p>
+            <p className="scenario-meta-trail">
+              {roleSimulationCompleted ? '✓ Completo' : (simulationIsActive ? 'Pronto para iniciar' : 'Bloqueado')}
+            </p>
+          </div>
         </div>
         <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
       </div>
@@ -928,17 +950,24 @@ useEffect(() => {
           }
 
           // Recalculate scenario completion
+          // Agora considera: lições regulares de A e B completas + simulações de A e B completas
           const lData = updatedLessonData[key];
           if (lData) {
-            const lessons = {
-              A: (lData.A || []).map(l => ({ completed: l.completed })),
-              B: (lData.B || []).map(l => ({ completed: l.completed })),
-              C: (lData.C || []).map(l => ({ completed: l.completed }))
-            };
+            const lessonsA = (lData.A || []).map(l => ({ completed: l.completed }));
+            const lessonsB = (lData.B || []).map(l => ({ completed: l.completed }));
+            const conversationLesson = lData.C?.[0];
+            const completedRoles = conversationLesson?.completedRoles || [];
+            
+            const allRegularLessonsACompleted = lessonsA.every(l => l.completed);
+            const allRegularLessonsBCompleted = lessonsB.every(l => l.completed);
+            const simulationACompleted = completedRoles.includes('A');
+            const simulationBCompleted = completedRoles.includes('B');
+
             const allCompleted =
-              lessons.A.every(l => l.completed) &&
-              lessons.B.every(l => l.completed) &&
-              lessons.C.every(l => l.completed);
+              allRegularLessonsACompleted &&
+              allRegularLessonsBCompleted &&
+              simulationACompleted &&
+              simulationBCompleted;
 
             updatedScenario.completed = allCompleted;
           }
@@ -1043,14 +1072,15 @@ useEffect(() => {
     );
   };
 
-  // Handler para entrar na simulação completa
-  const startSimulacaoChat = () => {
+  // Handler para entrar na simulação do role específico
+  const startSimulacaoChat = (role) => {
     const day = courseStructure[currentDayIndex];
     if (day?.locked && !subscriptionActive) {
-      alert('Assine para liberar a simulação completa deste dia.');
+      alert('Assine para liberar a simulação deste dia.');
       return;
     }
-    setStage('role');
+    setCurrentRole(role);
+    setStage('chat');
   };
 
   const handleSimulacaoComplete = async (completedRole) => {
@@ -1099,17 +1129,24 @@ useEffect(() => {
       }
 
       // Recalculate scenario completion
+      // Agora considera: lições regulares de A e B completas + simulações de A e B completas
       const lData = updatedLessonData[key];
       if (lData) {
-        const lessons = {
-          A: (lData.A || []).map(l => ({ completed: l.completed })),
-          B: (lData.B || []).map(l => ({ completed: l.completed })),
-          C: (lData.C || []).map(l => ({ completed: l.completed }))
-        };
+        const lessonsA = (lData.A || []).map(l => ({ completed: l.completed }));
+        const lessonsB = (lData.B || []).map(l => ({ completed: l.completed }));
+        const conversationLesson = lData.C?.[0];
+        const completedRoles = conversationLesson?.completedRoles || [];
+        
+        const allRegularLessonsACompleted = lessonsA.every(l => l.completed);
+        const allRegularLessonsBCompleted = lessonsB.every(l => l.completed);
+        const simulationACompleted = completedRoles.includes('A');
+        const simulationBCompleted = completedRoles.includes('B');
+
         const allCompleted =
-          lessons.A.every(l => l.completed) &&
-          lessons.B.every(l => l.completed) &&
-          lessons.C.every(l => l.completed);
+          allRegularLessonsACompleted &&
+          allRegularLessonsBCompleted &&
+          simulationACompleted &&
+          simulationBCompleted;
 
         updatedScenario.completed = allCompleted;
       }
@@ -1303,7 +1340,7 @@ useEffect(() => {
                   scenario={courseStructure[currentDayIndex].scenarios[currentScenarioIndex]}
                   conversationLesson={lessonData[courseStructure[currentDayIndex].scenarios[currentScenarioIndex].lessonKey]?.C?.[0]}
                   role={currentRole}
-                  onBack={() => setStage('role')}
+                  onBack={() => setStage('flashcard-selector')}
                   onComplete={handleSimulacaoComplete}
                 />
               )}
