@@ -38,6 +38,7 @@ function MainApp() {
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
+  const flashcardAudioRef = useRef(null);
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -749,10 +750,17 @@ function MainApp() {
                       return;
                     }
                     try {
-                      const audio = new Audio(src);
-                      audio.play().catch(() => {});
-                    } catch {
-                      // silencia erro
+                      if (!flashcardAudioRef.current) {
+                        flashcardAudioRef.current = new Audio();
+                      }
+                      flashcardAudioRef.current.pause();
+                      flashcardAudioRef.current.currentTime = 0;
+                      flashcardAudioRef.current.src = src;
+                      flashcardAudioRef.current.play().catch((err) => {
+                        console.error('Erro ao tocar áudio do flashcard', err);
+                      });
+                    } catch (err) {
+                      console.error('Exceção ao tocar áudio do flashcard', err);
                     }
                   }}
                 >
