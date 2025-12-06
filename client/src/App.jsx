@@ -849,7 +849,7 @@ useEffect(() => {
               startSimulacaoChat(currentRole);
             }}
           >
-            <div className={`sub-bubble ${roleClass} ${roleSimulationCompleted ? 'completed' : (simulationIsActive ? 'active' : '')}`} 
+            <div className={`sub-bubble ${roleSimulationCompleted ? 'completed' : (simulationIsActive ? `active ${roleClass}` : roleClass)}`} 
                  style={{ width: '64px', height: '64px', borderWidth: '4px' }}>
               🗣️
             </div>
