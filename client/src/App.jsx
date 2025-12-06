@@ -53,6 +53,15 @@ function MainApp() {
     fetchCourses(professionKey);
   }, []);
 
+useEffect(() => {
+  if (stage === 'flashcard') {
+    document.body.classList.add('flashcard-screen');
+  } else {
+    document.body.classList.remove('flashcard-screen');
+  }
+  return () => document.body.classList.remove('flashcard-screen');
+}, [stage]);
+
   // Carrega o progresso após os cursos serem carregados
   useEffect(() => {
     if (user && courseStructure.length > 0) {

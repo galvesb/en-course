@@ -49,6 +49,12 @@ body {
   min-height: 100vh;
 }
 
+body.flashcard-screen,
+body.flashcard-screen #root {
+  height: 100vh;
+  overflow: hidden;
+}
+
 body {
   min-height: 100vh;
 }
@@ -978,7 +984,7 @@ h3 {
   justify-content: center;
   align-items: center;
   padding: 24px 0 40px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .flashcard-stage {
@@ -1016,6 +1022,7 @@ h3 {
   border-radius: 28px;
   display: flex;
   justify-content: center;
+  overflow: hidden !important;
   align-items: center;
   box-shadow: 0 25px 40px rgba(2, 6, 23, 0.55);
   cursor: pointer;
