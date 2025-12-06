@@ -16,13 +16,23 @@ export const AuthProvider = ({ children }) => {
             });
             localStorage.setItem('user', JSON.stringify(res.data));
             setUser(res.data);
+            return res.data;
         } catch (err) {
             console.error('Error syncing user profile', err);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             delete axios.defaults.headers.common['Authorization'];
             setUser(null);
+            return null;
         }
+    };
+
+    const refreshUser = async () => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            return await syncUserProfile(token);
+        }
+        return null;
     };
 
     useEffect(() => {
@@ -84,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, loading, refreshUser }}>
             {!loading && children}
         </AuthContext.Provider>
     );

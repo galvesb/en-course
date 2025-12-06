@@ -7,7 +7,8 @@ const UserSchema = new mongoose.Schema({
     address: { type: String, required: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
-    hasSubscription: { type: Boolean, default: false }
+    hasSubscription: { type: Boolean, default: false },
+    stripeCustomerId: { type: String, default: null }
 }, {
     timestamps: true
 });

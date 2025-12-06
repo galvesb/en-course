@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const fs = require('fs');
 const multer = require('multer');
+const Stripe = require('stripe');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const Course = require('./models/Course');
 const Progress = require('./models/Progress');
@@ -84,6 +85,23 @@ async function uploadFileToMagaluStorage(file) {
         key,
         url: buildObjectPublicUrl(MAGALU_BUCKET, key)
     };
+}
+
+// Stripe configuration
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+let stripe = null;
+
+if (stripeSecretKey) {
+    // Valida se é uma chave secreta (deve começar com sk_test_ ou sk_live_)
+    if (!stripeSecretKey.startsWith('sk_test_') && !stripeSecretKey.startsWith('sk_live_')) {
+        console.warn('⚠️  STRIPE_SECRET_KEY não parece ser uma chave secreta válida. Deve começar com "sk_test_" ou "sk_live_".');
+        console.warn('⚠️  Certifique-se de usar a chave secreta (Secret key), não a chave pública (Publishable key).');
+    } else {
+        stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+        console.log('✅ Stripe configurado com sucesso');
+    }
+} else {
+    console.warn('⚠️  STRIPE_SECRET_KEY não definida. Funcionalidades de verificação de assinatura Stripe estarão desabilitadas.');
 }
 
 // Middleware
@@ -289,6 +307,118 @@ app.delete('/api/progress', authMiddleware, async (req, res) => {
 });
 
 console.log('✅ Progress routes mounted at /api/progress');
+
+// Stripe subscription check endpoint
+app.get('/api/stripe/check-subscription', authMiddleware, async (req, res) => {
+    if (!stripe) {
+        return res.status(500).json({ message: 'Stripe não configurado. Defina STRIPE_SECRET_KEY.' });
+    }
+
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado' });
+        }
+
+        let customerId = user.stripeCustomerId;
+        let hasActiveSubscription = false;
+
+        // 1. Buscar customer por email usando search API
+        if (!customerId) {
+            try {
+                const searchResult = await stripe.customers.search({
+                    query: `email:'${user.email}'`,
+                    limit: 1
+                });
+
+                if (searchResult.data && searchResult.data.length > 0) {
+                    customerId = searchResult.data[0].id;
+                    user.stripeCustomerId = customerId;
+                    await user.save();
+                }
+            } catch (searchErr) {
+                console.error('Erro ao buscar customer por email:', searchErr.message);
+                
+                // Verifica se o erro é relacionado à chave API incorreta
+                if (searchErr.message && searchErr.message.includes('publishable API key')) {
+                    console.error('❌ ERRO: Você está usando uma chave pública (publishable key) em vez de uma chave secreta (secret key).');
+                    console.error('❌ A chave secreta deve começar com "sk_test_" ou "sk_live_".');
+                    console.error('❌ Verifique a variável STRIPE_SECRET_KEY no arquivo .env');
+                    return res.status(500).json({ 
+                        message: 'Configuração do Stripe incorreta: está sendo usada uma chave pública em vez de uma chave secreta. Verifique a variável STRIPE_SECRET_KEY no arquivo .env' 
+                    });
+                }
+                
+                // Continua mesmo se não encontrar customer (erro não crítico)
+            }
+        }
+
+        // 2. Se temos um customerId, verificar subscriptions e payment intents
+        if (customerId) {
+            try {
+                // Verificar subscriptions ativas
+                const subscriptions = await stripe.subscriptions.list({
+                    customer: customerId,
+                    status: 'all',
+                    limit: 10
+                });
+
+                // Verificar se há alguma subscription ativa
+                for (const sub of subscriptions.data) {
+                    const status = sub.status?.toLowerCase();
+                    if (['active', 'trialing', 'past_due'].includes(status)) {
+                        hasActiveSubscription = true;
+                        break;
+                    }
+                }
+
+                // Se não encontrou subscription ativa, verificar payment intents recentes
+                if (!hasActiveSubscription) {
+                    const paymentIntents = await stripe.paymentIntents.list({
+                        customer: customerId,
+                        limit: 10
+                    });
+
+                    // Verificar se há algum payment intent com status succeeded nos últimos 30 dias
+                    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
+                    for (const pi of paymentIntents.data) {
+                        if (pi.status === 'succeeded' && pi.created >= thirtyDaysAgo) {
+                            hasActiveSubscription = true;
+                            break;
+                        }
+                    }
+                }
+            } catch (stripeErr) {
+                console.error('Erro ao consultar Stripe:', stripeErr.message);
+                
+                // Verifica se o erro é relacionado à chave API incorreta
+                if (stripeErr.message && stripeErr.message.includes('publishable API key')) {
+                    console.error('❌ ERRO: Você está usando uma chave pública (publishable key) em vez de uma chave secreta (secret key).');
+                    console.error('❌ A chave secreta deve começar com "sk_test_" ou "sk_live_".');
+                    console.error('❌ Verifique a variável STRIPE_SECRET_KEY no arquivo .env');
+                    return res.status(500).json({ 
+                        message: 'Configuração do Stripe incorreta: está sendo usada uma chave pública em vez de uma chave secreta. Verifique a variável STRIPE_SECRET_KEY no arquivo .env' 
+                    });
+                }
+            }
+        }
+
+        // 3. Atualizar status no banco
+        if (user.hasSubscription !== hasActiveSubscription) {
+            user.hasSubscription = hasActiveSubscription;
+            await user.save();
+        }
+
+        res.json({
+            hasSubscription: hasActiveSubscription,
+            customerId: customerId || null,
+            message: 'Subscription status verificado e atualizado'
+        });
+    } catch (err) {
+        console.error('Erro ao verificar assinatura Stripe:', err);
+        res.status(500).json({ message: 'Erro ao verificar assinatura Stripe', error: err.message });
+    }
+});
 
 // Course routes (requires authentication to apply subscription rules)
 app.get('/api/courses', authMiddleware, async (req, res) => {

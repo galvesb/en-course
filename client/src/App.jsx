@@ -39,8 +39,9 @@ function MainApp() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
   const flashcardAudioRef = useRef(null);
+  const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas
 
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,38 @@ function MainApp() {
     }
     fetchCourses(professionKey);
   }, []);
+
+  // Verifica assinatura Stripe quando o usuário acessa a rota raiz (/) - apenas uma vez
+  useEffect(() => {
+    // Se já foi executado nesta sessão, não executa novamente
+    if (stripeCheckDoneRef.current) {
+      return;
+    }
+
+    if (!user || !user.email) {
+      return;
+    }
+
+    // Marca como executado antes de fazer a chamada
+    stripeCheckDoneRef.current = true;
+
+    const checkStripeSubscription = async () => {
+      try {
+        const res = await axios.get('/api/stripe/check-subscription');
+        if (res.data?.hasSubscription !== undefined && refreshUser) {
+          // Atualiza o perfil do usuário após verificar a Stripe
+          await refreshUser();
+        }
+      } catch (err) {
+        console.error('Erro ao verificar assinatura Stripe:', err);
+        // Não bloqueia o usuário se houver erro
+        // Reseta a flag em caso de erro para permitir nova tentativa depois
+        stripeCheckDoneRef.current = false;
+      }
+    };
+
+    checkStripeSubscription();
+  }, [user?.email]); // Executa apenas quando o email do usuário muda pela primeira vez
 
 useEffect(() => {
   if (stage === 'flashcard') {
