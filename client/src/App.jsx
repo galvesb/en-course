@@ -1096,6 +1096,7 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
   const [mistakeInfo, setMistakeInfo] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   const audioRef = useRef(new Audio());
   const manualAudioRef = useRef(new Audio());
@@ -1137,6 +1138,27 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
       }
     }
   }, [scenario?.id, role]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateMatches = (event) => setIsMobileViewport(event.matches);
+    setIsMobileViewport(mediaQuery.matches);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', updateMatches);
+    } else {
+      mediaQuery.addListener(updateMatches);
+    }
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', updateMatches);
+      } else {
+        mediaQuery.removeListener(updateMatches);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -1371,6 +1393,15 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
     return { wrongWords, missingWords, extraWords };
   };
 
+  const inputRows = isMobileViewport
+    ? Math.min(6, Math.max(1, Math.ceil((input.length || 1) / 20)))
+    : 1;
+
+  const inputClassName = [
+    lastWrong ? 'error-input' : '',
+    isMobileViewport && input.length > 20 ? 'expanded' : ''
+  ].filter(Boolean).join(' ');
+
   return (
     <div className="sim-chat-wrapper">
       <div className="sim-chat-shell">
@@ -1438,13 +1469,19 @@ function SimulacaoChat({ scenario, conversationLesson, role, onBack, onComplete 
 
         <div className="sim-input-bar">
           <button type="button" className="sim-input-icon" onClick={toggleHintToast}>💡</button>
-          <input
-            type="text"
+          <textarea
             placeholder="Digite sua resposta..."
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-            className={lastWrong ? 'error-input' : ''}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            className={inputClassName}
+            rows={inputRows}
+            autoComplete="off"
           />
           <button type="button" className="sim-input-icon" title="Ouvir próxima fala" onClick={() => playAudioImmediate(hintAudio)}>🔊</button>
           <button type="button" className="sim-send-btn" onClick={handleSend}>➤</button>
