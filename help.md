@@ -57,6 +57,17 @@ MAGALU_OBJECT_REGION=br-se1
 MAGALU_OBJECT_PUBLIC_BASE=https://<host-do-bucket>
 ```
 
+### Stripe Buy Button (frontend)
+O fluxo de assinatura do app usa o Stripe Buy Button hospedado. Defina os valores no arquivo `client/.env.local` (ou via variáveis do Vite) para usar sua conta:
+```
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+VITE_STRIPE_BUY_BUTTON_ID=buy_btn_xxx
+VITE_STRIPE_PLAN_TITLE=Plano Mensal (opcional)
+VITE_STRIPE_PLAN_PRICE_LABEL=R$ 20,00 / mês (opcional)
+VITE_STRIPE_PLAN_DESCRIPTION=Acesso completo à plataforma (opcional)
+```
+Depois de salvar, execute `npm run dev` (ou `npm run build`) no `client/` para carregar os novos textos/keys. Veja a doc oficial do Stripe Buy Button para gerar o `buy_button_id` correto e opções adicionais.
+
 ---
 ## 5. Instalar dependências do projeto
 ```bash

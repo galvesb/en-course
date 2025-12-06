@@ -337,7 +337,15 @@ useEffect(() => {
       </p>
       {!subscriptionActive && (
         <div className="subscription-banner">
-          <strong>Plano Free:</strong> apenas o Dia 1 está liberado. Assine para desbloquear todas as aulas.
+          <strong>Assinar Plano Free:</strong> apenas o Dia 1 está liberado.{' '}
+          <a
+            className="subscription-inline-link"
+            href="https://buy.stripe.com/test_9B64grbyB1i05nN9ok24000"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Assine para desbloquear todas as aulas.
+          </a>
         </div>
       )}
       <div className="day-path map-trail">

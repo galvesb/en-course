@@ -480,6 +480,16 @@ body.admin-body #root {
   font-size: .9rem;
 }
 
+.subscription-inline-link {
+  color: #fde68a;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.subscription-inline-link:hover {
+  color: #fef3c7;
+}
+
 .locked-card {
   text-align: center;
 }
