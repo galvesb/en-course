@@ -577,9 +577,7 @@ useEffect(() => {
         <li>Dia 1 liberado no plano gratuito</li>
         <li>Assinantes acessam todos os dias e cenários</li>
       </ul>
-      <button className="btn secondary" onClick={() => setStage('map')}>
-        Voltar ao mapa
-      </button>
+      <button className="sim-icon-btn" type="button" onClick={() => setStage('map')}>‹</button>
     </div>
   );
 
@@ -726,8 +724,6 @@ useEffect(() => {
             </React.Fragment>
           ))}
         </div>
-
-        <button className="btn ghost" onClick={() => setStage('map')}>Voltar aos Dias</button>
       </div>
     );
   };
@@ -812,8 +808,6 @@ useEffect(() => {
             </p>
           </div>
         </div>
-
-        <button className="btn ghost" onClick={() => setStage('day-scenarios')}>Voltar aos Cenários</button>
       </div>
     );
   };
@@ -904,7 +898,6 @@ useEffect(() => {
             </p>
           </div>
         </div>
-        <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
       </div>
     );
   };
@@ -915,7 +908,6 @@ useEffect(() => {
         <div className="card scenario-card trail-card">
           <h2>Nenhum card disponível</h2>
           <p className="trail-subtitle">Selecione outra lição para continuar praticando.</p>
-          <button className="btn ghost" onClick={() => setStage('flashcard-selector')}>Voltar às Lições</button>
         </div>
       );
     }
@@ -1285,7 +1277,7 @@ useEffect(() => {
           })}
         </div>
 
-        <button className="btn ghost" onClick={() => setStage('role-choice-lessons')}>Voltar</button>
+        <button className="sim-icon-btn" type="button" onClick={() => setStage('role-choice-lessons')}>‹</button>
       </div>
     );
   };
@@ -1344,24 +1336,43 @@ useEffect(() => {
           }}>
             Sair
           </button>
-          <button className="btn secondary" style={{ marginTop: '1rem' }} onClick={() => setSettingsVisible(false)}>
-            Voltar
-          </button>
+          <button className="sim-icon-btn" type="button" onClick={() => setSettingsVisible(false)}>‹</button>
         </div>
       </div>
 
       <div className={`app-shell ${stage === 'flashcard' ? 'flashcard-mode' : ''} ${stage === 'chat' ? 'chat-mode' : ''}`}>
         <header className="app-header">
-          <div>
-            <p className="app-eyebrow">Profissão atual</p>
-            <div className="app-title">
-              <span className="app-profession-icon">{professionIcon}</span>
-              <span>{professionName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {stage !== 'map' && (
+              <button 
+                className="sim-icon-btn" 
+                type="button" 
+                onClick={() => {
+                  if (stage === 'day-scenarios') {
+                    setStage('map');
+                  } else if (stage === 'role-choice-lessons') {
+                    setStage('day-scenarios');
+                  } else if (stage === 'flashcard-selector') {
+                    setStage('role-choice-lessons');
+                  } else if (stage === 'role') {
+                    setStage('role-choice-lessons');
+                  }
+                }}
+              >
+                ‹
+              </button>
+            )}
+            <div>
+              <p className="app-eyebrow">Profissão atual</p>
+              <div className="app-title">
+                <span className="app-profession-icon">{professionIcon}</span>
+                <span>{professionName}</span>
+              </div>
+              <p className="app-progress">
+                {totalDays > 0 ? `Dia ${currentDayIndex + 1}/${totalDays}` : 'Carregando trilha'}
+                {scenariosCount > 0 && ` · ${completedScenarios}/${scenariosCount} cenários`}
+              </p>
             </div>
-            <p className="app-progress">
-              {totalDays > 0 ? `Dia ${currentDayIndex + 1}/${totalDays}` : 'Carregando trilha'}
-              {scenariosCount > 0 && ` · ${completedScenarios}/${scenariosCount} cenários`}
-            </p>
           </div>
           <div className="app-header-badges"></div>
         </header>
@@ -1402,9 +1413,7 @@ useEffect(() => {
               <button type="button" className="flashcard-btn dont-know" onClick={() => flashcardActionsRef.current.dontKnow?.()}>
                 NÃO SEI
               </button>
-              <button type="button" className="flashcard-btn back" onClick={() => flashcardActionsRef.current.back?.()}>
-                VOLTAR
-              </button>
+              <button type="button" className="sim-icon-btn" onClick={() => flashcardActionsRef.current.back?.()}>‹</button>
             </>
           ) : (
             <>
