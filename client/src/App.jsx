@@ -299,12 +299,19 @@ useEffect(() => {
         return;
       }
 
-      console.log('Fetching user progress...');
-      const res = await axios.get('/api/progress', {
+      const professionKey = localStorage.getItem('selectedProfessionKey');
+      if (!professionKey) {
+        console.log('No professionKey found, skipping progress fetch');
+        return;
+      }
+
+      console.log('Fetching user progress for professionKey:', professionKey);
+      const url = `/api/progress?professionKey=${encodeURIComponent(professionKey)}`;
+      const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const { courseProgress } = res.data;
+      const courseProgress = res.data.courseProgress || [];
       console.log('Progress fetched:', courseProgress);
 
       if (courseProgress && courseProgress.length > 0) {
@@ -493,10 +500,21 @@ useEffect(() => {
       console.log('Saving progress...', { user: user.email, lessons: Object.keys(lessonsSource || {}) });
 
       const progressData = buildProgressSnapshot(coursesSource, lessonsSource);
+      const professionKey = localStorage.getItem('selectedProfessionKey');
+      
+      if (!professionKey) {
+        console.warn('Cannot save progress: no professionKey selected');
+        return;
+      }
+      
       console.log('Progress data to save:', JSON.stringify(progressData, null, 2));
+      console.log('Saving for professionKey:', professionKey);
 
       const response = await axios.post('/api/progress',
-        { courseProgress: progressData },
+        { 
+          courseProgress: progressData, 
+          professionKey: professionKey 
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

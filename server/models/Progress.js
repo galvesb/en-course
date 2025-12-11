@@ -6,6 +6,10 @@ const ProgressSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    professionKey: {
+        type: String,
+        required: true
+    },
     // Armazena o progresso completo no formato da estrutura de curso
     // Estrutura: [{ id, title, scenarios: [{ id, completed, lessons: { A: [...], B: [...], C: [...] } }] }]
     courseProgress: {
@@ -21,8 +25,7 @@ const ProgressSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Índice único para garantir um documento de progresso por usuário
-ProgressSchema.index({ userId: 1 }, { unique: true });
+// Índice único para garantir um documento de progresso por usuário + profissão
+ProgressSchema.index({ userId: 1, professionKey: 1 }, { unique: true });
 
 module.exports = mongoose.model('Progress', ProgressSchema);
-

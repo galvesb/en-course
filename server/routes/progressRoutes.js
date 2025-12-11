@@ -7,17 +7,24 @@ const router = express.Router();
 // Todas as rotas requerem autenticação
 router.use(authMiddleware);
 
-// Buscar progresso do usuário atual
+// Buscar progresso do usuário atual para uma profissão específica
 router.get('/', async (req, res) => {
     try {
         const userId = req.user.userId;
+        const professionKey = req.query.professionKey; // Query parameter obrigatório
         
-        let progress = await Progress.findOne({ userId });
+        if (!professionKey) {
+            return res.status(400).json({ message: 'professionKey is required' });
+        }
         
-        // Se não existe, cria um documento vazio
+        // Busca o documento específico para essa combinação de usuário + profissão
+        let progress = await Progress.findOne({ userId, professionKey });
+        
+        // Se não existe, cria um documento vazio para essa profissão
         if (!progress) {
             progress = new Progress({
                 userId,
+                professionKey,
                 courseProgress: []
             });
             await progress.save();
@@ -33,13 +40,14 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Salvar/Atualizar progresso completo do usuário
+// Salvar/Atualizar progresso completo do usuário para uma profissão específica
 router.post('/', async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { courseProgress } = req.body;
+        const { courseProgress, professionKey } = req.body;
         
         console.log('POST /api/progress - Received request from userId:', userId);
+        console.log('professionKey:', professionKey);
         console.log('courseProgress type:', typeof courseProgress, 'isArray:', Array.isArray(courseProgress));
         
         if (!courseProgress || !Array.isArray(courseProgress)) {
@@ -47,14 +55,20 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'courseProgress must be an array' });
         }
         
-        // Busca ou cria o documento de progresso
-        let progress = await Progress.findOne({ userId });
+        if (!professionKey) {
+            console.error('professionKey is required');
+            return res.status(400).json({ message: 'professionKey is required' });
+        }
+        
+        // Busca ou cria o documento de progresso específico para essa combinação de usuário + profissão
+        let progress = await Progress.findOne({ userId, professionKey });
         console.log('Existing progress found:', !!progress);
         
         if (!progress) {
-            console.log('Creating new progress document');
+            console.log('Creating new progress document for userId:', userId, 'professionKey:', professionKey);
             progress = new Progress({
                 userId,
+                professionKey,
                 courseProgress
             });
         } else {
@@ -64,7 +78,7 @@ router.post('/', async (req, res) => {
         }
         
         await progress.save();
-        console.log('Progress saved successfully for userId:', userId);
+        console.log('Progress saved successfully for userId:', userId, 'professionKey:', professionKey);
         console.log('Progress document ID:', progress._id);
         
         res.json({
@@ -83,17 +97,23 @@ router.post('/', async (req, res) => {
 router.patch('/', async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { courseId, scenarioId, lessonId, role, completed } = req.body;
+        const { courseId, scenarioId, lessonId, role, completed, professionKey } = req.body;
         
         if (courseId === undefined) {
             return res.status(400).json({ message: 'courseId is required' });
         }
         
-        let progress = await Progress.findOne({ userId });
+        if (!professionKey) {
+            return res.status(400).json({ message: 'professionKey is required' });
+        }
+        
+        // Busca o documento específico para essa combinação de usuário + profissão
+        let progress = await Progress.findOne({ userId, professionKey });
         
         if (!progress) {
             progress = new Progress({
                 userId,
+                professionKey,
                 courseProgress: []
             });
         }
@@ -154,14 +174,21 @@ router.patch('/', async (req, res) => {
     }
 });
 
-// Resetar progresso do usuário
+// Resetar progresso do usuário para uma profissão específica
 router.delete('/', async (req, res) => {
     try {
         const userId = req.user.userId;
+        const professionKey = req.query.professionKey; // Query parameter opcional
         
-        await Progress.findOneAndDelete({ userId });
-        
-        res.json({ message: 'Progress reset successfully' });
+        if (professionKey) {
+            // Remove apenas o progresso da profissão específica
+            await Progress.findOneAndDelete({ userId, professionKey });
+            res.json({ message: `Progress reset successfully for profession: ${professionKey}` });
+        } else {
+            // Remove todos os progressos do usuário (para todas as profissões)
+            await Progress.deleteMany({ userId });
+            res.json({ message: 'All progress reset successfully' });
+        }
     } catch (err) {
         console.error('Error resetting progress:', err);
         res.status(500).json({ message: 'Error resetting progress', error: err.message });
@@ -169,4 +196,3 @@ router.delete('/', async (req, res) => {
 });
 
 module.exports = router;
-
