@@ -646,7 +646,7 @@ useEffect(() => {
                 onClick={() => handleDaySelection(dIdx)}
               >
                 <div className={`main-bubble ${allScenariosCompleted ? 'completed' : (isActiveDay ? 'active' : '')}`}>
-                  {day.id}
+                  {day.title.replace(/\D/g, '')}
                 </div>
                 <p className="scenario-name">{day.title}</p>
                 <p className="scenario-meta-trail">
