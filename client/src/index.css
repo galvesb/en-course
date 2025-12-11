@@ -647,7 +647,7 @@ h3 {
   background: linear-gradient(135deg, #0B7B70, #0d8a92);
   padding: 18px 20px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   position: sticky;

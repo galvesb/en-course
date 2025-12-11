@@ -577,7 +577,6 @@ useEffect(() => {
         <li>Dia 1 liberado no plano gratuito</li>
         <li>Assinantes acessam todos os dias e cenários</li>
       </ul>
-      <button className="sim-icon-btn" type="button" onClick={() => setStage('map')}>‹</button>
     </div>
   );
 
@@ -1276,8 +1275,6 @@ useEffect(() => {
             );
           })}
         </div>
-
-        <button className="sim-icon-btn" type="button" onClick={() => setStage('role-choice-lessons')}>‹</button>
       </div>
     );
   };
@@ -1413,7 +1410,7 @@ useEffect(() => {
               <button type="button" className="flashcard-btn dont-know" onClick={() => flashcardActionsRef.current.dontKnow?.()}>
                 NÃO SEI
               </button>
-              <button type="button" className="sim-icon-btn" onClick={() => flashcardActionsRef.current.back?.()}>‹</button>
+              <button type="button" className="flashcard-btn" onClick={() => flashcardActionsRef.current.back?.()}>Voltar</button>
             </>
           ) : (
             <>
