@@ -32,6 +32,8 @@ function MainApp() {
   const [simulacaoInput, setSimulacaoInput] = useState('');
   const [simulacaoHintVisible, setSimulacaoHintVisible] = useState(false);
   const [simulacaoUltimaErrada, setSimulacaoUltimaErrada] = useState(false);
+  const [toast, setToast] = useState(null); // { message: string, type: 'success' | 'error' }
+  const toastTimerRef = useRef(null);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [currentRole, setCurrentRole] = useState(null);
@@ -49,6 +51,31 @@ function MainApp() {
 
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  // Função para mostrar toast
+  const showToast = (message, type = 'success') => {
+    // Limpa timer anterior se existir
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    
+    setToast({ message, type });
+    
+    // Remove o toast após 1 segundo
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 1000);
+  };
+
+  // Cleanup do timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Garante que o usuário tenha escolhido uma profissão antes de carregar os cursos
@@ -535,7 +562,7 @@ useEffect(() => {
     const day = courseStructure[dayIndex];
     if (!day) return;
     if (day.locked && !subscriptionActive) {
-      alert('Este dia está disponível apenas para assinantes.');
+      showToast('Este dia está disponível apenas para assinantes.', 'error');
       return;
     }
     setCurrentDayIndex(dayIndex);
@@ -839,7 +866,7 @@ useEffect(() => {
                       setIsFlashcardFlipped(false);
                       setStage('flashcard');
                     } else {
-                      alert('Complete a lição anterior primeiro!');
+                      showToast('Complete a lição anterior primeiro!', 'error');
                     }
                   }}
                 >
@@ -861,7 +888,7 @@ useEffect(() => {
             className={`day-node ${!simulationIsActive ? 'locked' : ''}`}
             onClick={() => {
               if (!simulationIsActive) {
-                alert('Complete todas as lições anteriores primeiro!');
+                showToast('Complete todas as lições anteriores primeiro!', 'error');
                 return;
               }
               startSimulacaoChat(currentRole);
@@ -1004,7 +1031,7 @@ useEffect(() => {
           fetchUserProgress();
         }, 300);
 
-        alert("Lição Completa!");
+        showToast("Lição Completa!", 'success');
         setStage('flashcard-selector');
       }
     };
@@ -1057,7 +1084,7 @@ useEffect(() => {
                     e.stopPropagation();
                     const src = card.audio || findConversationAudioForCard();
                     if (!src) {
-                      alert('Áudio ainda não configurado para este item.');
+                      showToast('Áudio ainda não configurado para este item.', 'error');
                       return;
                     }
                     try {
@@ -1094,7 +1121,7 @@ useEffect(() => {
   const startSimulacaoChat = (role) => {
     const day = courseStructure[currentDayIndex];
     if (day?.locked && !subscriptionActive) {
-      alert('Assine para liberar a simulação deste dia.');
+      showToast('Assine para liberar a simulação deste dia.', 'error');
       return;
     }
     setCurrentRole(role);
@@ -1405,6 +1432,15 @@ useEffect(() => {
             </>
           )}
         </footer>
+        
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`toast-notification ${toast.type} show`}>
+            <div className="toast-content">
+              <span>{toast.message}</span>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
