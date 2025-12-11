@@ -1339,7 +1339,7 @@ useEffect(() => {
 
       <div className={`app-shell ${stage === 'flashcard' ? 'flashcard-mode' : ''} ${stage === 'chat' ? 'chat-mode' : ''}`}>
         <header className="app-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="app-header-left">
             {stage !== 'map' && (
               <button 
                 className="sim-icon-btn" 
@@ -1359,19 +1359,19 @@ useEffect(() => {
                 ‹
               </button>
             )}
-            <div>
-              <p className="app-eyebrow">Profissão atual</p>
-              <div className="app-title">
-                <span className="app-profession-icon">{professionIcon}</span>
-                <span>{professionName}</span>
-              </div>
-              <p className="app-progress">
-                {totalDays > 0 ? `Dia ${currentDayIndex + 1}/${totalDays}` : 'Carregando trilha'}
-                {scenariosCount > 0 && ` · ${completedScenarios}/${scenariosCount} cenários`}
-              </p>
-            </div>
           </div>
-          <div className="app-header-badges"></div>
+          <div className="app-header-center">
+            <p className="app-eyebrow">Profissão atual</p>
+            <div className="app-title">
+              <span className="app-profession-icon">{professionIcon}</span>
+              <span>{professionName}</span>
+            </div>
+            <p className="app-progress">
+              {totalDays > 0 ? `Dia ${currentDayIndex + 1}/${totalDays}` : 'Carregando trilha'}
+              {scenariosCount > 0 && ` · ${completedScenarios}/${scenariosCount} cenários`}
+            </p>
+          </div>
+          <div className="app-header-right"></div>
         </header>
 
         <div className={`app-body ${stage === 'flashcard' ? 'flashcard-body' : ''} ${stage === 'chat' ? 'chat-body' : ''}`}>
