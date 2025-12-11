@@ -65,7 +65,7 @@ function MainApp() {
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, 1000);
+    }, 2500);
   };
 
   // Cleanup do timer ao desmontar
