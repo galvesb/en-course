@@ -20,10 +20,21 @@ const { authMiddleware, adminMiddleware } = require('./middleware/authMiddleware
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('✅ Diretório uploads criado:', uploadsDir);
+}
+
 // File upload config (for admin audio uploads)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'uploads'));
+        // Ensure directory exists before saving
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        cb(null, uploadsDir);
     },
     filename: (req, file, cb) => {
         const ext = path.extname(file.originalname);
@@ -68,6 +79,12 @@ async function uploadFileToMagaluStorage(file) {
     if (!magaluS3Client) {
         throw new Error('Magalu Object Storage client is not configured');
     }
+    
+    // Verify file exists before trying to read it
+    if (!file.path || !fs.existsSync(file.path)) {
+        throw new Error(`Arquivo não encontrado: ${file.path || 'caminho não definido'}`);
+    }
+    
     const ext = path.extname(file.originalname) || '.bin';
     const base = sanitizeName(path.basename(file.originalname, ext)) || 'audio';
     const key = `audio/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${base}${ext}`;
@@ -518,6 +535,25 @@ app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('fi
             return res.status(400).json({ message: 'Nenhum arquivo enviado' });
         }
 
+        // Verify file was saved correctly
+        if (!req.file.path) {
+            return res.status(500).json({ message: 'Erro: arquivo não foi salvo corretamente pelo multer' });
+        }
+
+        // Check if file exists on disk
+        if (!fs.existsSync(req.file.path)) {
+            console.error('Arquivo não encontrado no caminho:', req.file.path);
+            console.error('Diretório uploads existe?', fs.existsSync(uploadsDir));
+            return res.status(500).json({ 
+                message: 'Erro: arquivo não encontrado após upload', 
+                error: `Arquivo não existe em: ${req.file.path}` 
+            });
+        }
+
+        console.log('✅ Arquivo recebido:', req.file.originalname);
+        console.log('✅ Caminho local:', req.file.path);
+        console.log('✅ Tamanho:', req.file.size, 'bytes');
+
         if (!magaluS3Client) {
             return res.status(500).json({ message: 'Magalu Object Storage não configurado. Defina as variáveis de ambiente MAGALU_OBJECT_KEY_ID, MAGALU_OBJECT_KEY_SECRET, MAGALU_OBJECT_BUCKET.' });
         }
@@ -525,7 +561,11 @@ app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('fi
         const uploaded = await uploadFileToMagaluStorage(req.file);
 
         // Remove o arquivo salvo localmente após subir para o storage
-        fs.promises.unlink(req.file.path).catch(() => {});
+        fs.promises.unlink(req.file.path).catch((unlinkErr) => {
+            console.warn('Aviso: não foi possível remover arquivo local:', unlinkErr.message);
+        });
+
+        console.log('✅ Upload para Magalu Storage concluído:', uploaded.url);
 
         res.json({
             message: 'Upload realizado com sucesso',
@@ -535,8 +575,18 @@ app.post('/api/upload-audio', authMiddleware, adminMiddleware, upload.single('fi
             storageKey: uploaded.key
         });
     } catch (err) {
-        console.error('Error uploading audio:', err);
-        res.status(500).json({ message: 'Erro ao fazer upload do áudio', error: err.message });
+        console.error('❌ Error uploading audio:', err);
+        
+        // Try to clean up file if it exists
+        if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+            fs.promises.unlink(req.file.path).catch(() => {});
+        }
+        
+        res.status(500).json({ 
+            message: 'Erro ao fazer upload do áudio', 
+            error: err.message,
+            details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
     }
 });
 
