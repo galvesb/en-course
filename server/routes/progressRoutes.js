@@ -118,8 +118,10 @@ router.post('/', async (req, res) => {
                     
                     if (!existingReview) {
                         // Agenda primeira revisão para 1 dia depois
+                        // Usa UTC para evitar problemas de timezone
                         const nextReviewDate = new Date();
-                        nextReviewDate.setDate(nextReviewDate.getDate() + 1);
+                        nextReviewDate.setUTCHours(0, 0, 0, 0); // Zera para meia-noite UTC
+                        nextReviewDate.setUTCDate(nextReviewDate.getUTCDate() + 1); // Adiciona 1 dia
                         
                         progress.reviews.push({
                             courseId: newCourse.id,
@@ -128,7 +130,7 @@ router.post('/', async (req, res) => {
                             reviewCount: 0
                         });
                         
-                        console.log(`✅ Revisão agendada: Curso ${newCourse.id}, Cenário ${newScenario.id} para ${nextReviewDate.toISOString()}`);
+                        console.log(`✅ Revisão agendada: Curso ${newCourse.id}, Cenário ${newScenario.id} para ${nextReviewDate.toISOString()} (${nextReviewDate.toLocaleDateString('pt-BR')})`);
                     } else {
                         console.log(`⚠️  Revisão já existe para Curso ${newCourse.id}, Cenário ${newScenario.id}`);
                     }
@@ -278,10 +280,15 @@ router.get('/reviews', async (req, res) => {
         }
         
         const now = new Date();
+        // Zera horas para comparar apenas as datas (ignora hora)
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+        
         // Busca revisões que estão prontas (nextReviewDate <= hoje)
         const readyReviews = progress.reviews.filter(review => {
             const reviewDate = new Date(review.nextReviewDate);
-            return reviewDate <= now;
+            reviewDate.setUTCHours(0, 0, 0, 0); // Zera horas para comparar apenas a data
+            return reviewDate <= today;
         });
         
         res.json({ reviews: readyReviews });
@@ -332,22 +339,27 @@ router.post('/reviews/:reviewId/complete', async (req, res) => {
         // Atualiza a revisão conforme a lógica de repetição espaçada
         review.lastReviewDate = now;
         
+        // Usa UTC para evitar problemas de timezone
+        const nextReviewDate = new Date();
+        nextReviewDate.setUTCHours(0, 0, 0, 0); // Zera para meia-noite UTC
+        
         if (review.reviewCount === 0) {
             // Primeira revisão: próxima em 2 dias
-            review.nextReviewDate = new Date(now);
-            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 2);
+            nextReviewDate.setUTCDate(nextReviewDate.getUTCDate() + 2);
             review.reviewCount = 1;
         } else if (review.reviewCount === 1) {
             // Segunda revisão: próxima em 3 dias
-            review.nextReviewDate = new Date(now);
-            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 3);
+            nextReviewDate.setUTCDate(nextReviewDate.getUTCDate() + 3);
             review.reviewCount = 2;
         } else if (review.reviewCount === 2) {
             // Terceira revisão: reseta para 1 dia
-            review.nextReviewDate = new Date(now);
-            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 1);
+            nextReviewDate.setUTCDate(nextReviewDate.getUTCDate() + 1);
             review.reviewCount = 0;
         }
+        
+        review.nextReviewDate = nextReviewDate;
+        
+        console.log(`✅ Revisão ${review.reviewCount === 0 ? 'resetada' : 'atualizada'}: próxima revisão em ${review.reviewCount === 0 ? 1 : review.reviewCount === 1 ? 2 : 3} dia(s) - ${nextReviewDate.toISOString()} (${nextReviewDate.toLocaleDateString('pt-BR')})`);
         
         progress.reviews[reviewIndex] = review;
         await progress.save();
