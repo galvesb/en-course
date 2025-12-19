@@ -46,6 +46,9 @@ function MainApp() {
   const [reviews, setReviews] = useState([]); // Lista de revisões pendentes
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
   const flashcardAudioRef = useRef(null);
+  const flashcardAudioSlowRef = useRef(null);
+  const flashcardAudioContextRef = useRef(null);
+  const flashcardAudioSourceRef = useRef(null);
   const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas na mesma sessão
   const temporaryAccessTimerRef = useRef(null); // Timer de 5 minutos para liberação temporária
   const temporaryAccessStartTimeRef = useRef(null); // Timestamp de quando começou a liberação temporária
@@ -1030,6 +1033,85 @@ useEffect(() => {
     );
   };
 
+  // Função auxiliar para tocar áudio com velocidade controlada
+  // Usa HTML5 Audio diretamente para evitar problemas de CORS
+  const playFlashcardAudio = (src, playbackRate = 1.0) => {
+    if (!src) {
+      showToast('Áudio ainda não configurado para este item.', 'error');
+      return;
+    }
+
+    try {
+      // Usar player específico para velocidade lenta ou normal
+      const audioRef = playbackRate === 0.5 ? flashcardAudioSlowRef : flashcardAudioRef;
+      
+      // Criar novo Audio se não existir
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      
+      const audio = audioRef.current;
+      
+      // Pausar e resetar
+      audio.pause();
+      audio.currentTime = 0;
+      
+      // Limpar listeners anteriores para evitar acúmulo
+      audio.onloadedmetadata = null;
+      audio.oncanplay = null;
+      audio.onplay = null;
+      audio.onratechange = null;
+      
+      // Definir src primeiro
+      audio.src = src;
+      
+      // Definir playbackRate ANTES de carregar
+      audio.playbackRate = playbackRate;
+      
+      // Função para garantir playbackRate
+      const applyPlaybackRate = () => {
+        if (audio.playbackRate !== playbackRate) {
+          audio.playbackRate = playbackRate;
+        }
+      };
+      
+      // Aplicar playbackRate em múltiplos momentos
+      audio.onloadedmetadata = () => {
+        applyPlaybackRate();
+      };
+      
+      audio.oncanplay = () => {
+        applyPlaybackRate();
+      };
+      
+      audio.onplay = () => {
+        applyPlaybackRate();
+      };
+      
+      // Monitorar mudanças no playbackRate
+      audio.onratechange = () => {
+        if (audio.playbackRate !== playbackRate) {
+          audio.playbackRate = playbackRate;
+        }
+      };
+      
+      // Tentar tocar
+      audio.play().then(() => {
+        // Garantir novamente após iniciar
+        applyPlaybackRate();
+        
+        // Verificar após um pequeno delay
+        setTimeout(() => {
+          applyPlaybackRate();
+        }, 50);
+      }).catch(err => {
+        console.error('Erro ao tocar áudio:', err);
+      });
+    } catch (err) {
+      console.error('Exceção ao tocar áudio do flashcard:', err);
+    }
+  };
+
   const renderFlashcard = () => {
     if (flashcardQueue.length === 0) {
       return (
@@ -1196,34 +1278,31 @@ useEffect(() => {
           >
             <div className="card-inner">
               <div className="card-front">
-                <div className="flashcard-word">{card.word}</div>
-                <button
-                  className="audio-btn"
-                  title="Ouvir Pronúncia"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const src = card.audio || findConversationAudioForCard();
-                    if (!src) {
-                      showToast('Áudio ainda não configurado para este item.', 'error');
-                      return;
-                    }
-                    try {
-                      if (!flashcardAudioRef.current) {
-                        flashcardAudioRef.current = new Audio();
-                      }
-                      flashcardAudioRef.current.pause();
-                      flashcardAudioRef.current.currentTime = 0;
-                      flashcardAudioRef.current.src = src;
-                      flashcardAudioRef.current.play().catch((err) => {
-                        console.error('Erro ao tocar áudio do flashcard', err);
-                      });
-                    } catch (err) {
-                      console.error('Exceção ao tocar áudio do flashcard', err);
-                    }
-                  }}
-                >
-                  🔊
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                  <button
+                    className="audio-btn"
+                    title="Ouvir Pronúncia (Velocidade Lenta 0.5x)"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const src = card.audio || findConversationAudioForCard();
+                      playFlashcardAudio(src, 0.5);
+                    }}
+                  >
+                    🐌
+                  </button>
+                  <div className="flashcard-word">{card.word}</div>
+                  <button
+                    className="audio-btn"
+                    title="Ouvir Pronúncia (Velocidade Normal)"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const src = card.audio || findConversationAudioForCard();
+                      playFlashcardAudio(src, 1.0);
+                    }}
+                  >
+                    🔊
+                  </button>
+                </div>
               </div>
               <div className="card-back">
                 <div className="flashcard-translation">{card.translation}</div>

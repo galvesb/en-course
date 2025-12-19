@@ -472,7 +472,30 @@
             const b = document.getElementById('chat-scroll');
             if (b) b.scrollTop = b.scrollHeight;
         };
-        const playAudio = src => { if(!src) return; try{ player.pause(); player.currentTime=0; player.src=src; player.play(); }catch{} };
+        const playAudio = (src, playbackRate = 1.0) => { 
+            if(!src) return; 
+            try{ 
+                player.pause(); 
+                player.currentTime=0; 
+                // Definir playbackRate ANTES de definir src
+                player.playbackRate = playbackRate;
+                player.src=src; 
+                // Garantir que playbackRate seja mantido quando o áudio estiver pronto
+                const applyPlaybackRate = () => {
+                    if (player.playbackRate !== playbackRate) {
+                        player.playbackRate = playbackRate;
+                    }
+                };
+                player.onloadedmetadata = applyPlaybackRate;
+                player.oncanplay = applyPlaybackRate;
+                player.play().then(() => {
+                    // Garantir após iniciar a reprodução
+                    applyPlaybackRate();
+                }).catch(err => console.error('Erro ao tocar áudio:', err)); 
+            }catch(err){
+                console.error('Erro ao configurar áudio:', err);
+            } 
+        };
         const pushMessage = msg => { history.push(msg); if(msg.audio) playAudio(msg.audio); };
         const revealAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.add('revealed'));
         const hideAll = () => document.querySelectorAll('.hidden-text').forEach(el=>el.classList.remove('revealed'));
@@ -491,7 +514,7 @@
         
         const getConversation = () => getScenario()?.conversations;
         
-        window.playCardAudio = (text, dIdx, sIdx) => {
+        window.playCardAudio = (text, dIdx, sIdx, playbackRate = 1.0) => {
             const scenario = courseStructure[dIdx]?.scenarios[sIdx];
             if (!scenario) return;
 
@@ -511,8 +534,141 @@
             
             const audioPath = `${baseAudioPath}/flashcard/${filename}.mp3`;
             
-            console.log(`Tentando tocar audio em: ${audioPath}`);
-            playAudio(audioPath); 
+            console.log(`Tentando tocar audio em: ${audioPath} (velocidade: ${playbackRate}x)`);
+            
+            // Parar qualquer reprodução anterior
+            if (window.flashcardPlayer) {
+                window.flashcardPlayer.pause();
+                window.flashcardPlayer = null;
+            }
+            if (window.flashcardSource) {
+                try {
+                    window.flashcardSource.stop();
+                } catch(e) {}
+                window.flashcardSource = null;
+            }
+            
+            // Tentar Web Audio API primeiro
+            try {
+                if (!window.flashcardAudioContext) {
+                    window.flashcardAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Se o contexto estiver suspenso, retomar
+                if (window.flashcardAudioContext.state === 'suspended') {
+                    window.flashcardAudioContext.resume().then(() => {
+                        console.log('AudioContext retomado');
+                    });
+                }
+                
+                // Aguardar contexto estar pronto
+                const ensureContextReady = () => {
+                    return new Promise((resolve) => {
+                        if (window.flashcardAudioContext.state === 'running') {
+                            resolve();
+                        } else {
+                            window.flashcardAudioContext.resume().then(() => resolve());
+                        }
+                    });
+                };
+                
+                // Carregar e tocar usando Web Audio API
+                ensureContextReady().then(() => {
+                    return fetch(audioPath);
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                    .then(arrayBuffer => {
+                        return window.flashcardAudioContext.decodeAudioData(arrayBuffer);
+                    })
+                    .then(audioBuffer => {
+                        // Criar buffer source
+                        window.flashcardSource = window.flashcardAudioContext.createBufferSource();
+                        window.flashcardSource.buffer = audioBuffer;
+                        
+                        // Criar gain node
+                        const gainNode = window.flashcardAudioContext.createGain();
+                        gainNode.gain.value = 1.0;
+                        
+                        // Conectar: source -> gain -> destination
+                        window.flashcardSource.connect(gainNode);
+                        gainNode.connect(window.flashcardAudioContext.destination);
+                        
+                        // Aplicar velocidade de reprodução ANTES de iniciar
+                        // IMPORTANTE: playbackRate deve ser definido ANTES de conectar ou iniciar
+                        window.flashcardSource.playbackRate.value = playbackRate;
+                        
+                        console.log(`[Web Audio] PlaybackRate ANTES de conectar: ${window.flashcardSource.playbackRate.value}x`);
+                        
+                        // Verificar se foi aplicado
+                        if (Math.abs(window.flashcardSource.playbackRate.value - playbackRate) > 0.01) {
+                            console.error(`ERRO: PlaybackRate não foi aplicado! Esperado: ${playbackRate}x, Atual: ${window.flashcardSource.playbackRate.value}x`);
+                            // Tentar forçar novamente
+                            window.flashcardSource.playbackRate.value = playbackRate;
+                        }
+                        
+                        // Tocar
+                        window.flashcardSource.start(0);
+                        
+                        // Verificar novamente após iniciar
+                        setTimeout(() => {
+                            const currentRate = window.flashcardSource.playbackRate.value;
+                            console.log(`[Web Audio] PlaybackRate APÓS iniciar: ${currentRate}x`);
+                            if (Math.abs(currentRate - playbackRate) > 0.01) {
+                                console.error(`ERRO: PlaybackRate mudou após iniciar! Esperado: ${playbackRate}x, Atual: ${currentRate}x`);
+                                // Tentar corrigir
+                                window.flashcardSource.playbackRate.value = playbackRate;
+                            }
+                        }, 50);
+                        
+                        // Limpar quando terminar
+                        window.flashcardSource.onended = () => {
+                            window.flashcardSource = null;
+                        };
+                    })
+                    .catch(err => {
+                        console.warn('Web Audio API falhou, usando fallback HTML5:', err);
+                        // Fallback para HTML5 Audio com tentativas múltiplas
+                        playWithHTML5Audio(audioPath, playbackRate);
+                    });
+            } catch (err) {
+                console.warn('Erro ao inicializar Web Audio API, usando fallback:', err);
+                playWithHTML5Audio(audioPath, playbackRate);
+            }
+            
+            // Função auxiliar para HTML5 Audio fallback
+            function playWithHTML5Audio(path, rate) {
+                window.flashcardPlayer = new Audio();
+                window.flashcardPlayer.src = path;
+                
+                // Tentar definir playbackRate em múltiplos momentos
+                window.flashcardPlayer.playbackRate = rate;
+                
+                window.flashcardPlayer.onloadedmetadata = () => {
+                    window.flashcardPlayer.playbackRate = rate;
+                    console.log(`[HTML5] PlaybackRate após loadedmetadata: ${window.flashcardPlayer.playbackRate}x`);
+                };
+                
+                window.flashcardPlayer.oncanplay = () => {
+                    window.flashcardPlayer.playbackRate = rate;
+                    console.log(`[HTML5] PlaybackRate após canplay: ${window.flashcardPlayer.playbackRate}x`);
+                };
+                
+                window.flashcardPlayer.onplay = () => {
+                    window.flashcardPlayer.playbackRate = rate;
+                    console.log(`[HTML5] PlaybackRate após play: ${window.flashcardPlayer.playbackRate}x`);
+                };
+                
+                window.flashcardPlayer.play().then(() => {
+                    window.flashcardPlayer.playbackRate = rate;
+                    console.log(`[HTML5] PlaybackRate após promise: ${window.flashcardPlayer.playbackRate}x`);
+                }).catch(e => {
+                    console.error('Erro ao tocar áudio HTML5:', e);
+                });
+            } 
         };
 
 
@@ -746,7 +902,10 @@
                                         <div style="font-weight: 600; font-size:1.8rem; margin-bottom: 10px;">
                                             ${card.word}
                                         </div>
-                                        <button class="audio-btn" title="Ouvir Pronúncia" onclick="event.stopPropagation(); playCardAudio('${card.word}', ${currentDayIndex}, ${currentScenarioIndex})">🔊</button>
+                                        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                                            <button class="audio-btn" title="Ouvir Pronúncia (Velocidade Normal)" onclick="event.stopPropagation(); playCardAudio('${card.word}', ${currentDayIndex}, ${currentScenarioIndex}, 1.0)">🔊</button>
+                                            <button class="audio-btn" title="Ouvir Pronúncia (Velocidade Lenta 0.5x)" onclick="event.stopPropagation(); playCardAudio('${card.word}', ${currentDayIndex}, ${currentScenarioIndex}, 0.5)">🐌</button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="card-back">
