@@ -20,6 +20,18 @@ const ProgressSchema = new mongoose.Schema({
     lastUpdated: {
         type: Date,
         default: Date.now
+    },
+    // Sistema de revisão espaçada
+    // Estrutura: [{ courseId, scenarioId, nextReviewDate, reviewCount, lastReviewDate }]
+    reviews: {
+        type: [{
+            courseId: { type: Number, required: true },
+            scenarioId: { type: String, required: true },
+            nextReviewDate: { type: Date, required: true },
+            reviewCount: { type: Number, default: 0 },
+            lastReviewDate: { type: Date }
+        }],
+        default: []
     }
 }, {
     timestamps: true

@@ -32,7 +32,8 @@ router.get('/', async (req, res) => {
         
         res.json({
             courseProgress: progress.courseProgress || [],
-            lastUpdated: progress.lastUpdated
+            lastUpdated: progress.lastUpdated,
+            reviews: progress.reviews || []
         });
     } catch (err) {
         console.error('Error fetching progress:', err);
@@ -64,18 +65,83 @@ router.post('/', async (req, res) => {
         let progress = await Progress.findOne({ userId, professionKey });
         console.log('Existing progress found:', !!progress);
         
+        // Garante que reviews é um array
         if (!progress) {
             console.log('Creating new progress document for userId:', userId, 'professionKey:', professionKey);
             progress = new Progress({
                 userId,
                 professionKey,
-                courseProgress
+                courseProgress,
+                reviews: []
             });
         } else {
             console.log('Updating existing progress document');
-            progress.courseProgress = courseProgress;
-            progress.lastUpdated = new Date();
+            
+            // Garante que reviews é um array
+            if (!Array.isArray(progress.reviews)) {
+                progress.reviews = [];
+            }
         }
+        
+        // Verifica se algum cenário foi concluído pela primeira vez e agenda revisão
+        const oldProgress = progress.courseProgress || [];
+        const newProgress = courseProgress || [];
+        
+        // Compara cenários concluídos para agendar revisões
+        console.log('🔍 Verificando cenários para agendar revisões...');
+        console.log('Progresso antigo:', JSON.stringify(oldProgress, null, 2));
+        console.log('Progresso novo:', JSON.stringify(newProgress, null, 2));
+        
+        for (const newCourse of newProgress) {
+            const oldCourse = oldProgress.find(c => c.id === newCourse.id);
+            console.log(`📚 Verificando curso ${newCourse.id} (${newCourse.title}) - curso antigo existe: ${!!oldCourse}`);
+            
+            for (const newScenario of (newCourse.scenarios || [])) {
+                if (!newScenario.completed) {
+                    console.log(`  ⏭️  Cenário ${newScenario.id} não está completo, pulando...`);
+                    continue;
+                }
+                
+                // Se não há curso antigo, significa que é novo, então se está completo, agenda revisão
+                const oldScenario = oldCourse?.scenarios?.find(s => s.id === newScenario.id);
+                const wasCompleted = oldScenario?.completed || false;
+                const isNowCompleted = newScenario.completed;
+                
+                console.log(`  📋 Cenário ${newScenario.id}: estava completo: ${wasCompleted}, está completo agora: ${isNowCompleted}`);
+                
+                // Se acabou de ser concluído pela primeira vez, agenda revisão
+                // Isso inclui casos onde não havia progresso anterior (oldCourse é undefined)
+                if (isNowCompleted && !wasCompleted) {
+                    const existingReview = progress.reviews.find(
+                        r => r.courseId === newCourse.id && r.scenarioId === newScenario.id
+                    );
+                    
+                    if (!existingReview) {
+                        // Agenda primeira revisão para 1 dia depois
+                        const nextReviewDate = new Date();
+                        nextReviewDate.setDate(nextReviewDate.getDate() + 1);
+                        
+                        progress.reviews.push({
+                            courseId: newCourse.id,
+                            scenarioId: newScenario.id,
+                            nextReviewDate,
+                            reviewCount: 0
+                        });
+                        
+                        console.log(`✅ Revisão agendada: Curso ${newCourse.id}, Cenário ${newScenario.id} para ${nextReviewDate.toISOString()}`);
+                    } else {
+                        console.log(`⚠️  Revisão já existe para Curso ${newCourse.id}, Cenário ${newScenario.id}`);
+                    }
+                } else {
+                    console.log(`ℹ️  Cenário ${newScenario.id} não precisa de nova revisão (já estava completo ou não está completo agora)`);
+                }
+            }
+        }
+        
+        console.log(`📊 Total de revisões agendadas: ${progress.reviews.length}`);
+        
+        progress.courseProgress = courseProgress;
+        progress.lastUpdated = new Date();
         
         await progress.save();
         console.log('Progress saved successfully for userId:', userId, 'professionKey:', professionKey);
@@ -192,6 +258,108 @@ router.delete('/', async (req, res) => {
     } catch (err) {
         console.error('Error resetting progress:', err);
         res.status(500).json({ message: 'Error resetting progress', error: err.message });
+    }
+});
+
+// Buscar cenários que precisam ser revisados
+router.get('/reviews', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const professionKey = req.query.professionKey;
+        
+        if (!professionKey) {
+            return res.status(400).json({ message: 'professionKey is required' });
+        }
+        
+        const progress = await Progress.findOne({ userId, professionKey });
+        
+        if (!progress || !Array.isArray(progress.reviews)) {
+            return res.json({ reviews: [] });
+        }
+        
+        const now = new Date();
+        // Busca revisões que estão prontas (nextReviewDate <= hoje)
+        const readyReviews = progress.reviews.filter(review => {
+            const reviewDate = new Date(review.nextReviewDate);
+            return reviewDate <= now;
+        });
+        
+        res.json({ reviews: readyReviews });
+    } catch (err) {
+        console.error('Error fetching reviews:', err);
+        res.status(500).json({ message: 'Error fetching reviews', error: err.message });
+    }
+});
+
+// Marcar revisão como concluída
+router.post('/reviews/:reviewId/complete', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { reviewId } = req.params;
+        const { professionKey, courseId, scenarioId } = req.body;
+        
+        if (!professionKey) {
+            return res.status(400).json({ message: 'professionKey is required' });
+        }
+        
+        const progress = await Progress.findOne({ userId, professionKey });
+        
+        if (!progress || !Array.isArray(progress.reviews)) {
+            return res.status(404).json({ message: 'Review not found' });
+        }
+        
+        let reviewIndex;
+        
+        // Se courseId e scenarioId foram fornecidos, usa eles para encontrar a revisão
+        if (courseId !== undefined && scenarioId !== undefined) {
+            reviewIndex = progress.reviews.findIndex(r => 
+                r.courseId === courseId && r.scenarioId === scenarioId
+            );
+            if (reviewIndex === -1) {
+                return res.status(404).json({ message: 'Review not found' });
+            }
+        } else {
+            // Caso contrário, usa o índice fornecido (compatibilidade com código antigo)
+            reviewIndex = parseInt(reviewId);
+            if (isNaN(reviewIndex) || reviewIndex < 0 || reviewIndex >= progress.reviews.length) {
+                return res.status(404).json({ message: 'Review not found' });
+            }
+        }
+        
+        const review = progress.reviews[reviewIndex];
+        const now = new Date();
+        
+        // Atualiza a revisão conforme a lógica de repetição espaçada
+        review.lastReviewDate = now;
+        
+        if (review.reviewCount === 0) {
+            // Primeira revisão: próxima em 2 dias
+            review.nextReviewDate = new Date(now);
+            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 2);
+            review.reviewCount = 1;
+        } else if (review.reviewCount === 1) {
+            // Segunda revisão: próxima em 3 dias
+            review.nextReviewDate = new Date(now);
+            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 3);
+            review.reviewCount = 2;
+        } else if (review.reviewCount === 2) {
+            // Terceira revisão: reseta para 1 dia
+            review.nextReviewDate = new Date(now);
+            review.nextReviewDate.setDate(review.nextReviewDate.getDate() + 1);
+            review.reviewCount = 0;
+        }
+        
+        progress.reviews[reviewIndex] = review;
+        await progress.save();
+        
+        res.json({
+            message: 'Review completed successfully',
+            review: review,
+            nextReviewDate: review.nextReviewDate
+        });
+    } catch (err) {
+        console.error('Error completing review:', err);
+        res.status(500).json({ message: 'Error completing review', error: err.message });
     }
 });
 

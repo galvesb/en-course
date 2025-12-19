@@ -43,6 +43,7 @@ function MainApp() {
   const [isFlashcardFlipped, setIsFlashcardFlipped] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [temporarySubscriptionAccess, setTemporarySubscriptionAccess] = useState(false); // Liberação temporária ao clicar em pagar
+  const [reviews, setReviews] = useState([]); // Lista de revisões pendentes
   const flashcardActionsRef = useRef({ know: null, dontKnow: null, back: null });
   const flashcardAudioRef = useRef(null);
   const stripeCheckDoneRef = useRef(false); // Flag para evitar múltiplas chamadas na mesma sessão
@@ -284,6 +285,23 @@ useEffect(() => {
     }
   }, [user, courseStructure.length]);
 
+  // Carrega revisões quando o stage for 'reviews'
+  useEffect(() => {
+    if (stage === 'reviews' && user && courseStructure.length > 0) {
+      console.log('Carregando revisões - courseStructure já carregado');
+      fetchReviews();
+    } else if (stage === 'reviews' && user && courseStructure.length === 0) {
+      console.log('Aguardando courseStructure carregar antes de buscar revisões...');
+      // Se os cursos ainda não foram carregados, tenta carregar
+      const professionKey = localStorage.getItem('selectedProfessionKey');
+      if (professionKey) {
+        fetchCourses(professionKey).then(() => {
+          fetchReviews();
+        });
+      }
+    }
+  }, [stage, user, courseStructure.length]);
+
   const fetchCourses = async (professionKeyParam) => {
     try {
       const key = professionKeyParam || localStorage.getItem('selectedProfessionKey');
@@ -353,6 +371,79 @@ useEffect(() => {
       if (err.response?.status === 404) {
         console.log('Progress endpoint not found - server may need restart');
       }
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, skipping reviews fetch');
+        return;
+      }
+
+      const professionKey = localStorage.getItem('selectedProfessionKey');
+      if (!professionKey) {
+        console.log('No professionKey found, skipping reviews fetch');
+        return;
+      }
+
+      console.log('Fetching reviews for professionKey:', professionKey);
+      const url = `/api/progress/reviews?professionKey=${encodeURIComponent(professionKey)}`;
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const reviewsData = res.data.reviews || [];
+      console.log('Reviews fetched:', reviewsData);
+      console.log('Number of reviews:', reviewsData.length);
+      console.log('Reviews data structure:', JSON.stringify(reviewsData, null, 2));
+      setReviews(reviewsData);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+      setReviews([]);
+    }
+  };
+
+  const completeReview = async (courseId, scenarioId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showToast('Erro: não autenticado', 'error');
+        return;
+      }
+
+      const professionKey = localStorage.getItem('selectedProfessionKey');
+      if (!professionKey) {
+        showToast('Erro: profissão não selecionada', 'error');
+        return;
+      }
+
+      // Usa courseId e scenarioId para encontrar a revisão no backend
+      const url = `/api/progress/reviews/0/complete`; // O índice não importa mais, usamos courseId e scenarioId
+      await axios.post(url, { 
+        professionKey,
+        courseId,
+        scenarioId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      showToast('Revisão concluída! Próxima revisão agendada.', 'success');
+      
+      // Recarrega as revisões
+      await fetchReviews();
+      
+      // Se não há mais revisões, volta para o mapa
+      const updatedReviews = reviews.filter(r => 
+        !(r.courseId === courseId && r.scenarioId === scenarioId)
+      );
+      if (updatedReviews.length === 0) {
+        setStage('map');
+      }
+    } catch (err) {
+      console.error("Error completing review:", err);
+      showToast('Erro ao concluir revisão', 'error');
     }
   };
 
@@ -546,6 +637,44 @@ useEffect(() => {
       );
 
       console.log('Progress saved successfully:', response.data);
+
+      // Recarrega as revisões após salvar o progresso para atualizar a lista
+      // Aguarda um pouco para garantir que o backend processou a atualização
+      setTimeout(async () => {
+        await fetchReviews();
+        console.log('✅ Revisões recarregadas após salvar progresso');
+      }, 1000);
+
+      // Verifica se há uma revisão pendente para o cenário atual e se foi completado
+      if (currentDayIndex !== null && currentScenarioIndex !== null) {
+        const day = coursesSource[currentDayIndex];
+        const scenario = day?.scenarios?.[currentScenarioIndex];
+        
+        if (day && scenario) {
+          // Verifica se o cenário foi completado
+          const scenarioProgress = progressData.find(c => c.id === day.id)?.scenarios?.find(s => s.id === scenario.id);
+          if (scenarioProgress?.completed) {
+            // Aguarda um pouco para garantir que as revisões foram atualizadas
+            setTimeout(async () => {
+              await fetchReviews();
+              // Verifica se há uma revisão pendente para este cenário
+              const updatedReviews = await axios.get(`/api/progress/reviews?professionKey=${encodeURIComponent(professionKey)}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
+              const pendingReview = updatedReviews.data.reviews?.find(r => 
+                r.courseId === day.id && r.scenarioId === scenario.id
+              );
+              
+              if (pendingReview) {
+                // Marca a revisão como concluída automaticamente
+                console.log('Cenário completado durante revisão, marcando revisão como concluída...');
+                await completeReview(day.id, scenario.id);
+              }
+            }, 500);
+          }
+        }
+      }
     } catch (err) {
       console.error("Error saving progress:", err);
       if (err.response) {
@@ -1206,6 +1335,187 @@ useEffect(() => {
     }
   };
 
+  const renderReviews = () => {
+    console.log('renderReviews called, reviews.length:', reviews.length);
+    console.log('courseStructure.length:', courseStructure.length);
+    console.log('reviews data:', reviews);
+    console.log('courseStructure IDs:', courseStructure.map(d => ({ id: d.id, type: typeof d.id, title: d.title })));
+
+    if (reviews.length === 0) {
+      return (
+        <div className="card scenario-card trail-card">
+          <h2>📚 Revisão</h2>
+          <p className="trail-subtitle">
+            Não há cenários para revisar no momento. Continue praticando e os cenários concluídos aparecerão aqui para revisão!
+          </p>
+          <div style={{ marginTop: '2rem' }}>
+            <button className="btn primary" onClick={() => setStage('map')}>
+              Voltar ao Mapa
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Filtra revisões que podem ser exibidas (têm dia e cenário correspondentes)
+    // Normaliza tipos para comparação (pode ser string ou number)
+    const validReviews = reviews.filter(review => {
+      // Tenta encontrar o dia comparando tanto como número quanto como string
+      const day = courseStructure.find(d => {
+        const dId = typeof d.id === 'number' ? d.id : parseInt(d.id);
+        const rId = typeof review.courseId === 'number' ? review.courseId : parseInt(review.courseId);
+        return dId === rId || String(d.id) === String(review.courseId);
+      });
+      
+      if (!day) {
+        console.warn(`Dia não encontrado para review: courseId=${review.courseId} (tipo: ${typeof review.courseId})`);
+        console.warn('IDs disponíveis nos cursos:', courseStructure.map(d => ({ id: d.id, type: typeof d.id })));
+        return false;
+      }
+      
+      // Tenta encontrar o cenário comparando tanto como número quanto como string
+      const scenario = day.scenarios?.find(s => {
+        const sId = typeof s.id === 'number' ? s.id : String(s.id);
+        const rId = typeof review.scenarioId === 'number' ? review.scenarioId : String(review.scenarioId);
+        return sId === rId || String(s.id) === String(review.scenarioId);
+      });
+      
+      if (!scenario) {
+        console.warn(`Cenário não encontrado para review: courseId=${review.courseId}, scenarioId=${review.scenarioId} (tipo: ${typeof review.scenarioId})`);
+        if (day.scenarios) {
+          console.warn('IDs de cenários disponíveis:', day.scenarios.map(s => ({ id: s.id, type: typeof s.id })));
+        }
+        return false;
+      }
+      return true;
+    });
+
+    console.log('validReviews.length:', validReviews.length);
+
+    if (validReviews.length === 0) {
+      return (
+        <div className="card scenario-card trail-card">
+          <h2>📚 Revisão</h2>
+          <p className="trail-subtitle">
+            Não foi possível encontrar os cenários correspondentes às revisões. Isso pode acontecer se os cursos ainda não foram carregados.
+          </p>
+          <div style={{ marginTop: '2rem' }}>
+            <button className="btn primary" onClick={() => {
+              fetchReviews();
+              const professionKey = localStorage.getItem('selectedProfessionKey');
+              if (professionKey) {
+                fetchCourses(professionKey);
+              }
+            }}>
+              Recarregar
+            </button>
+            <button className="btn secondary" style={{ marginTop: '0.5rem' }} onClick={() => setStage('map')}>
+              Voltar ao Mapa
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="card scenario-card trail-card">
+        <h2>📚 Revisão</h2>
+        <p className="trail-subtitle">
+          Revise os cenários que você já concluiu. A repetição espaçada ajuda a fixar o aprendizado!
+        </p>
+        <div className="day-path scenario-trail" style={{ marginTop: '2rem' }}>
+          {validReviews.map((review, idx) => {
+            // Encontra o dia e cenário correspondentes (já validados no filter acima)
+            const day = courseStructure.find(d => {
+              const dId = typeof d.id === 'number' ? d.id : parseInt(d.id);
+              const rId = typeof review.courseId === 'number' ? review.courseId : parseInt(review.courseId);
+              return dId === rId || String(d.id) === String(review.courseId);
+            });
+            if (!day) {
+              console.error(`Dia não encontrado após validação: courseId=${review.courseId}`);
+              return null;
+            }
+            
+            const scenario = day.scenarios?.find(s => {
+              const sId = typeof s.id === 'number' ? s.id : String(s.id);
+              const rId = typeof review.scenarioId === 'number' ? review.scenarioId : String(review.scenarioId);
+              return sId === rId || String(s.id) === String(review.scenarioId);
+            });
+            if (!scenario) {
+              console.error(`Cenário não encontrado após validação: scenarioId=${review.scenarioId}`);
+              return null;
+            }
+
+            const nextReviewDate = new Date(review.nextReviewDate);
+            const now = new Date();
+            // Compara apenas a data (ignora hora) para evitar problemas de timezone
+            const reviewDateOnly = new Date(nextReviewDate.getFullYear(), nextReviewDate.getMonth(), nextReviewDate.getDate());
+            const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const isOverdue = reviewDateOnly <= todayOnly;
+            const daysUntilReview = Math.ceil((reviewDateOnly - todayOnly) / (1000 * 60 * 60 * 24));
+            
+            console.log(`Review ${idx}: courseId=${review.courseId}, scenarioId=${review.scenarioId}, nextReviewDate=${review.nextReviewDate}, isOverdue=${isOverdue}`);
+
+            return (
+              <div key={idx} className="day-node" style={{ marginBottom: '1.5rem' }}>
+                <div className={`scenario-bubble ${isOverdue ? 'completed' : ''}`}>
+                  {scenario.icon || '🎯'}
+                </div>
+                <p className="scenario-name">{day.title} - {scenario.name}</p>
+                <p className="scenario-meta-trail">
+                  {isOverdue 
+                    ? 'Pronto para revisar!' 
+                    : `Próxima revisão em ${daysUntilReview} dia${daysUntilReview !== 1 ? 's' : ''}`
+                  }
+                </p>
+                {isOverdue && (
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <button
+                      className="btn primary"
+                      onClick={() => {
+                        // Abre o cenário para revisão
+                        const dayIndex = courseStructure.findIndex(d => {
+                          const dId = typeof d.id === 'number' ? d.id : parseInt(d.id);
+                          const rId = typeof review.courseId === 'number' ? review.courseId : parseInt(review.courseId);
+                          return dId === rId || String(d.id) === String(review.courseId);
+                        });
+                        const scenarioIndex = day.scenarios.findIndex(s => {
+                          const sId = typeof s.id === 'number' ? s.id : String(s.id);
+                          const rId = typeof review.scenarioId === 'number' ? review.scenarioId : String(review.scenarioId);
+                          return sId === rId || String(s.id) === String(review.scenarioId);
+                        });
+                        setCurrentDayIndex(dayIndex);
+                        setCurrentScenarioIndex(scenarioIndex);
+                        fetchLessonData(scenario.lessonKey);
+                        setStage('role-choice-lessons');
+                      }}
+                    >
+                      Revisar
+                    </button>
+                    <button
+                      className="btn secondary"
+                      onClick={async () => {
+                        // Marca como concluída sem revisar
+                        await completeReview(review.courseId, review.scenarioId);
+                      }}
+                    >
+                      Marcar como Revisado
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: '2rem' }}>
+          <button className="btn secondary" onClick={() => setStage('map')}>
+            Voltar ao Mapa
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderRoles = () => {
     const day = courseStructure[currentDayIndex];
     if (!day) return null;
@@ -1285,7 +1595,7 @@ useEffect(() => {
   const currentDay = courseStructure[currentDayIndex];
   const scenariosCount = currentDay?.scenarios.length || 0;
   const completedScenarios = currentDay ? currentDay.scenarios.filter(s => s.completed).length : 0;
-  const lessonStages = ['day-scenarios', 'role-choice-lessons', 'flashcard-selector', 'flashcard', 'role', 'chat'];
+  const lessonStages = ['day-scenarios', 'role-choice-lessons', 'flashcard-selector', 'flashcard', 'role', 'chat', 'reviews'];
 
   const staticStages = ['role-choice-lessons', 'flashcard'];
   const stageContainerClass = staticStages.includes(stage) ? 'app-stage-static' : 'app-stage-scroll';
@@ -1353,6 +1663,8 @@ useEffect(() => {
                     setStage('role-choice-lessons');
                   } else if (stage === 'role') {
                     setStage('role-choice-lessons');
+                  } else if (stage === 'reviews') {
+                    setStage('map');
                   }
                 }}
               >
@@ -1383,6 +1695,7 @@ useEffect(() => {
           ) : (
             <div className={`${stageContainerClass} ${stage === 'chat' ? 'chat-stage' : ''}`}>
               {stage === 'map' && renderMap()}
+              {stage === 'reviews' && renderReviews()}
               {stage === 'day-scenarios' && renderDayScenarios()}
               {stage === 'role-choice-lessons' && renderRoleChoiceLessons()}
               {stage === 'flashcard-selector' && renderFlashcardSelector()}
@@ -1421,6 +1734,36 @@ useEffect(() => {
               >
                 <span>🗺️</span>
                 <small>Mapa</small>
+              </button>
+              <button
+                type="button"
+                className={stage === 'reviews' ? 'active' : ''}
+                onClick={() => setStage('reviews')}
+                title={reviews.length > 0 ? `${reviews.length} revisão${reviews.length !== 1 ? 'ões' : ''} pendente${reviews.length !== 1 ? 's' : ''}` : 'Revisão'}
+                style={{ position: 'relative' }}
+              >
+                <span>📚</span>
+                <small>Revisão</small>
+                {reviews.length > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '4px',
+                    background: '#ef4444',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '16px',
+                    height: '16px',
+                    fontSize: '9px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    lineHeight: '16px'
+                  }}>
+                    {reviews.length > 9 ? '9+' : reviews.length}
+                  </span>
+                )}
               </button>
               <button
                 type="button"
