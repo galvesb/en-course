@@ -1416,21 +1416,23 @@ h3 {
 .flashcard-word {
   font-size: clamp(1.6rem, 4vw, 2.4rem);
   font-weight: 600;
-  
-  /* Margens automáticas centralizam verticalmente se houver espaço,
-     mas permitem o scroll se faltar espaço */
-  margin-top: auto;
-  margin-bottom: 0.5rem; 
   width: 100%;
+  text-align: center;
+  
+  /* ISSO É O IMPORTANTE: */
+  margin-top: auto;    /* Empurra para baixo */
+  margin-bottom: auto; /* Empurra para cima */
 }
 
 .flashcard-translation {
   font-size: clamp(1.4rem, 3.6vw, 2rem);
   font-weight: 600;
-  
-  /* Completa a centralização vertical */
-  margin-bottom: auto;
   width: 100%;
+  text-align: center;
+  
+  /* ISSO É O IMPORTANTE: */
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 /* --- 6. BOTÕES E AÇÕES --- */
