@@ -1154,7 +1154,6 @@ h3 {
 }
 
 .flashcard {
-  -webkit-overflow-scrolling: touch;
   width: min(520px, 90%);
   height: 320px;
   background: radial-gradient(circle at top, rgba(15, 118, 110, 0.35), rgba(6, 11, 20, 0.9));
