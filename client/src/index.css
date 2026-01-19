@@ -1113,7 +1113,7 @@ h3 {
 }
 
 /* Estilo para a Tela de Flash Card */
-.flashcard-wrapper {
+/* .flashcard-wrapper {
   flex: 1;
   width: 100%;
   display: flex;
@@ -1268,8 +1268,217 @@ h3 {
   background: rgba(226, 232, 240, 0.2);
   border: 1px solid rgba(226, 232, 240, 0.35);
   color: #f8fafc;
+} */
+
+
+/* --- 1. ESTILIZAÇÃO DA BARRA DE ROLAGEM (NOVO) --- */
+/* Funciona no Chrome, Edge, Safari */
+.card-front::-webkit-scrollbar,
+.card-back::-webkit-scrollbar {
+  width: 6px;
 }
 
+.card-front::-webkit-scrollbar-track,
+.card-back::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 20px 0; /* Evita que a barra toque nas bordas arredondadas */
+}
+
+.card-front::-webkit-scrollbar-thumb,
+.card-back::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+/* Funciona no Firefox */
+.card-front,
+.card-back {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+/* --- 2. ESTRUTURA DO LAYOUT --- */
+.flashcard-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0 40px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.flashcard-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 12px 0 24px;
+}
+
+.flashcard-stage-header {
+  width: 100%;
+  margin-bottom: 0.1rem;
+  text-align: center;
+}
+
+.flashcard-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  margin-bottom: -1rem;
+  align-items: center;
+  overflow: visible;
+}
+
+/* --- 3. O CARTÃO (FLASHCARD) --- */
+.flashcard {
+  -webkit-overflow-scrolling: touch;
+  width: min(520px, 90%);
+  height: 320px;
+  background: radial-gradient(circle at top, rgba(15, 118, 110, 0.35), rgba(6, 11, 20, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 28px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden !important; /* Mantém o formato arredondado externo */
+  align-items: center;
+  box-shadow: 0 25px 40px rgba(2, 6, 23, 0.55);
+  cursor: pointer;
+  perspective: 1200px;
+  margin-bottom: 10px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flashcard.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* --- 4. FRENTE E VERSO (ATUALIZADO PARA SCROLL) --- */
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  
+  display: flex;
+  /* Alterado para column para organizar texto longo */
+  flex-direction: column; 
+  /* Alterado para flex-start para permitir scroll do topo */
+  justify-content: flex-start; 
+  align-items: center;
+  
+  padding: 32px 24px;
+  border-radius: 26px;
+  
+  /* Habilita o scroll vertical */
+  overflow-y: auto; 
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.card-front {
+  background: linear-gradient(160deg, rgba(34, 197, 94, 0.25), rgba(15, 23, 42, 0.65));
+  color: #f8fafc;
+}
+
+.card-back {
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.35), rgba(15, 23, 42, 0.75));
+  color: #fff;
+  transform: rotateY(180deg);
+}
+
+/* --- 5. CONTEÚDO DO TEXTO --- */
+.flashcard-progress {
+  margin: 0;
+  font-size: .9rem;
+  color: rgba(226, 232, 240, 0.75);
+  /* Garante que o progresso não encolha */
+  flex-shrink: 0; 
+}
+
+.flashcard-word {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 600;
+  
+  /* Margens automáticas centralizam verticalmente se houver espaço,
+     mas permitem o scroll se faltar espaço */
+  margin-top: auto;
+  margin-bottom: 0.5rem; 
+  width: 100%;
+}
+
+.flashcard-translation {
+  font-size: clamp(1.4rem, 3.6vw, 2rem);
+  font-weight: 600;
+  
+  /* Completa a centralização vertical */
+  margin-bottom: auto;
+  width: 100%;
+}
+
+/* --- 6. BOTÕES E AÇÕES --- */
+.flashcard-stage-actions {
+  width: min(520px, 90%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 1rem auto 0;
+}
+
+.flashcard-btn {
+  border: none;
+  border-radius: 16px;
+  padding: 22px 28px;
+  height: 60px;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+}
+
+.flashcard-btn:active {
+  transform: translateY(1px);
+}
+
+.flashcard-btn.know {
+  background: linear-gradient(120deg, #22c55e, #16a34a);
+  color: #f8fafc;
+}
+
+.flashcard-btn.dont-know {
+  background: linear-gradient(120deg, #ef4444, #dc2626);
+  color: #f8fafc;
+}
+
+.flashcard-btn.back {
+  background: rgba(226, 232, 240, 0.2);
+  border: 1px solid rgba(226, 232, 240, 0.35);
+  color: #f8fafc;
+}
 
 /* Chat Simulator */
 .chat-scroll {

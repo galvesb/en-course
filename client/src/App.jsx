@@ -1263,55 +1263,125 @@ useEffect(() => {
     };
 
     return (
+      // <div className="flashcard-wrapper">
+      // <div className="card scenario-card flashcard-stage">
+      //   <div className="flashcard-stage-header">
+      //     <p className="flashcard-progress">
+      //       Card {currentCardIndexInQueue + 1}/{flashcardQueue.length}
+      //     </p>
+      //   </div>
+
+      //   <div className="flashcard-container">
+      //     <div
+      //       className={`flashcard ${isFlashcardFlipped ? 'flipped' : ''}`}
+      //       onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
+      //     >
+      //       <div className="card-inner">
+      //         <div className="card-front">
+      //           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+      //             <button
+      //               className="audio-btn"
+      //               title="Ouvir Pronúncia (Velocidade Lenta 0.5x)"
+      //               onClick={(e) => {
+      //                 e.stopPropagation();
+      //                 const src = card.audio || findConversationAudioForCard();
+      //                 playFlashcardAudio(src, 0.5);
+      //               }}
+      //             >
+      //               🐌
+      //             </button>
+      //             <div className="flashcard-word">{card.word}</div>
+      //             <button
+      //               className="audio-btn"
+      //               title="Ouvir Pronúncia (Velocidade Normal)"
+      //               onClick={(e) => {
+      //                 e.stopPropagation();
+      //                 const src = card.audio || findConversationAudioForCard();
+      //                 playFlashcardAudio(src, 1.0);
+      //               }}
+      //             >
+      //               🔊
+      //             </button>
+      //           </div>
+      //         </div>
+      //         <div className="card-back">
+      //           <div className="flashcard-translation">{card.translation}</div>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   </div>
+
+      // </div>
+      // </div>
+
+
       <div className="flashcard-wrapper">
-      <div className="card scenario-card flashcard-stage">
-        <div className="flashcard-stage-header">
-          <p className="flashcard-progress">
-            Card {currentCardIndexInQueue + 1}/{flashcardQueue.length}
-          </p>
+        <div className="card scenario-card flashcard-stage">
+          <div className="flashcard-stage-header">
+            <p className="flashcard-progress">
+              Card {currentCardIndexInQueue + 1}/{flashcardQueue.length}
+            </p>
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '20px', 
+            width: '100%',
+            marginBottom: '10px' // Espaço entre os botões e o texto
+        }}>
+          <button
+            className="audio-btn"
+            title="Ouvir Pronúncia (Velocidade Lenta 0.5x)"
+            onClick={(e) => {
+              e.stopPropagation();
+              const src = card.audio || findConversationAudioForCard();
+              playFlashcardAudio(src, 0.5);
+            }}
+          >
+            🐌
+          </button>
+
+          <button
+            className="audio-btn"
+            title="Ouvir Pronúncia (Velocidade Normal)"
+            onClick={(e) => {
+              e.stopPropagation();
+              const src = card.audio || findConversationAudioForCard();
+              playFlashcardAudio(src, 1.0);
+            }}
+          >
+            🔊
+          </button>
         </div>
 
-        <div className="flashcard-container">
-          <div
-            className={`flashcard ${isFlashcardFlipped ? 'flipped' : ''}`}
-            onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
-          >
-            <div className="card-inner">
-              <div className="card-front">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-                  <button
-                    className="audio-btn"
-                    title="Ouvir Pronúncia (Velocidade Lenta 0.5x)"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const src = card.audio || findConversationAudioForCard();
-                      playFlashcardAudio(src, 0.5);
-                    }}
-                  >
-                    🐌
-                  </button>
+          <div className="flashcard-container">
+            
+            <div
+              className={`flashcard ${isFlashcardFlipped ? 'flipped' : ''}`}
+              onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
+            >
+              <div className="card-inner">
+
+                {/* --- FRENTE DO CARD --- */}
+                <div className="card-front">
+
+                  {/* 1. CONTAINER DOS ÁUDIOS (TOPO) */}
+
+
+                  {/* 2. A PALAVRA (ABAIXO) */}
                   <div className="flashcard-word">{card.word}</div>
-                  <button
-                    className="audio-btn"
-                    title="Ouvir Pronúncia (Velocidade Normal)"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const src = card.audio || findConversationAudioForCard();
-                      playFlashcardAudio(src, 1.0);
-                    }}
-                  >
-                    🔊
-                  </button>
+
                 </div>
-              </div>
-              <div className="card-back">
-                <div className="flashcard-translation">{card.translation}</div>
+
+                {/* --- VERSO DO CARD --- */}
+                <div className="card-back">
+                  <div className="flashcard-translation">{card.translation}</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-      </div>
+        </div>
       </div>
     );
   };
