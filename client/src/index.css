@@ -1378,18 +1378,18 @@ h3 {
   backface-visibility: hidden;
   
   display: flex;
-  /* Alterado para column para organizar texto longo */
-  flex-direction: column; 
-  /* Alterado para flex-start para permitir scroll do topo */
-  justify-content: flex-start; 
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
   
   padding: 32px 24px;
   border-radius: 26px;
   
-  /* Habilita o scroll vertical */
-  overflow-y: auto; 
+  /* --- AJUSTES PARA MOBILE --- */
+  overflow-y: auto;          /* Habilita rolagem */
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* ESSENCIAL: Permite rolagem suave no iOS */
+  touch-action: pan-y;       /* Diz ao navegador que essa área serve para rolar verticalmente */
   box-sizing: border-box;
 }
 
