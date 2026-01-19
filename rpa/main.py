@@ -7,13 +7,15 @@ import os
 # ====================================================================
 
 # --- Configurações Site 1 (Sua Aplicação) ---
-URL_LOGIN_SITE1 = os.environ.get("SITE1_LOGIN_URL", "http://localhost:5173/login")
-URL_PROFESSION_ESPERADA = os.environ.get("SITE1_PROFESSION_URL", "http://localhost:5173/profession")
-URL_HOME_ESPERADO = os.environ.get("SITE1_HOME_URL", "http://localhost:5173/")
-URL_ADMIN_ESPERADA = os.environ.get("SITE1_ADMIN_URL", "http://localhost:5173/admin")
+url_base = "http://201.23.76.116"
+
+URL_LOGIN_SITE1 = os.environ.get("SITE1_LOGIN_URL", f"{url_base}/login")
+URL_PROFESSION_ESPERADA = os.environ.get("SITE1_PROFESSION_URL", f"{url_base}/profession")
+URL_HOME_ESPERADO = os.environ.get("SITE1_HOME_URL", f"{url_base}/")
+URL_ADMIN_ESPERADA = os.environ.get("SITE1_ADMIN_URL", f"{url_base}/admin")
 PROFISSAO_PADRAO = os.environ.get("SITE1_PROFESSION_NAME", "Software Developer")
 EMAIL = "admin@admin.com"
-SENHA = "123456"
+SENHA = "123456" # TODO: Alterar para a senha do admin
 
 # --- Configurações Site 2 (ElevenLabs) ---
 URL_ELEVENLABS_HOME = "https://elevenlabs.io/app/home" 
