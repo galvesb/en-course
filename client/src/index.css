@@ -1270,40 +1270,6 @@ h3 {
   color: #f8fafc;
 } */
 
-
-/* --- 1. ESTILIZAÇÃO DA BARRA DE ROLAGEM (NOVO) --- */
-/* Funciona no Chrome, Edge, Safari */
-/* --- 1. ESTILIZAÇÃO DA BARRA DE ROLAGEM (AGRESSIVA PARA MOBILE) --- */
-/* Configuração base para Webkit (Chrome, Safari, Edge, Android, iOS) */
-.card-front::-webkit-scrollbar,
-.card-back::-webkit-scrollbar {
-  -webkit-appearance: none;
-  width: 6px;
-  display: block; /* Tenta forçar a exibição no mobile */
-}
-
-.card-front::-webkit-scrollbar-track,
-.card-back::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  margin: 20px 0;
-  border-radius: 10px;
-}
-
-.card-front::-webkit-scrollbar-thumb,
-.card-back::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.4);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Funciona no Firefox */
-.card-front,
-.card-back {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
-}
-
-/* --- 2. ESTRUTURA DO LAYOUT --- */
 .flashcard-wrapper {
   flex: 1;
   width: 100%;
@@ -1343,29 +1309,23 @@ h3 {
   overflow: visible;
 }
 
-/* --- 3. O CARTÃO (FLASHCARD - CONTAINER PAI) --- */
 .flashcard {
-  -webkit-overflow-scrolling: touch;
   width: min(520px, 90%);
   height: 320px;
-  
-  /* IMPORTANTE: Background transparente aqui, a cor fica no filho */
-  background: transparent; 
-  
-  /* IMPORTANTE: Removido overflow:hidden que travava o mobile */
-  /* overflow: hidden !important; <--- REMOVIDO */
-  
+  background: radial-gradient(circle at top, rgba(15, 118, 110, 0.35), rgba(6, 11, 20, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 28px;
   display: flex;
   justify-content: center;
+  overflow: hidden !important; 
   align-items: center;
   box-shadow: 0 25px 40px rgba(2, 6, 23, 0.55);
   cursor: pointer;
   perspective: 1200px;
   margin-bottom: 10px;
   
-  /* Permite interações 3D corretas */
-  transform-style: preserve-3d;
+  /* Remove o highlight azul ao clicar em mobile (Android/Chrome) */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card-inner {
@@ -1381,7 +1341,7 @@ h3 {
   transform: rotateY(180deg);
 }
 
-/* --- 4. FRENTE E VERSO (CORREÇÃO DE SCROLL MOBILE) --- */
+/* --- LADOS DO CARTÃO (Com bloqueio de seleção) --- */
 .card-front,
 .card-back {
   position: absolute;
@@ -1392,26 +1352,36 @@ h3 {
   
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: flex-start; 
   align-items: center;
   
   padding: 32px 24px;
-  
-  /* O arredondamento deve vir para cá, já que tiramos do pai */
-  border-radius: 28px;
-  /* Garante que o conteúdo não vaze das bordas arredondadas */
-  overflow: hidden; 
-  
-  /* --- AJUSTES CRÍTICOS PARA MOBILE --- */
-  overflow-y: auto;          
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch; /* Momentum scroll no iOS */
-  touch-action: pan-y;       /* Permite apenas scroll vertical no toque */
-  
-  /* Truque para forçar renderização de camada no mobile */
-  transform: translateZ(1px); 
-  
+  border-radius: 26px;
   box-sizing: border-box;
+  
+  /* SCROLL */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; 
+  overscroll-behavior: contain; 
+  
+  /* BLOQUEIO DE SELEÇÃO DE TEXTO */
+  -webkit-user-select: none;  /* Safari/Chrome */
+  -moz-user-select: none;     /* Firefox */
+  -ms-user-select: none;      /* IE/Edge */
+  user-select: none;          /* Padrão */
+  
+  /* Desativa menu de contexto (copiar/colar) ao segurar o toque no iOS */
+  -webkit-touch-callout: none; 
+}
+
+/* Hacks para centralização vertical quando o texto é curto */
+.card-front::before, .card-front::after,
+.card-back::before, .card-back::after {
+  content: '';
+  flex: 0 1 auto; 
+  height: auto;
+  min-height: 0;
 }
 
 .card-front {
@@ -1422,45 +1392,54 @@ h3 {
 .card-back {
   background: linear-gradient(160deg, rgba(59, 130, 246, 0.35), rgba(15, 23, 42, 0.75));
   color: #fff;
-  /* O translateZ(1px) é somado aqui para manter a correção do mobile */
-  transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg);
 }
 
-/* --- 5. CONTEÚDO DO TEXTO --- */
+/* SCROLLBAR CUSTOMIZADA */
+.card-front::-webkit-scrollbar,
+.card-back::-webkit-scrollbar {
+  width: 4px;
+}
+
+.card-front::-webkit-scrollbar-track,
+.card-back::-webkit-scrollbar-track {
+  background: transparent; 
+  margin: 20px 0;
+}
+
+.card-front::-webkit-scrollbar-thumb,
+.card-back::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
 .flashcard-progress {
   margin: 0;
   font-size: .9rem;
   color: rgba(226, 232, 240, 0.75);
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .flashcard-word {
   font-size: clamp(1.6rem, 4vw, 2.4rem);
   font-weight: 600;
-  width: 100%;
-  text-align: center;
-  
-  /* Centraliza se for pequeno, permite scroll se for grande */
-  margin-top: auto;   
-  margin-bottom: auto; 
-  
-  /* Melhora a UX: Cursor de texto indica que não é botão de virar */
-  cursor: text;
+  margin-bottom: 1rem;
+  margin-top: auto; 
+  cursor: default; /* Cursor padrão para reforçar que não é selecionável */
 }
 
 .flashcard-translation {
   font-size: clamp(1.4rem, 3.6vw, 2rem);
   font-weight: 600;
-  width: 100%;
-  text-align: center;
-  
   margin-top: auto;
-  margin-bottom: auto;
-  
-  cursor: text;
+  cursor: default;
 }
 
-/* --- 6. BOTÕES E AÇÕES --- */
+.flashcard-word:last-child, 
+.flashcard-translation:last-child {
+  margin-bottom: auto;
+}
+
 .flashcard-stage-actions {
   width: min(520px, 90%);
   display: flex;
@@ -1485,6 +1464,8 @@ h3 {
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+  /* Botões também não devem ter texto selecionável */
+  user-select: none;
 }
 
 .flashcard-btn:active {
@@ -1506,6 +1487,8 @@ h3 {
   border: 1px solid rgba(226, 232, 240, 0.35);
   color: #f8fafc;
 }
+
+
 
 /* Chat Simulator */
 .chat-scroll {
