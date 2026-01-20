@@ -1290,7 +1290,7 @@ useEffect(() => {
       //             >
       //               🐌
       //             </button>
-      //             <div className="flashcard-word">{card.word}</div>
+      //             <div className="flashcard-word flashcard-scrollable-text">{card.word}</div>
       //             <button
       //               className="audio-btn"
       //               title="Ouvir Pronúncia (Velocidade Normal)"
@@ -1369,7 +1369,7 @@ useEffect(() => {
 
 
                   {/* 2. A PALAVRA (ABAIXO) */}
-                  <div className="flashcard-word">{card.word}</div>
+                  <div className="flashcard-word flashcard-scrollable-text">{card.word}</div>
 
                 </div>
 
